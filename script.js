@@ -1186,6 +1186,7 @@ function setActivePanel(panelName) {
 }
 
 function renderProfile() {
+  const hasAccess = hasMemberAreaAccess();
   const member = state.member || {
     name: "Aluno",
     email: "",
@@ -1193,18 +1194,41 @@ function renderProfile() {
     rhythm: "30 min por dia",
   };
 
-  dom.memberName.textContent = member.name;
-  dom.memberPlan.textContent = member.email || "Plano local";
-  dom.memberAvatar.textContent = initials(member.name);
-  dom.heroSubtitle.textContent = `Área do aluno ${member.name}`;
+  if (hasAccess) {
+    dom.memberName.textContent = member.name;
+    dom.memberPlan.textContent = member.email || "Plano premium";
+    dom.memberAvatar.textContent = initials(member.name);
+    dom.heroSubtitle.textContent = `Área do aluno ${member.name}`;
+    dom.heroTitle.textContent = course.title || "Curso Completo de Eletrônica";
+    dom.heroText.textContent =
+      "Uma experiência de membro com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
+    dom.memberGreeting.textContent = `Olá, ${member.name}. Seu laboratório digital está pronto.`;
+    dom.memberGoalCopy.textContent = `Objetivo atual: ${member.goal}. A plataforma vai te ajudar a avançar no ritmo "${member.rhythm}".`;
+    dom.memberRhythm.textContent = `Ritmo: ${member.rhythm}`;
+    dom.memberGoal.textContent = `Objetivo: ${member.goal}`;
+    dom.certificateStudent.textContent = member.name;
+    return;
+  }
+
+  dom.memberName.textContent = "Visitante";
+  dom.memberPlan.textContent = "Preview gratuito";
+  dom.memberAvatar.textContent = "DR";
+  dom.heroSubtitle.textContent = "Vitrine pública com aulas abertas";
   dom.heroTitle.textContent = course.title || "Curso Completo de Eletrônica";
   dom.heroText.textContent =
-    "Uma experiência de membro com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
-  dom.memberGreeting.textContent = `Olá, ${member.name}. Seu laboratório digital está pronto.`;
-  dom.memberGoalCopy.textContent = `Objetivo atual: ${member.goal}. A plataforma vai te ajudar a avançar no ritmo "${member.rhythm}".`;
-  dom.memberRhythm.textContent = `Ritmo: ${member.rhythm}`;
-  dom.memberGoal.textContent = `Objetivo: ${member.goal}`;
-  dom.certificateStudent.textContent = member.name;
+    "Conheça a plataforma, explore aulas de demonstração e entre na área premium quando quiser liberar o curso completo.";
+  dom.memberGreeting.textContent = "Veja por dentro da Academia DR.";
+  dom.memberGoalCopy.textContent =
+    "Você está navegando na área pública. Crie sua conta para salvar progresso, fazer o quiz final e emitir o certificado.";
+  dom.memberRhythm.textContent = "Acesso: preview aberto";
+  dom.memberGoal.textContent = "Plano: premium sob demanda";
+  dom.certificateStudent.textContent = "Aluno";
+}
+
+function renderSessionChrome() {
+  const hasAccess = hasMemberAreaAccess();
+  dom.logoutButton.hidden = !hasAccess;
+  dom.editProfile.hidden = !hasAccess;
 }
 
 function renderPublicOffer() {
@@ -1826,6 +1850,7 @@ function renderAdminPanel() {
 
 function renderAll() {
   syncAdminUi();
+  renderSessionChrome();
   renderPublicOffer();
   renderProfile();
   renderHeroStats();
