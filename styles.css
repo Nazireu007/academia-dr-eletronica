@@ -424,6 +424,21 @@ body::before {
     rgba(255, 255, 255, 0.03);
 }
 
+.ad-support-card {
+  border-style: dashed;
+  border-color: rgba(255, 191, 102, 0.24);
+}
+
+.ad-placeholder {
+  margin-top: 0.9rem;
+  padding: 0.95rem 1rem;
+  border: 1px dashed rgba(255, 191, 102, 0.28);
+  border-radius: 1rem;
+  color: var(--muted);
+  background: rgba(255, 191, 102, 0.06);
+  line-height: 1.6;
+}
+
 .admin-member-copy {
   display: grid;
   gap: 0.2rem;

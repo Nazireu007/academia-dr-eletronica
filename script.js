@@ -176,6 +176,8 @@ const dom = {
   nextLessonSummary: document.querySelector("#next-lesson-summary"),
   openNextLesson: document.querySelector("#open-next-lesson"),
   openCoursePanel: document.querySelector("#open-course-panel"),
+  publicAdCard: document.querySelector("#public-ad-card"),
+  dashboardAdCard: document.querySelector("#dashboard-ad-card"),
   memberMetrics: document.querySelector("#member-metrics"),
   achievementGrid: document.querySelector("#achievement-grid"),
   timelineList: document.querySelector("#timeline-list"),
@@ -197,6 +199,7 @@ const dom = {
   lessonOutline: document.querySelector("#lesson-outline"),
   moduleProgressCopy: document.querySelector("#module-progress-copy"),
   moduleProgressFill: document.querySelector("#module-progress-fill"),
+  lessonAdCard: document.querySelector("#lesson-ad-card"),
   lessonNote: document.querySelector("#lesson-note"),
   favoriteList: document.querySelector("#favorite-list"),
   noteList: document.querySelector("#note-list"),
@@ -297,17 +300,21 @@ const defaultAppConfig = {
   supabaseUrl: "",
   supabaseAnonKey: "",
   commerceMode: "hybrid",
-  offerTitle: "Curso completo com acesso individual",
+  offerTitle: "Curso completo grátis com anúncios ou premium sem anúncios",
   offerCopy:
-    "Area premium com progresso salvo, quiz final, certificado e acesso individual por aluno.",
-  priceLabel: "R$ 197",
-  billingLabel: "pagamento unico",
+    "Estude grátis com anúncios ou desbloqueie a experiência sem anúncios por R$ 50, com acesso individual, progresso salvo, quiz final e certificado.",
+  priceLabel: "R$ 50",
+  billingLabel: "premium sem anuncios",
   paymentProviderLabel: "Checkout direto",
   checkoutUrl: "",
   hotmartCheckoutUrl: "",
   hotmartMembersUrl: "",
   whatsappNumber: "",
-  whatsappMessage: "Ola! Quero comprar o Curso Completo de Eletronica.",
+  whatsappMessage: "Ola! Quero assinar o plano premium sem anuncios do Curso Completo de Eletronica por R$ 50.",
+  freePlanLabel: "Gratis com anuncios",
+  premiumPlanLabel: "Premium sem anuncios",
+  adsEnabled: true,
+  adSenseClient: "",
   freeModuleNumbers: ["01"],
   previewLessonIds: [],
 };
@@ -322,6 +329,7 @@ const authState = {
   session: null,
   user: null,
   accessGranted: false,
+  accessStatus: "guest",
   isAdmin: false,
   profileRole: "student",
   syncTimer: null,
@@ -964,6 +972,52 @@ function getWhatsAppUrl() {
   return `https://wa.me/${phone}?text=${text}`;
 }
 
+function getMemberPlanKind() {
+  if (!isSupabaseMode()) {
+    return hasActiveAccess() ? "premium" : "guest";
+  }
+
+  if (!authState.session) return "guest";
+  if (authState.isAdmin) return "premium";
+  if (authState.accessStatus === "blocked") return "blocked";
+  if (authState.accessStatus === "active") return "premium";
+  return "free";
+}
+
+function isPremiumMember() {
+  return getMemberPlanKind() === "premium";
+}
+
+function isFreeMember() {
+  return getMemberPlanKind() === "free";
+}
+
+function ensureAdsScript() {
+  if (!appConfig.adsEnabled || !appConfig.adSenseClient) return;
+  if (document.querySelector(`script[data-ad-client="${appConfig.adSenseClient}"]`)) return;
+
+  const script = document.createElement("script");
+  script.async = true;
+  script.crossOrigin = "anonymous";
+  script.dataset.adClient = appConfig.adSenseClient;
+  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(
+    appConfig.adSenseClient
+  )}`;
+  document.head.append(script);
+}
+
+function getAdSupportMarkup(title, compact = false) {
+  return `
+    <p class="panel-label">Espaco patrocinado</p>
+    <h3>${escapeHtml(title)}</h3>
+    <p class="side-copy">${
+      compact
+        ? "Este plano permanece gratuito porque exibe anúncios. Para estudar sem anúncios, assine o premium por R$ 50."
+        : "Este plano permanece gratuito porque exibe anúncios. Para estudar sem anúncios e apoiar o projeto, assine o premium por R$ 50."
+    }</p>
+  `;
+}
+
 function hasMemberAreaAccess() {
   return isSupabaseMode() ? Boolean(authState.session && authState.accessGranted) : hasActiveAccess();
 }
@@ -1006,12 +1060,14 @@ function hasUnlockedCertificate() {
 async function refreshRemoteAccessStatus() {
   if (!isSupabaseMode() || !authState.user) {
     authState.accessGranted = false;
+    authState.accessStatus = "guest";
     return false;
   }
 
   const client = await getAuthClient();
   if (!client) {
     authState.accessGranted = false;
+    authState.accessStatus = "guest";
     return false;
   }
 
@@ -1022,7 +1078,8 @@ async function refreshRemoteAccessStatus() {
     .eq("course_slug", appConfig.courseSlug)
     .maybeSingle();
 
-  authState.accessGranted = data?.access_status === "active";
+  authState.accessStatus = data?.access_status || "pending";
+  authState.accessGranted = Boolean(authState.session) && authState.accessStatus !== "blocked";
   return authState.accessGranted;
 }
 
@@ -1057,15 +1114,15 @@ function setAccessFeedback(message = "", tone = "") {
 function syncAccessModeUi() {
   const supabaseMode = isSupabaseMode();
   const signedIn = Boolean(authState.session);
-  const lockedAwaitingApproval = supabaseMode && signedIn && !authState.accessGranted && !authState.isAdmin;
+  const blockedMember = supabaseMode && signedIn && authState.accessStatus === "blocked" && !authState.isAdmin;
 
   dom.localAccessFields.hidden = supabaseMode;
-  dom.cloudAuthFields.hidden = !supabaseMode || lockedAwaitingApproval;
+  dom.cloudAuthFields.hidden = !supabaseMode || blockedMember;
   dom.authSignupButton.hidden = !supabaseMode || signedIn;
   dom.authResetButton.hidden = !supabaseMode || signedIn;
-  dom.authRefreshAccessButton.hidden = !lockedAwaitingApproval;
+  dom.authRefreshAccessButton.hidden = !blockedMember;
   dom.authSignoutButton.hidden = !supabaseMode || !signedIn;
-  dom.authSubmitButton.hidden = lockedAwaitingApproval;
+  dom.authSubmitButton.hidden = blockedMember;
 
   if (!supabaseMode) {
     dom.accessCopy.textContent =
@@ -1087,20 +1144,20 @@ function syncAccessModeUi() {
 
   dom.authSubmitButton.disabled = false;
 
-  if (lockedAwaitingApproval) {
+  if (blockedMember) {
     dom.accessCopy.textContent =
-      "Sua conta foi encontrada, mas o acesso ao curso ainda aguarda liberacao.";
+      "Sua conta esta temporariamente indisponivel para este curso.";
     setAccessFeedback(
-      "Quando o acesso for liberado, clique em Atualizar acesso para entrar na plataforma.",
+      "Se voce acredita que isso e um engano, fale com o suporte e depois clique em Atualizar acesso.",
       ""
     );
     return;
   }
 
   dom.accessCopy.textContent =
-    "Entre com seu e-mail e senha. Cada aluno passa a ter conta individual, acesso remoto e dados sincronizados.";
+    "Entre com seu e-mail e senha. O plano gratis exibe anuncios e o premium remove os anuncios.";
   dom.authModeCopy.textContent =
-    "Crie sua conta ou entre com seus dados para acessar a area premium do curso.";
+    "Crie sua conta para começar gratis ou entre para continuar seus estudos.";
   dom.authSubmitButton.textContent = signedIn ? "Entrar com outra conta" : "Entrar com e-mail";
 }
 
@@ -1216,9 +1273,9 @@ function setActivePanel(panelName) {
 }
 
 function getAdminAccessLabel(status) {
-  if (status === "active") return "Acesso liberado";
+  if (status === "active") return appConfig.premiumPlanLabel || "Premium sem anuncios";
   if (status === "blocked") return "Acesso bloqueado";
-  return "Aguardando liberação";
+  return appConfig.freePlanLabel || "Gratis com anuncios";
 }
 
 function getAdminRoleLabel(role) {
@@ -1241,6 +1298,7 @@ function formatAdminDate(value) {
 
 function renderProfile() {
   const hasAccess = hasMemberAreaAccess();
+  const planKind = getMemberPlanKind();
   const member = state.member || {
     name: "Aluno",
     email: "",
@@ -1250,14 +1308,20 @@ function renderProfile() {
 
   if (hasAccess) {
     dom.memberName.textContent = member.name;
-    dom.memberPlan.textContent = member.email || "Plano premium";
+    dom.memberPlan.textContent =
+      planKind === "premium" ? appConfig.premiumPlanLabel || "Premium sem anuncios" : appConfig.freePlanLabel || "Gratis com anuncios";
     dom.memberAvatar.textContent = initials(member.name);
     dom.heroSubtitle.textContent = `Área do aluno ${member.name}`;
     dom.heroTitle.textContent = course.title || "Curso Completo de Eletrônica";
     dom.heroText.textContent =
-      "Uma experiência de membro com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
+      planKind === "premium"
+        ? "Uma experiência premium, sem anúncios, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado."
+        : "Seu acesso gratuito com anúncios já está liberado, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
     dom.memberGreeting.textContent = `Olá, ${member.name}. Seu laboratório digital está pronto.`;
-    dom.memberGoalCopy.textContent = `Objetivo atual: ${member.goal}. A plataforma vai te ajudar a avançar no ritmo "${member.rhythm}".`;
+    dom.memberGoalCopy.textContent =
+      planKind === "premium"
+        ? `Objetivo atual: ${member.goal}. Você está no plano premium, sem anúncios, avançando no ritmo "${member.rhythm}".`
+        : `Objetivo atual: ${member.goal}. Você está no plano gratuito com anúncios, avançando no ritmo "${member.rhythm}".`;
     dom.memberRhythm.textContent = `Ritmo: ${member.rhythm}`;
     dom.memberGoal.textContent = `Objetivo: ${member.goal}`;
     dom.certificateStudent.textContent = member.name;
@@ -1296,14 +1360,16 @@ function renderPublicOffer() {
   const checkoutUrl = getCheckoutUrl();
   const whatsappUrl = getWhatsAppUrl();
   const offerMetrics = [
-    { label: "Oferta", value: appConfig.priceLabel || "Defina o preco" },
-    { label: "Modelo", value: appConfig.billingLabel || "pagamento unico" },
+    { label: "Plano grátis", value: appConfig.freePlanLabel || "Gratis com anuncios" },
+    { label: "Plano premium", value: appConfig.priceLabel || "R$ 50" },
     { label: "Entrega", value: isSupabaseMode() ? "login individual" : "acesso local ou protegido" },
     { label: "Preview aberto", value: `${previewLessons.length} aula(s)` },
   ];
 
   dom.offerTitle.textContent = appConfig.offerTitle;
   dom.offerCopy.textContent = appConfig.offerCopy;
+  dom.primaryCheckoutLink.textContent = `Estudar sem anuncios por ${appConfig.priceLabel || "R$ 50"}`;
+  dom.enterMemberArea.textContent = "Começar grátis";
   dom.primaryCheckoutLink.href = checkoutUrl;
   dom.primaryCheckoutLink.classList.toggle("is-disabled-link", checkoutUrl === "#");
   dom.whatsappSalesLink.href = whatsappUrl;
@@ -1866,12 +1932,12 @@ function renderAdminPanel() {
   const metrics = [
     { label: "Cadastros", value: String(manageableMembers.length) },
     {
-      label: "Ativos",
-      value: String(manageableMembers.filter((member) => member.accessStatus === "active").length),
+      label: "Grátis",
+      value: String(manageableMembers.filter((member) => member.accessStatus === "pending").length),
     },
     {
-      label: "Pendentes",
-      value: String(manageableMembers.filter((member) => member.accessStatus === "pending").length),
+      label: "Premium",
+      value: String(manageableMembers.filter((member) => member.accessStatus === "active").length),
     },
     {
       label: "Admins",
@@ -1936,10 +2002,10 @@ function renderAdminPanel() {
                 <div class="admin-member-actions">
                   <button class="button button-secondary button-small" data-access-action="active" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "active" ? "disabled" : ""
-                  }>Liberar acesso</button>
+                  }>Ativar premium</button>
                   <button class="button button-secondary button-small" data-access-action="pending" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "pending" ? "disabled" : ""
-                  }>Deixar pendente</button>
+                  }>Plano grátis</button>
                   <button class="button button-secondary button-small" data-access-action="blocked" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "blocked" ? "disabled" : ""
                   }>Bloquear</button>
@@ -1968,10 +2034,38 @@ function renderAdminPanel() {
   });
 }
 
+function renderMonetization() {
+  const showAds = appConfig.adsEnabled && isFreeMember();
+  ensureAdsScript();
+
+  [
+    [dom.publicAdCard, "Acesso gratuito com anúncios"],
+    [dom.dashboardAdCard, "Seu plano gratuito é mantido por anúncios"],
+    [dom.lessonAdCard, "Anúncio do plano gratuito"],
+  ].forEach(([element, title], index) => {
+    if (!element) return;
+    element.hidden = !showAds;
+    if (!showAds) {
+      element.innerHTML = "";
+      return;
+    }
+
+    element.innerHTML = `
+      ${getAdSupportMarkup(title, index > 0)}
+      <div class="ad-placeholder">${escapeHtml(
+        appConfig.adSenseClient
+          ? "Os anúncios automáticos serão exibidos aqui quando a conta de anúncios estiver ativa."
+          : "Espaço preparado para anúncios. Assim que você conectar sua conta de anúncios, este plano gratuito começa a monetizar."
+      )}</div>
+    `;
+  });
+}
+
 function renderAll() {
   syncAdminUi();
   renderSessionChrome();
   renderPublicOffer();
+  renderMonetization();
   renderProfile();
   renderHeroStats();
   renderHeaderHud();
@@ -2128,6 +2222,7 @@ async function signOutFromSupabase() {
   authState.session = null;
   authState.user = null;
   authState.accessGranted = false;
+  authState.accessStatus = "guest";
   authState.isAdmin = false;
   authState.profileRole = "student";
   authState.adminMembers = [];
@@ -2145,6 +2240,7 @@ async function applySupabaseSession(session) {
 
   if (!authState.session) {
     authState.accessGranted = false;
+    authState.accessStatus = "guest";
     authState.isAdmin = false;
     authState.profileRole = "student";
     state.activePanel = "public";
@@ -2211,6 +2307,7 @@ async function bootstrapSupabaseAuth() {
     authState.session = null;
     authState.user = null;
     authState.accessGranted = false;
+    authState.accessStatus = "guest";
     authState.isAdmin = false;
     authState.profileRole = "student";
     state.activePanel = "public";
