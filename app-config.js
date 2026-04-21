@@ -5,9 +5,9 @@ window.APP_CONFIG = {
   supabaseUrl: "https://rncboydsbikprypssbkj.supabase.co",
   supabaseAnonKey: "sb_publishable_NoROjbognmiGh0XBYX0Acg_pOLr1FO5",
   commerceMode: "hybrid",
-  offerTitle: "Curso completo com acesso livre ou premium",
+  offerTitle: "Garanta seu acesso premium completo",
   offerCopy:
-    "Conheça a formação em acesso livre com anúncios ou ative a experiência premium sem anúncios por R$ 50, com acesso individual, progresso salvo, quiz final e certificado.",
+    "Ative o plano premium por R$ 50 e estude com acesso individual, sem anúncios, com progresso salvo, quiz final, certificado e suporte direto.",
   priceLabel: "R$ 50",
   billingLabel: "assinatura premium",
   paymentProviderLabel: "PicPay • Pix e cartões",

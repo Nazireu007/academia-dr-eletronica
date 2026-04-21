@@ -300,9 +300,9 @@ const defaultAppConfig = {
   supabaseUrl: "",
   supabaseAnonKey: "",
   commerceMode: "hybrid",
-  offerTitle: "Curso completo com acesso livre ou premium",
+  offerTitle: "Garanta seu acesso premium completo",
   offerCopy:
-    "Conheça a formação em acesso livre com anúncios ou ative a experiência premium sem anúncios por R$ 50, com acesso individual, progresso salvo, quiz final e certificado.",
+    "Ative o plano premium por R$ 50 e estude com acesso individual, sem anúncios, com progresso salvo, quiz final, certificado e suporte direto.",
   priceLabel: "R$ 50",
   billingLabel: "assinatura premium",
   paymentProviderLabel: "PicPay • Pix e cartões",
@@ -992,6 +992,39 @@ async function copyPixKey() {
   }
 }
 
+async function copyTextToClipboard(text) {
+  const content = String(text || "").trim();
+  if (!content) return false;
+
+  try {
+    await navigator.clipboard.writeText(content);
+    return true;
+  } catch (_error) {
+    const helper = document.createElement("textarea");
+    helper.value = content;
+    helper.setAttribute("readonly", "");
+    helper.style.position = "absolute";
+    helper.style.left = "-9999px";
+    document.body.append(helper);
+    helper.select();
+    const copied = document.execCommand("copy");
+    helper.remove();
+    return copied;
+  }
+}
+
+function buildWelcomeMessage(member) {
+  const firstName = String(member?.name || "Aluno").trim().split(/\s+/)[0] || "Aluno";
+  const loginUrl = appConfig.siteUrl || window.location.href;
+  return [
+    `Olá, ${firstName}! Seu acesso à Academia DR já está liberado.`,
+    `Entre por aqui: ${loginUrl}`,
+    `Use o e-mail ${member?.email || ""} para entrar na área do curso.`,
+    "Depois do login, clique em Entrar na área e continue seus estudos normalmente.",
+    "Se precisar de ajuda, fale comigo no WhatsApp.",
+  ].join(" ");
+}
+
 function getMemberPlanKind() {
   if (!isSupabaseMode()) {
     return hasActiveAccess() ? "premium" : "guest";
@@ -1384,13 +1417,13 @@ function renderPublicOffer() {
   const offerMetrics = [
     { label: "Acesso livre", value: appConfig.freePlanLabel || "Acesso livre com anúncios" },
     { label: "Plano premium", value: appConfig.priceLabel || "R$ 50" },
-    { label: "Entrega", value: isSupabaseMode() ? "login individual" : "acesso local ou protegido" },
+    { label: "Pagamento", value: appConfig.paymentProviderLabel || "PicPay • Pix e cartões" },
     { label: "Aulas abertas", value: `${previewLessons.length} aula(s)` },
   ];
 
   dom.offerTitle.textContent = appConfig.offerTitle;
   dom.offerCopy.textContent = appConfig.offerCopy;
-  dom.primaryCheckoutLink.textContent = `Ativar premium por ${appConfig.priceLabel || "R$ 50"}`;
+  dom.primaryCheckoutLink.textContent = `Quero o premium por ${appConfig.priceLabel || "R$ 50"}`;
   dom.enterMemberArea.textContent = "Entrar na área";
   dom.primaryCheckoutLink.href = checkoutUrl;
   dom.primaryCheckoutLink.classList.toggle("is-disabled-link", checkoutUrl === "#");
@@ -1424,23 +1457,23 @@ function renderPublicOffer() {
 
   const offerLinks = [
     {
-      title: "Plano premium",
-      meta: appConfig.paymentProviderLabel || "Acesso premium sem anúncios",
+      title: "Pagar no PicPay",
+      meta: appConfig.paymentProviderLabel || "PicPay • Pix e cartões",
       href: checkoutUrl,
     },
     {
-      title: "Atendimento no WhatsApp",
-      meta: appConfig.whatsappNumber ? "Fale direto com a equipe do curso" : "Contato em configuracao",
-      href: whatsappUrl,
-    },
-    {
-      title: "Pagamento por Pix",
+      title: "Copiar chave Pix",
       meta: appConfig.pixKey ? "Copiar chave Pix para pagamento manual" : "Chave Pix indisponivel",
       href: appConfig.pixKey ? "__copy_pix__" : "#",
     },
     {
-      title: "Apresentacao do curso",
-      meta: "Resumo do programa e proposta",
+      title: "Falar no WhatsApp",
+      meta: appConfig.whatsappNumber ? "Confirme pagamento ou tire dúvidas" : "Contato em configuracao",
+      href: whatsappUrl,
+    },
+    {
+      title: "Ver programa completo",
+      meta: "Resumo do conteúdo e da proposta do curso",
       href: "conteudo/curso-eletronica.md",
     },
   ];
@@ -2061,6 +2094,7 @@ function renderAdminPanel() {
                   }" data-member-id="${member.userId}" type="button">${
                     member.role === "admin" ? "Remover admin" : "Tornar admin"
                   }</button>
+                  <button class="button button-secondary button-small" data-copy-welcome="${member.userId}" type="button">Copiar boas-vindas</button>
                 </div>
               </article>
             `
@@ -2077,6 +2111,17 @@ function renderAdminPanel() {
   dom.adminMemberList.querySelectorAll("[data-role-action]").forEach((button) => {
     button.addEventListener("click", () => {
       void updateMemberRole(button.dataset.memberId, button.dataset.roleAction);
+    });
+  });
+
+  dom.adminMemberList.querySelectorAll("[data-copy-welcome]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const member = allMembers.find((item) => item.userId === button.dataset.copyWelcome);
+      if (!member) return;
+      const copied = await copyTextToClipboard(buildWelcomeMessage(member));
+      dom.adminStatusCopy.textContent = copied
+        ? `Mensagem de boas-vindas copiada para ${member.name}.`
+        : "Nao foi possivel copiar a mensagem de boas-vindas.";
     });
   });
 }
