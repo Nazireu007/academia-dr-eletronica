@@ -817,16 +817,16 @@ function scheduleRemoteSync() {
 
 async function refreshAdminMembers() {
   if (!isSupabaseMode()) {
-    dom.adminStatusCopy.textContent = "O painel admin exige o modo Supabase ativo.";
+    dom.adminStatusCopy.textContent = "O painel administrativo ainda nao esta disponivel nesta configuracao.";
     dom.adminMetrics.innerHTML = "";
-    dom.adminMemberList.innerHTML = `<div class="empty-state">Ative o Supabase para operar membros reais.</div>`;
+    dom.adminMemberList.innerHTML = `<div class="empty-state">A configuracao administrativa ainda nao foi ativada.</div>`;
     return;
   }
 
   if (!authState.isAdmin) {
-    dom.adminStatusCopy.textContent = "Entre com uma conta admin para listar e liberar alunos.";
+    dom.adminStatusCopy.textContent = "Entre com uma conta administradora para visualizar os alunos.";
     dom.adminMetrics.innerHTML = "";
-    dom.adminMemberList.innerHTML = `<div class="empty-state">Conta admin necessaria.</div>`;
+    dom.adminMemberList.innerHTML = `<div class="empty-state">Acesso restrito a administradores.</div>`;
     return;
   }
 
@@ -847,7 +847,7 @@ async function refreshAdminMembers() {
 
   if (profilesError || accessError) {
     dom.adminStatusCopy.textContent =
-      profilesError?.message || accessError?.message || "Nao foi possivel carregar os membros.";
+      profilesError?.message || accessError?.message || "Nao foi possivel carregar os cadastros.";
     return;
   }
 
@@ -865,7 +865,7 @@ async function refreshAdminMembers() {
     };
   });
 
-  dom.adminStatusCopy.textContent = `Lista carregada com ${authState.adminMembers.length} membro(s).`;
+  dom.adminStatusCopy.textContent = `Lista atualizada com ${authState.adminMembers.length} cadastro(s).`;
   renderAdminPanel();
 }
 
@@ -873,7 +873,7 @@ async function updateMemberAccess(userId, accessStatus) {
   const client = await getAuthClient();
   if (!client || !authState.isAdmin) return;
 
-  dom.adminStatusCopy.textContent = `Atualizando acesso para ${accessStatus}...`;
+  dom.adminStatusCopy.textContent = "Atualizando permissao de acesso...";
 
   const { error } = await client.from("course_access").upsert(
     {
@@ -893,7 +893,7 @@ async function updateMemberAccess(userId, accessStatus) {
     return;
   }
 
-  dom.adminStatusCopy.textContent = `Acesso atualizado para ${accessStatus}.`;
+  dom.adminStatusCopy.textContent = "Permissao de acesso atualizada com sucesso.";
   await refreshAdminMembers();
 }
 
@@ -901,7 +901,7 @@ async function updateMemberRole(userId, role) {
   const client = await getAuthClient();
   if (!client || !authState.isAdmin) return;
 
-  dom.adminStatusCopy.textContent = `Atualizando perfil para ${role === "admin" ? "admin" : "aluno"}...`;
+  dom.adminStatusCopy.textContent = `Atualizando perfil para ${role === "admin" ? "administrador" : "aluno"}...`;
 
   const { error } = await client
     .from("member_profiles")
@@ -916,7 +916,7 @@ async function updateMemberRole(userId, role) {
     return;
   }
 
-  dom.adminStatusCopy.textContent = `Perfil atualizado para ${role === "admin" ? "admin" : "aluno"}.`;
+  dom.adminStatusCopy.textContent = `Perfil atualizado para ${role === "admin" ? "administrador" : "aluno"}.`;
   await refreshAdminMembers();
 }
 
@@ -1076,10 +1076,10 @@ function syncAccessModeUi() {
 
   if (!hasSupabaseConfig()) {
     dom.accessCopy.textContent =
-      "O modo profissional foi preparado, mas ainda faltam a URL e a chave publica do backend.";
+      "A configuracao de acesso da plataforma ainda nao foi concluida.";
     dom.authModeCopy.textContent =
-      "Abra app-config.js, preencha as credenciais do Supabase e rode o script SQL para liberar contas individuais.";
-    dom.authSubmitButton.textContent = "Backend pendente";
+      "Conclua a configuracao da plataforma para ativar contas individuais.";
+    dom.authSubmitButton.textContent = "Configuracao pendente";
     dom.authSubmitButton.disabled = true;
     return;
   }
@@ -1088,9 +1088,9 @@ function syncAccessModeUi() {
 
   if (lockedAwaitingApproval) {
     dom.accessCopy.textContent =
-      "Sua conta esta autenticada, mas o acesso ao curso ainda nao foi liberado para este aluno.";
+      "Sua conta foi encontrada, mas o acesso ao curso ainda aguarda liberacao.";
     setAccessFeedback(
-      "Depois que voce ativar o aluno no backend, clique em Atualizar acesso para abrir a plataforma.",
+      "Quando o acesso for liberado, clique em Atualizar acesso para entrar na plataforma.",
       ""
     );
     return;
@@ -1180,8 +1180,8 @@ function closeAuthModal() {
 
 function setActivePanel(panelName) {
   if (panelName === "admin" && !isAdminPanelAvailable()) {
-    setAccessFeedback("Esta area administrativa so fica visivel para contas admin.", "is-error");
-    openAccessModal("Entre com uma conta admin para operar os alunos do curso.");
+    setAccessFeedback("Esta area administrativa so fica visivel para contas administradoras.", "is-error");
+    openAccessModal("Entre com uma conta administradora para gerenciar os alunos do curso.");
     panelName = "public";
   }
 
@@ -2013,7 +2013,7 @@ async function signInWithSupabase() {
 
   const client = await getAuthClient();
   if (!client) {
-    setAccessFeedback("O backend Supabase ainda nao foi configurado.", "is-error");
+    setAccessFeedback("A plataforma ainda nao foi configurada para login individual.", "is-error");
     return;
   }
 
@@ -2048,7 +2048,7 @@ async function signUpWithSupabase() {
 
   const client = await getAuthClient();
   if (!client) {
-    setAccessFeedback("O backend Supabase ainda nao foi configurado.", "is-error");
+    setAccessFeedback("A plataforma ainda nao foi configurada para login individual.", "is-error");
     return;
   }
 
@@ -2070,7 +2070,7 @@ async function signUpWithSupabase() {
   }
 
   setAccessFeedback(
-    "Conta criada. Se a confirmacao por e-mail estiver ativa no Supabase, valide a caixa de entrada do aluno.",
+    "Conta criada com sucesso. Agora entre com seu e-mail e senha para continuar.",
     "is-success"
   );
 }
@@ -2084,7 +2084,7 @@ async function resetSupabasePassword() {
 
   const client = await getAuthClient();
   if (!client) {
-    setAccessFeedback("O backend Supabase ainda nao foi configurado.", "is-error");
+    setAccessFeedback("A plataforma ainda nao foi configurada para login individual.", "is-error");
     return;
   }
 
@@ -2140,10 +2140,10 @@ async function applySupabaseSession(session) {
 
   if (!authState.accessGranted && !authState.isAdmin) {
     openAccessModal(
-      "Conta autenticada. Agora libere este aluno no backend para abrir o curso com acesso individual."
+      "Conta autenticada. O acesso ao curso ainda esta aguardando liberacao."
     );
     setAccessFeedback(
-      "Depois que voce ativar este aluno na tabela course_access, clique em Atualizar acesso.",
+      "Assim que a liberacao for concluida, clique em Atualizar acesso.",
       ""
     );
     return;
@@ -2175,7 +2175,7 @@ async function bootstrapSupabaseAuth() {
 
   if (!hasSupabaseConfig()) {
     openAccessModal(
-      "Modo profissional preparado. Preencha app-config.js com a URL e a chave publica do Supabase para ativar contas individuais."
+      "A configuracao da plataforma ainda nao foi concluida."
     );
     return;
   }
