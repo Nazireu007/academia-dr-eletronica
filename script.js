@@ -305,12 +305,13 @@ const defaultAppConfig = {
     "Conheça a formação em acesso livre com anúncios ou ative a experiência premium sem anúncios por R$ 50, com acesso individual, progresso salvo, quiz final e certificado.",
   priceLabel: "R$ 50",
   billingLabel: "assinatura premium",
-  paymentProviderLabel: "Checkout direto",
+  paymentProviderLabel: "PicPay • Pix e cartões",
   checkoutUrl: "",
   hotmartCheckoutUrl: "",
   hotmartMembersUrl: "",
   whatsappNumber: "",
   whatsappMessage: "Ola! Quero ativar o plano premium do Curso Completo de Eletronica por R$ 50.",
+  pixKey: "",
   freePlanLabel: "Acesso livre com anúncios",
   premiumPlanLabel: "Premium sem anúncios",
   adsEnabled: true,
@@ -972,6 +973,25 @@ function getWhatsAppUrl() {
   return `https://wa.me/${phone}?text=${text}`;
 }
 
+async function copyPixKey() {
+  const key = String(appConfig.pixKey || "").trim();
+  if (!key) return;
+
+  try {
+    await navigator.clipboard.writeText(key);
+  } catch (_error) {
+    const helper = document.createElement("textarea");
+    helper.value = key;
+    helper.setAttribute("readonly", "");
+    helper.style.position = "absolute";
+    helper.style.left = "-9999px";
+    document.body.append(helper);
+    helper.select();
+    document.execCommand("copy");
+    helper.remove();
+  }
+}
+
 function getMemberPlanKind() {
   if (!isSupabaseMode()) {
     return hasActiveAccess() ? "premium" : "guest";
@@ -1409,9 +1429,14 @@ function renderPublicOffer() {
       href: checkoutUrl,
     },
     {
-      title: "Suporte e acesso",
-      meta: "Canal complementar do curso",
-      href: appConfig.hotmartMembersUrl || "#",
+      title: "Atendimento no WhatsApp",
+      meta: appConfig.whatsappNumber ? "Fale direto com a equipe do curso" : "Contato em configuracao",
+      href: whatsappUrl,
+    },
+    {
+      title: "Pagamento por Pix",
+      meta: appConfig.pixKey ? "Copiar chave Pix para pagamento manual" : "Chave Pix indisponivel",
+      href: appConfig.pixKey ? "__copy_pix__" : "#",
     },
     {
       title: "Apresentacao do curso",
@@ -1423,8 +1448,14 @@ function renderPublicOffer() {
   dom.offerLinks.innerHTML = offerLinks
     .map(
       (item) => `
-        <a class="resource-link-card ${item.href === "#" ? "is-disabled-link" : ""}" href="${item.href}" ${
-          item.href === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
+        <a class="resource-link-card ${item.href === "#" ? "is-disabled-link" : ""}" href="${
+          item.href === "__copy_pix__" ? "#" : item.href
+        }" ${
+          item.href === "#"
+            ? 'aria-disabled="true"'
+            : item.href === "__copy_pix__"
+              ? 'data-copy-pix="true"'
+              : 'target="_blank" rel="noreferrer"'
         }>
           <strong>${escapeHtml(item.title)}</strong>
           <span>${escapeHtml(item.meta)}</span>
@@ -1432,6 +1463,20 @@ function renderPublicOffer() {
       `
     )
     .join("");
+
+  dom.offerLinks.querySelectorAll("[data-copy-pix]").forEach((link) => {
+    link.addEventListener("click", async (event) => {
+      event.preventDefault();
+      await copyPixKey();
+      const meta = link.querySelector("span");
+      if (!meta) return;
+      const original = meta.textContent;
+      meta.textContent = "Chave Pix copiada";
+      window.setTimeout(() => {
+        meta.textContent = original;
+      }, 2200);
+    });
+  });
 
   dom.previewLessonList.querySelectorAll("[data-preview-lesson]").forEach((button) => {
     button.addEventListener("click", () => {
