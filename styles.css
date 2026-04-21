@@ -371,6 +371,43 @@ body::before {
   cursor: pointer;
 }
 
+.is-disabled-link {
+  pointer-events: none;
+  opacity: 0.58;
+}
+
+.admin-member-card-span {
+  grid-column: span 2;
+}
+
+.admin-member-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-member-copy {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.admin-member-copy strong {
+  display: block;
+}
+
+.admin-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .top-nav-link:hover,
 .sidebar-link:hover,
 .top-nav-link.is-active,
@@ -1204,7 +1241,8 @@ body.access-locked .site-footer {
 
   .library-grid .resource-card:nth-child(1),
   .quiz-grid .quiz-card,
-  .certificate-layout .certificate-card {
+  .certificate-layout .certificate-card,
+  .admin-member-card-span {
     grid-column: auto;
   }
 
@@ -1246,6 +1284,14 @@ body.access-locked .site-footer {
   .sidebar-link {
     width: 100%;
     text-align: left;
+  }
+
+  .admin-member-item {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-member-actions {
+    justify-content: stretch;
   }
 
   .auth-actions .button {

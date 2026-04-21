@@ -4,4 +4,18 @@ window.APP_CONFIG = {
   siteUrl: "https://nazireu007.github.io/academia-dr-eletronica/",
   supabaseUrl: "",
   supabaseAnonKey: "",
+  commerceMode: "hybrid",
+  offerTitle: "Curso completo com acesso individual",
+  offerCopy:
+    "Area premium com progresso salvo, quiz final, certificado e acesso individual por aluno.",
+  priceLabel: "R$ 197",
+  billingLabel: "pagamento unico",
+  paymentProviderLabel: "Checkout direto",
+  checkoutUrl: "",
+  hotmartCheckoutUrl: "",
+  hotmartMembersUrl: "",
+  whatsappNumber: "",
+  whatsappMessage: "Ola! Quero comprar o Curso Completo de Eletronica.",
+  freeModuleNumbers: ["01"],
+  previewLessonIds: [],
 };

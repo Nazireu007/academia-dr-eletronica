@@ -139,9 +139,19 @@ const dom = {
   profileModalCopy: document.querySelector("#profile-modal-copy"),
   editProfile: document.querySelector("#edit-profile"),
   logoutButton: document.querySelector("#logout-button"),
+  adminTopLink: document.querySelector("#admin-top-link"),
+  adminSidebarLink: document.querySelector("#admin-sidebar-link"),
   topNavLinks: [...document.querySelectorAll(".top-nav-link")],
   sidebarLinks: [...document.querySelectorAll(".sidebar-link")],
   panels: [...document.querySelectorAll(".member-panel")],
+  offerTitle: document.querySelector("#offer-title"),
+  offerCopy: document.querySelector("#offer-copy"),
+  primaryCheckoutLink: document.querySelector("#primary-checkout-link"),
+  enterMemberArea: document.querySelector("#enter-member-area"),
+  whatsappSalesLink: document.querySelector("#whatsapp-sales-link"),
+  salesMetrics: document.querySelector("#sales-metrics"),
+  previewLessonList: document.querySelector("#preview-lesson-list"),
+  offerLinks: document.querySelector("#offer-links"),
   memberName: document.querySelector("#member-name"),
   memberPlan: document.querySelector("#member-plan"),
   memberAvatar: document.querySelector("#member-avatar"),
@@ -206,6 +216,11 @@ const dom = {
   hudProgressPercent: document.querySelector("#hud-progress-percent"),
   hudQuizStatus: document.querySelector("#hud-quiz-status"),
   hudCertificateStatus: document.querySelector("#hud-certificate-status"),
+  refreshAdminMembers: document.querySelector("#refresh-admin-members"),
+  adminMemberSearch: document.querySelector("#admin-member-search"),
+  adminStatusCopy: document.querySelector("#admin-status-copy"),
+  adminMetrics: document.querySelector("#admin-metrics"),
+  adminMemberList: document.querySelector("#admin-member-list"),
 };
 
 function escapeHtml(value) {
@@ -279,6 +294,20 @@ const defaultAppConfig = {
   siteUrl: window.location.href,
   supabaseUrl: "",
   supabaseAnonKey: "",
+  commerceMode: "hybrid",
+  offerTitle: "Curso completo com acesso individual",
+  offerCopy:
+    "Area premium com progresso salvo, quiz final, certificado e acesso individual por aluno.",
+  priceLabel: "R$ 197",
+  billingLabel: "pagamento unico",
+  paymentProviderLabel: "Checkout direto",
+  checkoutUrl: "",
+  hotmartCheckoutUrl: "",
+  hotmartMembersUrl: "",
+  whatsappNumber: "",
+  whatsappMessage: "Ola! Quero comprar o Curso Completo de Eletronica.",
+  freeModuleNumbers: ["01"],
+  previewLessonIds: [],
 };
 
 const appConfig = {
@@ -291,9 +320,11 @@ const authState = {
   session: null,
   user: null,
   accessGranted: false,
+  isAdmin: false,
+  profileRole: "student",
   syncTimer: null,
   syncInFlight: false,
-  bootstrapped: false,
+  adminMembers: [],
 };
 
 function decodeBase64(value) {
@@ -660,9 +691,10 @@ const state = {
   selectedLessonId: validLessonIds.has(loadJSON(storageKeys.selectedLesson, course.lessons[0]?.id))
     ? loadJSON(storageKeys.selectedLesson, course.lessons[0]?.id)
     : course.lessons[0]?.id,
-  activePanel: loadJSON(storageKeys.activePanel, "dashboard"),
+  activePanel: loadJSON(storageKeys.activePanel, "public"),
   query: "",
   accessSession: getValidAccessSession(),
+  adminQuery: "",
 };
 
 function saveState() {
@@ -712,7 +744,7 @@ async function loadRemoteProfile() {
 
   const { data } = await client
     .from("member_profiles")
-    .select("full_name,email,goal,rhythm,created_at")
+    .select("full_name,email,goal,rhythm,role,created_at")
     .eq("user_id", authState.user.id)
     .maybeSingle();
 
@@ -723,6 +755,9 @@ async function loadRemoteProfile() {
     rhythm: data?.rhythm || state.member?.rhythm || "30 min por dia",
     joinedAt: data?.created_at || state.member?.joinedAt || new Date().toISOString(),
   };
+  authState.profileRole = data?.role || "student";
+  authState.isAdmin = authState.profileRole === "admin";
+  syncAdminUi();
 }
 
 async function pullRemoteState() {
@@ -778,6 +813,88 @@ function scheduleRemoteSync() {
   }, 450);
 }
 
+async function refreshAdminMembers() {
+  if (!isSupabaseMode()) {
+    dom.adminStatusCopy.textContent = "O painel admin exige o modo Supabase ativo.";
+    dom.adminMetrics.innerHTML = "";
+    dom.adminMemberList.innerHTML = `<div class="empty-state">Ative o Supabase para operar membros reais.</div>`;
+    return;
+  }
+
+  if (!authState.isAdmin) {
+    dom.adminStatusCopy.textContent = "Entre com uma conta admin para listar e liberar alunos.";
+    dom.adminMetrics.innerHTML = "";
+    dom.adminMemberList.innerHTML = `<div class="empty-state">Conta admin necessaria.</div>`;
+    return;
+  }
+
+  const client = await getAuthClient();
+  if (!client) return;
+
+  const [{ data: profiles, error: profilesError }, { data: accessRows, error: accessError }] =
+    await Promise.all([
+      client
+        .from("member_profiles")
+        .select("user_id,full_name,email,role,updated_at")
+        .order("updated_at", { ascending: false }),
+      client
+        .from("course_access")
+        .select("user_id,course_slug,access_status,granted_at,updated_at")
+        .eq("course_slug", appConfig.courseSlug),
+    ]);
+
+  if (profilesError || accessError) {
+    dom.adminStatusCopy.textContent =
+      profilesError?.message || accessError?.message || "Nao foi possivel carregar os membros.";
+    return;
+  }
+
+  const accessMap = new Map((accessRows || []).map((row) => [row.user_id, row]));
+  authState.adminMembers = (profiles || []).map((profile) => {
+    const access = accessMap.get(profile.user_id);
+    return {
+      userId: profile.user_id,
+      name: profile.full_name || "Aluno",
+      email: profile.email || "",
+      role: profile.role || "student",
+      accessStatus: access?.access_status || "pending",
+      grantedAt: access?.granted_at || "",
+      updatedAt: access?.updated_at || profile.updated_at || "",
+    };
+  });
+
+  dom.adminStatusCopy.textContent = `Lista carregada com ${authState.adminMembers.length} membro(s).`;
+  renderAdminPanel();
+}
+
+async function updateMemberAccess(userId, accessStatus) {
+  const client = await getAuthClient();
+  if (!client || !authState.isAdmin) return;
+
+  dom.adminStatusCopy.textContent = `Atualizando acesso para ${accessStatus}...`;
+
+  const { error } = await client.from("course_access").upsert(
+    {
+      user_id: userId,
+      course_slug: appConfig.courseSlug,
+      access_status: accessStatus,
+      granted_at: accessStatus === "active" ? new Date().toISOString() : null,
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "user_id,course_slug",
+    }
+  );
+
+  if (error) {
+    dom.adminStatusCopy.textContent = error.message;
+    return;
+  }
+
+  dom.adminStatusCopy.textContent = `Acesso atualizado para ${accessStatus}.`;
+  await refreshAdminMembers();
+}
+
 function getLessonById(id) {
   return course.lessons.find((lesson) => lesson.id === id) || course.lessons[0];
 }
@@ -788,6 +905,49 @@ function getLessonIndex(id) {
 
 function getModuleByNumber(number) {
   return course.modules.find((module) => module.number === number);
+}
+
+function getAccessibleLessons() {
+  return hasMemberAreaAccess() ? course.lessons : course.lessons.filter((lesson) => isLessonPublic(lesson));
+}
+
+function isLessonPublic(lesson) {
+  if (!lesson) return false;
+  if ((appConfig.previewLessonIds || []).includes(lesson.id)) return true;
+  return (appConfig.freeModuleNumbers || []).includes(lesson.moduleNumber);
+}
+
+function getPreviewLessons() {
+  const configured = (appConfig.previewLessonIds || [])
+    .map((lessonId) => getLessonById(lessonId))
+    .filter(Boolean);
+
+  if (configured.length > 0) return configured.slice(0, 6);
+
+  return course.lessons.filter((lesson) => isLessonPublic(lesson)).slice(0, 6);
+}
+
+function getCheckoutUrl() {
+  return appConfig.hotmartCheckoutUrl || appConfig.checkoutUrl || "#";
+}
+
+function getWhatsAppUrl() {
+  if (!appConfig.whatsappNumber) return "#";
+  const phone = String(appConfig.whatsappNumber).replace(/\D+/g, "");
+  const text = encodeURIComponent(appConfig.whatsappMessage || "");
+  return `https://wa.me/${phone}?text=${text}`;
+}
+
+function hasMemberAreaAccess() {
+  return isSupabaseMode() ? Boolean(authState.session && authState.accessGranted) : hasActiveAccess();
+}
+
+function isAdminPanelAvailable() {
+  return Boolean(isSupabaseMode() && authState.isAdmin);
+}
+
+function isPanelRestricted(panelName) {
+  return panelName !== "public";
 }
 
 function getModuleProgress(module) {
@@ -801,7 +961,8 @@ function getModuleProgress(module) {
 }
 
 function getNextLesson() {
-  return course.lessons.find((lesson) => !state.completed.has(lesson.id)) || course.lessons[0];
+  const lessons = getAccessibleLessons();
+  return lessons.find((lesson) => !state.completed.has(lesson.id)) || lessons[0] || course.lessons[0];
 }
 
 function getAnsweredQuizCount() {
@@ -848,6 +1009,17 @@ function hasActiveAccess() {
   return Boolean(state.accessSession);
 }
 
+function syncAdminUi() {
+  const showAdmin = isAdminPanelAvailable();
+  if (dom.adminTopLink) dom.adminTopLink.hidden = !showAdmin;
+  if (dom.adminSidebarLink) dom.adminSidebarLink.hidden = !showAdmin;
+
+  if (!showAdmin && state.activePanel === "admin") {
+    state.activePanel = "public";
+    saveState();
+  }
+}
+
 function setAccessFeedback(message = "", tone = "") {
   dom.accessFeedback.textContent = message;
   dom.accessFeedback.classList.remove("is-error", "is-success");
@@ -859,7 +1031,7 @@ function setAccessFeedback(message = "", tone = "") {
 function syncAccessModeUi() {
   const supabaseMode = isSupabaseMode();
   const signedIn = Boolean(authState.session);
-  const lockedAwaitingApproval = supabaseMode && signedIn && !authState.accessGranted;
+  const lockedAwaitingApproval = supabaseMode && signedIn && !authState.accessGranted && !authState.isAdmin;
 
   dom.localAccessFields.hidden = supabaseMode;
   dom.cloudAuthFields.hidden = !supabaseMode || lockedAwaitingApproval;
@@ -873,6 +1045,7 @@ function syncAccessModeUi() {
     dom.accessCopy.textContent =
       "Esta plataforma exige um codigo de acesso antes de liberar aulas, progresso, quiz e certificado.";
     dom.authSubmitButton.textContent = "Entrar na area protegida";
+    dom.authSubmitButton.disabled = false;
     return;
   }
 
@@ -981,6 +1154,25 @@ function closeAuthModal() {
 }
 
 function setActivePanel(panelName) {
+  if (panelName === "admin" && !isAdminPanelAvailable()) {
+    setAccessFeedback("Esta area administrativa so fica visivel para contas admin.", "is-error");
+    openAccessModal("Entre com uma conta admin para operar os alunos do curso.");
+    panelName = "public";
+  }
+
+  if (panelName === "course" && !hasMemberAreaAccess()) {
+    const lesson = getLessonById(state.selectedLessonId);
+    if (!isLessonPublic(lesson)) {
+      openAccessModal("Entre na area premium para abrir o curso completo.");
+      panelName = "public";
+    }
+  }
+
+  if (isPanelRestricted(panelName) && panelName !== "course" && !hasMemberAreaAccess()) {
+    openAccessModal("Entre na area premium para acessar este painel.");
+    panelName = "public";
+  }
+
   state.activePanel = panelName;
   saveState();
 
@@ -1013,6 +1205,90 @@ function renderProfile() {
   dom.memberRhythm.textContent = `Ritmo: ${member.rhythm}`;
   dom.memberGoal.textContent = `Objetivo: ${member.goal}`;
   dom.certificateStudent.textContent = member.name;
+}
+
+function renderPublicOffer() {
+  const previewLessons = getPreviewLessons();
+  const checkoutUrl = getCheckoutUrl();
+  const whatsappUrl = getWhatsAppUrl();
+  const offerMetrics = [
+    { label: "Oferta", value: appConfig.priceLabel || "Defina o preco" },
+    { label: "Modelo", value: appConfig.billingLabel || "pagamento unico" },
+    { label: "Entrega", value: isSupabaseMode() ? "login individual" : "acesso local ou protegido" },
+    { label: "Preview aberto", value: `${previewLessons.length} aula(s)` },
+  ];
+
+  dom.offerTitle.textContent = appConfig.offerTitle;
+  dom.offerCopy.textContent = appConfig.offerCopy;
+  dom.primaryCheckoutLink.href = checkoutUrl;
+  dom.primaryCheckoutLink.classList.toggle("is-disabled-link", checkoutUrl === "#");
+  dom.whatsappSalesLink.href = whatsappUrl;
+  dom.whatsappSalesLink.classList.toggle("is-disabled-link", whatsappUrl === "#");
+
+  dom.salesMetrics.innerHTML = offerMetrics
+    .map(
+      (item) => `
+        <article class="metric-item">
+          <span>${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.value)}</strong>
+        </article>
+      `
+    )
+    .join("");
+
+  dom.previewLessonList.innerHTML =
+    previewLessons.length > 0
+      ? previewLessons
+          .map(
+            (lesson) => `
+              <button class="library-item" data-preview-lesson="${lesson.id}" type="button">
+                <strong>${escapeHtml(lesson.title)}</strong>
+                <span>Módulo ${lesson.moduleNumber} • ${lesson.duration} min • aula aberta</span>
+              </button>
+            `
+          )
+          .join("")
+      : `<div class="empty-state">Defina aulas abertas em app-config.js para ativar o preview gratis.</div>`;
+
+  const offerLinks = [
+    {
+      title: "Checkout principal",
+      meta: appConfig.paymentProviderLabel || "Pagamento",
+      href: checkoutUrl,
+    },
+    {
+      title: "Hotmart / Members",
+      meta: "Area de membros externa",
+      href: appConfig.hotmartMembersUrl || "#",
+    },
+    {
+      title: "Plano de monetizacao",
+      meta: "Roadmap comercial do curso",
+      href: "MONETIZACAO.md",
+    },
+  ];
+
+  dom.offerLinks.innerHTML = offerLinks
+    .map(
+      (item) => `
+        <a class="resource-link-card ${item.href === "#" ? "is-disabled-link" : ""}" href="${item.href}" ${
+          item.href === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
+        }>
+          <strong>${escapeHtml(item.title)}</strong>
+          <span>${escapeHtml(item.meta)}</span>
+        </a>
+      `
+    )
+    .join("");
+
+  dom.previewLessonList.querySelectorAll("[data-preview-lesson]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedLessonId = button.dataset.previewLesson;
+      saveState();
+      setActivePanel("course");
+      renderCourse();
+    });
+  });
 }
 
 function renderHeroStats() {
@@ -1146,10 +1422,15 @@ function renderDashboard() {
 
 function renderSidebarModules() {
   const query = normalize(state.query);
+  const hasPremiumAccess = hasMemberAreaAccess();
 
   dom.moduleNav.innerHTML = course.modules
     .map((module) => {
-      const visibleLessons = module.lessons.filter((lesson) => {
+      const candidateLessons = hasPremiumAccess
+        ? module.lessons
+        : module.lessons.filter((lesson) => isLessonPublic(lesson));
+
+      const visibleLessons = candidateLessons.filter((lesson) => {
         if (!query) return true;
         const haystack = normalize(`${module.title} ${lesson.title} ${lesson.summary}`);
         return haystack.includes(query);
@@ -1207,7 +1488,45 @@ function renderCourse() {
   renderSidebarModules();
 
   const lesson = getLessonById(state.selectedLessonId);
+  const hasPremiumAccess = hasMemberAreaAccess();
+  const lessonUnlocked = hasPremiumAccess || isLessonPublic(lesson);
+  const accessibleLessons = getAccessibleLessons();
+
+  if (!lessonUnlocked) {
+    openAccessModal("Esta aula faz parte da area premium. Entre para liberar o curso completo.");
+    const fallbackLesson = getPreviewLessons()[0];
+    if (fallbackLesson) {
+      state.selectedLessonId = fallbackLesson.id;
+      saveState();
+      renderCourse();
+      return;
+    }
+
+    dom.lessonBreadcrumb.textContent = "Curso / Area premium";
+    dom.lessonOverline.textContent = "Conteudo bloqueado";
+    dom.lessonTitle.textContent = "Abra sua conta premium para estudar esta aula.";
+    dom.lessonSummary.textContent =
+      "Ative o acesso completo para liberar o player, progresso, favoritos, quiz e certificado.";
+    dom.lessonPosition.textContent = "--";
+    dom.lessonDuration.textContent = "--";
+    dom.lessonStatus.textContent = "Bloqueada";
+    dom.lessonModuleName.textContent = "Premium";
+    dom.lessonContent.innerHTML =
+      '<p class="side-copy">Nenhuma aula gratuita foi configurada neste momento. Use o checkout ou entre com uma conta liberada.</p>';
+    dom.lessonOutline.innerHTML = "<li>Entre na area premium para continuar.</li>";
+    dom.moduleProgressCopy.textContent = "Conteudo premium bloqueado.";
+    dom.moduleProgressFill.style.width = "0%";
+    dom.lessonNote.value = "";
+    dom.lessonNote.disabled = true;
+    dom.favoriteLesson.disabled = true;
+    dom.markComplete.disabled = true;
+    dom.prevLesson.disabled = true;
+    dom.nextLesson.disabled = true;
+    return;
+  }
+
   const lessonIndex = getLessonIndex(lesson.id);
+  const accessibleIndex = accessibleLessons.findIndex((item) => item.id === lesson.id);
   const module = getModuleByNumber(lesson.moduleNumber);
   const moduleProgress = getModuleProgress(module);
   const done = state.completed.has(lesson.id);
@@ -1229,13 +1548,23 @@ function renderCourse() {
   dom.moduleProgressCopy.textContent = `${moduleProgress.done} de ${moduleProgress.total} aulas deste módulo concluídas.`;
   dom.moduleProgressFill.style.width = `${moduleProgress.percent}%`;
   dom.lessonNote.value = state.notes[lesson.id] || "";
+  dom.lessonNote.disabled = !hasPremiumAccess;
 
   dom.favoriteLesson.textContent = favorite ? "Remover dos favoritos" : "Favoritar aula";
   dom.favoriteLesson.classList.toggle("is-complete", favorite);
   dom.markComplete.textContent = done ? "Marcar como pendente" : "Marcar como concluída";
   dom.markComplete.classList.toggle("is-complete", done);
-  dom.prevLesson.disabled = lessonIndex <= 0;
-  dom.nextLesson.disabled = lessonIndex >= course.lessons.length - 1;
+  dom.favoriteLesson.disabled = !hasPremiumAccess;
+  dom.markComplete.disabled = !hasPremiumAccess;
+  dom.prevLesson.disabled = accessibleIndex <= 0;
+  dom.nextLesson.disabled = accessibleIndex >= accessibleLessons.length - 1;
+
+  if (!hasPremiumAccess) {
+    const hint = document.createElement("p");
+    hint.className = "side-copy";
+    hint.textContent = "Esta aula esta aberta como preview. Favoritos, progresso e anotacoes completas ficam na area premium.";
+    dom.lessonContent.prepend(hint);
+  }
 }
 
 function renderLibrary() {
@@ -1432,7 +1761,72 @@ function renderCertificate() {
     .join("");
 }
 
+function renderAdminPanel() {
+  const query = normalize(state.adminQuery);
+  const members = (authState.adminMembers || []).filter((member) => {
+    if (!query) return true;
+    return normalize(`${member.name} ${member.email} ${member.accessStatus}`).includes(query);
+  });
+
+  const metrics = [
+    { label: "Membros", value: String(authState.adminMembers.length) },
+    {
+      label: "Ativos",
+      value: String(authState.adminMembers.filter((member) => member.accessStatus === "active").length),
+    },
+    {
+      label: "Pendentes",
+      value: String(authState.adminMembers.filter((member) => member.accessStatus === "pending").length),
+    },
+    {
+      label: "Bloqueados",
+      value: String(authState.adminMembers.filter((member) => member.accessStatus === "blocked").length),
+    },
+  ];
+
+  dom.adminMetrics.innerHTML = metrics
+    .map(
+      (item) => `
+        <article class="metric-item">
+          <span>${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.value)}</strong>
+        </article>
+      `
+    )
+    .join("");
+
+  dom.adminMemberList.innerHTML =
+    members.length > 0
+      ? members
+          .map(
+            (member) => `
+              <article class="admin-member-item">
+                <div class="admin-member-copy">
+                  <strong>${escapeHtml(member.name)}</strong>
+                  <span>${escapeHtml(member.email || "Sem e-mail")}</span>
+                  <span>Perfil: ${escapeHtml(member.role)} • Status: ${escapeHtml(member.accessStatus)}</span>
+                </div>
+                <div class="admin-member-actions">
+                  <button class="button button-secondary button-small" data-access-action="pending" data-member-id="${member.userId}" type="button">Pendente</button>
+                  <button class="button button-secondary button-small" data-access-action="active" data-member-id="${member.userId}" type="button">Liberar</button>
+                  <button class="button button-secondary button-small" data-access-action="blocked" data-member-id="${member.userId}" type="button">Bloquear</button>
+                </div>
+              </article>
+            `
+          )
+          .join("")
+      : `<div class="empty-state">Nenhum membro encontrado para o filtro atual.</div>`;
+
+  dom.adminMemberList.querySelectorAll("[data-access-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      void updateMemberAccess(button.dataset.memberId, button.dataset.accessAction);
+    });
+  });
+}
+
 function renderAll() {
+  syncAdminUi();
+  renderPublicOffer();
   renderProfile();
   renderHeroStats();
   renderHeaderHud();
@@ -1443,6 +1837,7 @@ function renderAll() {
   renderLibrary();
   renderQuiz();
   renderCertificate();
+  renderAdminPanel();
   setActivePanel(state.activePanel);
 }
 
@@ -1588,7 +1983,11 @@ async function signOutFromSupabase() {
   authState.session = null;
   authState.user = null;
   authState.accessGranted = false;
+  authState.isAdmin = false;
+  authState.profileRole = "student";
+  authState.adminMembers = [];
   syncAccessModeUi();
+  syncAdminUi();
   openAccessModal("A sessao foi encerrada. Entre novamente para acessar o curso.");
 }
 
@@ -1598,6 +1997,8 @@ async function applySupabaseSession(session) {
 
   if (!authState.session) {
     authState.accessGranted = false;
+    authState.isAdmin = false;
+    authState.profileRole = "student";
     syncAccessModeUi();
     openAccessModal("Entre com seu e-mail e senha para liberar a area de membros.");
     return;
@@ -1607,7 +2008,7 @@ async function applySupabaseSession(session) {
   await refreshRemoteAccessStatus();
   syncAccessModeUi();
 
-  if (!authState.accessGranted) {
+  if (!authState.accessGranted && !authState.isAdmin) {
     openAccessModal(
       "Conta autenticada. Agora libere este aluno no backend para abrir o curso com acesso individual."
     );
@@ -1618,8 +2019,15 @@ async function applySupabaseSession(session) {
     return;
   }
 
-  await pullRemoteState();
-  saveState();
+  if (authState.accessGranted) {
+    await pullRemoteState();
+    saveState();
+  }
+
+  if (authState.isAdmin) {
+    await refreshAdminMembers();
+  }
+
   closeAccessModal();
   renderAll();
 
@@ -1646,7 +2054,17 @@ async function bootstrapSupabaseAuth() {
   if (!client) return;
 
   const { data } = await client.auth.getSession();
-  await applySupabaseSession(data.session);
+  if (data.session) {
+    await applySupabaseSession(data.session);
+  } else {
+    authState.session = null;
+    authState.user = null;
+    authState.accessGranted = false;
+    authState.isAdmin = false;
+    authState.profileRole = "student";
+    closeAccessModal();
+    renderAll();
+  }
 
   client.auth.onAuthStateChange((_event, session) => {
     void applySupabaseSession(session);
@@ -1753,6 +2171,15 @@ dom.logoutButton.addEventListener("click", () => {
   });
 });
 
+dom.enterMemberArea.addEventListener("click", () => {
+  if (hasMemberAreaAccess()) {
+    setActivePanel("dashboard");
+    return;
+  }
+
+  openAccessModal("Entre na area premium para liberar seu painel, progresso e certificado.");
+});
+
 dom.resumeCourse.addEventListener("click", () => openNextLesson(true));
 dom.goToQuiz.addEventListener("click", () => setActivePanel("quiz"));
 dom.openNextLesson.addEventListener("click", () => openNextLesson(true));
@@ -1786,17 +2213,19 @@ dom.markComplete.addEventListener("click", () => {
 });
 
 dom.prevLesson.addEventListener("click", () => {
-  const currentIndex = getLessonIndex(state.selectedLessonId);
+  const accessibleLessons = getAccessibleLessons();
+  const currentIndex = accessibleLessons.findIndex((lesson) => lesson.id === state.selectedLessonId);
   if (currentIndex <= 0) return;
-  state.selectedLessonId = course.lessons[currentIndex - 1].id;
+  state.selectedLessonId = accessibleLessons[currentIndex - 1].id;
   saveState();
   renderCourse();
 });
 
 dom.nextLesson.addEventListener("click", () => {
-  const currentIndex = getLessonIndex(state.selectedLessonId);
-  if (currentIndex >= course.lessons.length - 1) return;
-  state.selectedLessonId = course.lessons[currentIndex + 1].id;
+  const accessibleLessons = getAccessibleLessons();
+  const currentIndex = accessibleLessons.findIndex((lesson) => lesson.id === state.selectedLessonId);
+  if (currentIndex >= accessibleLessons.length - 1) return;
+  state.selectedLessonId = accessibleLessons[currentIndex + 1].id;
   saveState();
   renderCourse();
 });
@@ -1817,18 +2246,28 @@ dom.printCertificate.addEventListener("click", () => {
   window.print();
 });
 
+dom.refreshAdminMembers?.addEventListener("click", () => {
+  void refreshAdminMembers();
+});
+
+dom.adminMemberSearch?.addEventListener("input", (event) => {
+  state.adminQuery = event.target.value;
+  renderAdminPanel();
+});
+
 window.addEventListener("focus", () => {
   if (isSupabaseMode()) {
-    if (authState.session && !authState.accessGranted) {
+    if (authState.session && !authState.accessGranted && state.activePanel !== "public" && !authState.isAdmin) {
       void applySupabaseSession(authState.session);
     }
     return;
   }
 
-  if (!hasActiveAccess()) {
+  if (!hasActiveAccess() && isPanelRestricted(state.activePanel)) {
     openAccessModal(
       "Sua sessao expirou ou ainda nao foi validada. Digite o codigo de acesso para continuar."
     );
+    setActivePanel("public");
   }
 });
 
@@ -1838,11 +2277,9 @@ syncAccessModeUi();
 
 if (isSupabaseMode()) {
   void bootstrapSupabaseAuth();
-} else if (!hasActiveAccess()) {
-  openAccessModal(accessConfig.accessMessage);
 } else {
   closeAccessModal();
-  if (!state.member) {
+  if (hasMemberAreaAccess() && !state.member) {
     openAuthModal(false);
   } else {
     closeAuthModal();

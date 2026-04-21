@@ -13,12 +13,15 @@ Esta pasta agora contém uma plataforma web local em formato de área de membros
 - `conteudo/curso-eletronica.md`: texto-base limpo extraído do material bruto.
 - `gerar-acesso.html`: ferramenta local para gerar um novo hash de acesso.
 - `supabase-schema.sql`: estrutura do backend para contas individuais, liberação por aluno e estado remoto.
+- `MONETIZACAO.md`: guia rápido do modelo comercial do curso.
 
 ## Recursos da plataforma
 
 - onboarding do aluno com perfil salvo localmente
 - area de membros bloqueada por codigo de acesso com sessao expirada automaticamente
 - modo profissional pronto para Supabase com login por e-mail e liberação individual
+- vitrine pública com preview grátis e CTA de checkout/WhatsApp
+- painel admin para liberar ou bloquear alunos via Supabase
 - painel de membro com métricas e conquistas
 - player do curso com módulos, busca e progresso
 - favoritos e anotações por aula
@@ -42,6 +45,7 @@ O workflow fica em `.github/workflows/deploy-pages.yml` e publica apenas os arqu
 - `app-config.js`
 - `access-config.js`
 - `course-data.js`
+- `MONETIZACAO.md`
 - `404.html`
 - `conteudo/curso-eletronica.md`
 
@@ -99,6 +103,34 @@ Depois disso:
 - o acesso pode ser liberado por aluno na tabela `course_access`
 - progresso, notas e quiz sobem para o backend
 - o codigo de acesso local deixa de ser o fluxo principal
+
+Para transformar sua conta em admin no Supabase:
+
+```sql
+update public.member_profiles
+set role = 'admin'
+where email = 'SEUEMAIL@AQUI.COM';
+```
+
+Com isso, o painel `Admin` aparece na interface e voce consegue:
+
+- listar alunos
+- liberar acesso individual
+- bloquear acesso
+- acompanhar status do curso
+
+## Modo híbrido comercial
+
+Voce tambem pode vender sem abandonar seu site:
+
+1. Configure `app-config.js` com:
+   - `checkoutUrl` ou `hotmartCheckoutUrl`
+   - `hotmartMembersUrl`
+   - `whatsappNumber`
+   - `freeModuleNumbers`
+2. A aba `Oferta` vira sua vitrine pública.
+3. O player libera só o preview grátis para visitantes.
+4. O resto da plataforma continua premium.
 
 ## Observacao importante
 

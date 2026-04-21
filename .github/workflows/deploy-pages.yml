@@ -38,6 +38,7 @@ jobs:
           cp app-config.js _site/app-config.js
           cp access-config.js _site/access-config.js
           cp course-data.js _site/course-data.js
+          cp MONETIZACAO.md _site/MONETIZACAO.md
           cp 404.html _site/404.html
           cp .nojekyll _site/.nojekyll
           cp conteudo/curso-eletronica.md _site/conteudo/curso-eletronica.md

@@ -6,6 +6,7 @@ create table if not exists public.member_profiles (
   full_name text not null default 'Aluno',
   goal text not null default 'dominar fundamentos',
   rhythm text not null default '30 min por dia',
+  role text not null default 'student' check (role in ('student', 'admin')),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -30,9 +31,26 @@ create table if not exists public.member_states (
   primary key (user_id, course_slug)
 );
 
+create index if not exists idx_course_access_course_slug on public.course_access (course_slug);
+
 alter table public.member_profiles enable row level security;
 alter table public.course_access enable row level security;
 alter table public.member_states enable row level security;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.member_profiles
+    where user_id = auth.uid()
+      and role = 'admin'
+  );
+$$;
 
 drop policy if exists "profiles_select_own" on public.member_profiles;
 create policy "profiles_select_own"
@@ -40,6 +58,13 @@ on public.member_profiles
 for select
 to authenticated
 using (auth.uid() = user_id);
+
+drop policy if exists "profiles_select_admin" on public.member_profiles;
+create policy "profiles_select_admin"
+on public.member_profiles
+for select
+to authenticated
+using (public.is_admin());
 
 drop policy if exists "profiles_upsert_own" on public.member_profiles;
 create policy "profiles_upsert_own"
@@ -56,12 +81,42 @@ to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
+drop policy if exists "profiles_update_admin" on public.member_profiles;
+create policy "profiles_update_admin"
+on public.member_profiles
+for update
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
 drop policy if exists "course_access_select_own" on public.course_access;
 create policy "course_access_select_own"
 on public.course_access
 for select
 to authenticated
 using (auth.uid() = user_id);
+
+drop policy if exists "course_access_select_admin" on public.course_access;
+create policy "course_access_select_admin"
+on public.course_access
+for select
+to authenticated
+using (public.is_admin());
+
+drop policy if exists "course_access_insert_admin" on public.course_access;
+create policy "course_access_insert_admin"
+on public.course_access
+for insert
+to authenticated
+with check (public.is_admin());
+
+drop policy if exists "course_access_update_admin" on public.course_access;
+create policy "course_access_update_admin"
+on public.course_access
+for update
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
 
 drop policy if exists "member_states_select_own" on public.member_states;
 create policy "member_states_select_own"
@@ -140,3 +195,6 @@ execute procedure public.handle_new_user();
 
 comment on table public.course_access is
 'Defina access_status = active para liberar o curso ao aluno autenticado.';
+
+comment on column public.member_profiles.role is
+'Use admin para habilitar o painel administrativo e gerenciar acessos.';
