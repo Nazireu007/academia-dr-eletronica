@@ -1402,19 +1402,19 @@ function renderPublicOffer() {
 
   const offerLinks = [
     {
-      title: "Checkout principal",
-      meta: appConfig.paymentProviderLabel || "Pagamento",
+      title: "Plano premium",
+      meta: appConfig.paymentProviderLabel || "Acesso sem anuncios",
       href: checkoutUrl,
     },
     {
-      title: "Hotmart / Members",
-      meta: "Area de membros externa",
+      title: "Suporte e acesso",
+      meta: "Canal complementar do curso",
       href: appConfig.hotmartMembersUrl || "#",
     },
     {
-      title: "Plano de monetizacao",
-      meta: "Roadmap comercial do curso",
-      href: "MONETIZACAO.md",
+      title: "Apresentacao do curso",
+      meta: "Resumo do programa e proposta",
+      href: "conteudo/curso-eletronica.md",
     },
   ];
 
