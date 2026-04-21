@@ -115,9 +115,19 @@ const storageKeys = {
 const dom = {
   accessModal: document.querySelector("#access-modal"),
   accessForm: document.querySelector("#access-form"),
+  localAccessFields: document.querySelector("#local-access-fields"),
+  cloudAuthFields: document.querySelector("#cloud-auth-fields"),
   accessCodeInput: document.querySelector("#access-code-input"),
   accessCopy: document.querySelector("#access-copy"),
   accessFeedback: document.querySelector("#access-feedback"),
+  authEmailInput: document.querySelector("#auth-email-input"),
+  authPasswordInput: document.querySelector("#auth-password-input"),
+  authModeCopy: document.querySelector("#auth-mode-copy"),
+  authSignupButton: document.querySelector("#auth-signup-button"),
+  authResetButton: document.querySelector("#auth-reset-button"),
+  authRefreshAccessButton: document.querySelector("#auth-refresh-access-button"),
+  authSignoutButton: document.querySelector("#auth-signout-button"),
+  authSubmitButton: document.querySelector("#auth-submit-button"),
   authModal: document.querySelector("#auth-modal"),
   memberForm: document.querySelector("#member-form"),
   memberNameInput: document.querySelector("#member-name-input"),
@@ -263,6 +273,29 @@ const accessConfig = {
   ...(window.MEMBER_ACCESS_CONFIG || {}),
 };
 
+const defaultAppConfig = {
+  authMode: "local",
+  courseSlug: "curso-eletronica-completo",
+  siteUrl: window.location.href,
+  supabaseUrl: "",
+  supabaseAnonKey: "",
+};
+
+const appConfig = {
+  ...defaultAppConfig,
+  ...(window.APP_CONFIG || {}),
+};
+
+const authState = {
+  client: null,
+  session: null,
+  user: null,
+  accessGranted: false,
+  syncTimer: null,
+  syncInFlight: false,
+  bootstrapped: false,
+};
+
 function decodeBase64(value) {
   const binary = window.atob(value);
   const bytes = new Uint8Array(binary.length);
@@ -312,6 +345,54 @@ async function verifyAccessCode(code) {
   if (!normalizedCode) return false;
   const derived = await deriveAccessHash(normalizedCode);
   return derived === accessConfig.codeHashBase64;
+}
+
+function isSupabaseMode() {
+  return appConfig.authMode === "supabase";
+}
+
+function hasSupabaseConfig() {
+  return Boolean(appConfig.supabaseUrl && appConfig.supabaseAnonKey);
+}
+
+async function getAuthClient() {
+  if (!isSupabaseMode() || !hasSupabaseConfig()) return null;
+  if (authState.client) return authState.client;
+
+  const module = await import("https://esm.sh/@supabase/supabase-js@2");
+  authState.client = module.createClient(appConfig.supabaseUrl, appConfig.supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+    },
+  });
+
+  return authState.client;
+}
+
+function getRemoteStatePayload() {
+  return {
+    completed: [...state.completed],
+    favorites: [...state.favorites],
+    notes: state.notes,
+    quizAnswers: state.quizAnswers,
+    quizResult: state.quizResult,
+    selectedLessonId: state.selectedLessonId,
+    activePanel: state.activePanel,
+  };
+}
+
+function applyRemoteStatePayload(payload) {
+  const source = payload && typeof payload === "object" ? payload : {};
+  state.completed = new Set(sanitizeLessonIdCollection(source.completed));
+  state.favorites = new Set(sanitizeLessonIdCollection(source.favorites));
+  state.notes = sanitizeNotesMap(source.notes);
+  state.quizAnswers = sanitizeQuizAnswers(source.quizAnswers);
+  state.quizResult = source.quizResult || null;
+  state.selectedLessonId = validLessonIds.has(source.selectedLessonId)
+    ? source.selectedLessonId
+    : course.lessons[0]?.id;
+  state.activePanel = source.activePanel || "dashboard";
 }
 
 function parseCourse(markdown) {
@@ -598,6 +679,103 @@ function saveState() {
   } else {
     removeStored(storageKeys.accessSession);
   }
+
+  if (isSupabaseMode() && authState.accessGranted) {
+    scheduleRemoteSync();
+  }
+}
+
+async function ensureRemoteProfile() {
+  if (!isSupabaseMode() || !authState.user) return;
+  const client = await getAuthClient();
+  if (!client) return;
+
+  const fullName = state.member?.name || authState.user.user_metadata?.name || "Aluno";
+  const payload = {
+    user_id: authState.user.id,
+    email: authState.user.email || state.member?.email || "",
+    full_name: fullName,
+    goal: state.member?.goal || "dominar fundamentos",
+    rhythm: state.member?.rhythm || "30 min por dia",
+    updated_at: new Date().toISOString(),
+  };
+
+  await client.from("member_profiles").upsert(payload, {
+    onConflict: "user_id",
+  });
+}
+
+async function loadRemoteProfile() {
+  if (!isSupabaseMode() || !authState.user) return;
+  const client = await getAuthClient();
+  if (!client) return;
+
+  const { data } = await client
+    .from("member_profiles")
+    .select("full_name,email,goal,rhythm,created_at")
+    .eq("user_id", authState.user.id)
+    .maybeSingle();
+
+  state.member = {
+    name: data?.full_name || state.member?.name || "Aluno",
+    email: data?.email || authState.user.email || state.member?.email || "",
+    goal: data?.goal || state.member?.goal || "dominar fundamentos",
+    rhythm: data?.rhythm || state.member?.rhythm || "30 min por dia",
+    joinedAt: data?.created_at || state.member?.joinedAt || new Date().toISOString(),
+  };
+}
+
+async function pullRemoteState() {
+  if (!isSupabaseMode() || !authState.user) return;
+  const client = await getAuthClient();
+  if (!client) return;
+
+  const { data } = await client
+    .from("member_states")
+    .select("payload")
+    .eq("user_id", authState.user.id)
+    .eq("course_slug", appConfig.courseSlug)
+    .maybeSingle();
+
+  if (data?.payload) {
+    applyRemoteStatePayload(data.payload);
+  }
+}
+
+async function pushRemoteState() {
+  if (!isSupabaseMode() || !authState.user || !authState.accessGranted || authState.syncInFlight) return;
+  const client = await getAuthClient();
+  if (!client) return;
+
+  authState.syncInFlight = true;
+
+  try {
+    await ensureRemoteProfile();
+    await client.from("member_states").upsert(
+      {
+        user_id: authState.user.id,
+        course_slug: appConfig.courseSlug,
+        payload: getRemoteStatePayload(),
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id,course_slug",
+      }
+    );
+  } finally {
+    authState.syncInFlight = false;
+  }
+}
+
+function scheduleRemoteSync() {
+  if (authState.syncTimer) {
+    window.clearTimeout(authState.syncTimer);
+  }
+
+  authState.syncTimer = window.setTimeout(() => {
+    authState.syncTimer = null;
+    void pushRemoteState();
+  }, 450);
 }
 
 function getLessonById(id) {
@@ -638,7 +816,34 @@ function hasUnlockedCertificate() {
   return state.completed.size === course.lessons.length && Boolean(state.quizResult?.passed);
 }
 
+async function refreshRemoteAccessStatus() {
+  if (!isSupabaseMode() || !authState.user) {
+    authState.accessGranted = false;
+    return false;
+  }
+
+  const client = await getAuthClient();
+  if (!client) {
+    authState.accessGranted = false;
+    return false;
+  }
+
+  const { data } = await client
+    .from("course_access")
+    .select("access_status")
+    .eq("user_id", authState.user.id)
+    .eq("course_slug", appConfig.courseSlug)
+    .maybeSingle();
+
+  authState.accessGranted = data?.access_status === "active";
+  return authState.accessGranted;
+}
+
 function hasActiveAccess() {
+  if (isSupabaseMode()) {
+    return Boolean(authState.session && authState.accessGranted);
+  }
+
   state.accessSession = getValidAccessSession();
   return Boolean(state.accessSession);
 }
@@ -651,14 +856,71 @@ function setAccessFeedback(message = "", tone = "") {
   }
 }
 
+function syncAccessModeUi() {
+  const supabaseMode = isSupabaseMode();
+  const signedIn = Boolean(authState.session);
+  const lockedAwaitingApproval = supabaseMode && signedIn && !authState.accessGranted;
+
+  dom.localAccessFields.hidden = supabaseMode;
+  dom.cloudAuthFields.hidden = !supabaseMode || lockedAwaitingApproval;
+  dom.authSignupButton.hidden = !supabaseMode || signedIn;
+  dom.authResetButton.hidden = !supabaseMode || signedIn;
+  dom.authRefreshAccessButton.hidden = !lockedAwaitingApproval;
+  dom.authSignoutButton.hidden = !supabaseMode || !signedIn;
+  dom.authSubmitButton.hidden = lockedAwaitingApproval;
+
+  if (!supabaseMode) {
+    dom.accessCopy.textContent =
+      "Esta plataforma exige um codigo de acesso antes de liberar aulas, progresso, quiz e certificado.";
+    dom.authSubmitButton.textContent = "Entrar na area protegida";
+    return;
+  }
+
+  if (!hasSupabaseConfig()) {
+    dom.accessCopy.textContent =
+      "O modo profissional foi preparado, mas ainda faltam a URL e a chave publica do backend.";
+    dom.authModeCopy.textContent =
+      "Abra app-config.js, preencha as credenciais do Supabase e rode o script SQL para liberar contas individuais.";
+    dom.authSubmitButton.textContent = "Backend pendente";
+    dom.authSubmitButton.disabled = true;
+    return;
+  }
+
+  dom.authSubmitButton.disabled = false;
+
+  if (lockedAwaitingApproval) {
+    dom.accessCopy.textContent =
+      "Sua conta esta autenticada, mas o acesso ao curso ainda nao foi liberado para este aluno.";
+    setAccessFeedback(
+      "Depois que voce ativar o aluno no backend, clique em Atualizar acesso para abrir a plataforma.",
+      ""
+    );
+    return;
+  }
+
+  dom.accessCopy.textContent =
+    "Entre com seu e-mail e senha. Cada aluno passa a ter conta individual, acesso remoto e dados sincronizados.";
+  dom.authModeCopy.textContent =
+    "Crie uma conta para o aluno ou entre com as credenciais ja liberadas no backend.";
+  dom.authSubmitButton.textContent = signedIn ? "Entrar com outra conta" : "Entrar com e-mail";
+}
+
 function openAccessModal(message = accessConfig.accessMessage) {
+  syncAccessModeUi();
   dom.accessCopy.textContent = message;
   dom.accessModal.classList.add("is-open");
   dom.accessModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open", "access-locked");
   dom.accessCodeInput.value = "";
+  if (dom.authEmailInput) dom.authEmailInput.value = authState.user?.email || "";
+  if (dom.authPasswordInput) dom.authPasswordInput.value = "";
   setAccessFeedback("", "");
-  dom.accessCodeInput.focus();
+
+  if (isSupabaseMode()) {
+    (dom.authEmailInput || dom.authPasswordInput)?.focus();
+  } else {
+    dom.accessCodeInput.focus();
+  }
 }
 
 function closeAccessModal() {
@@ -1221,8 +1483,184 @@ function openNextLesson(panel = true) {
   renderAll();
 }
 
+async function signInWithSupabase() {
+  const email = dom.authEmailInput.value.trim();
+  const password = dom.authPasswordInput.value.trim();
+
+  if (!email || !password) {
+    setAccessFeedback("Preencha e-mail e senha para entrar.", "is-error");
+    return;
+  }
+
+  const client = await getAuthClient();
+  if (!client) {
+    setAccessFeedback("O backend Supabase ainda nao foi configurado.", "is-error");
+    return;
+  }
+
+  setAccessFeedback("Entrando na conta do aluno...", "");
+  const { error, data } = await client.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    setAccessFeedback(error.message, "is-error");
+    return;
+  }
+
+  await applySupabaseSession(data.session);
+}
+
+async function signUpWithSupabase() {
+  const email = dom.authEmailInput.value.trim();
+  const password = dom.authPasswordInput.value.trim();
+  const suggestedName = email.split("@")[0] || "Aluno";
+
+  if (!email || !password) {
+    setAccessFeedback("Preencha e-mail e senha para criar a conta.", "is-error");
+    return;
+  }
+
+  if (password.length < 8) {
+    setAccessFeedback("Use uma senha com pelo menos 8 caracteres.", "is-error");
+    return;
+  }
+
+  const client = await getAuthClient();
+  if (!client) {
+    setAccessFeedback("O backend Supabase ainda nao foi configurado.", "is-error");
+    return;
+  }
+
+  setAccessFeedback("Criando a conta do aluno...", "");
+  const { error } = await client.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: appConfig.siteUrl,
+      data: {
+        name: suggestedName,
+      },
+    },
+  });
+
+  if (error) {
+    setAccessFeedback(error.message, "is-error");
+    return;
+  }
+
+  setAccessFeedback(
+    "Conta criada. Se a confirmacao por e-mail estiver ativa no Supabase, valide a caixa de entrada do aluno.",
+    "is-success"
+  );
+}
+
+async function resetSupabasePassword() {
+  const email = dom.authEmailInput.value.trim();
+  if (!email) {
+    setAccessFeedback("Informe o e-mail da conta para redefinir a senha.", "is-error");
+    return;
+  }
+
+  const client = await getAuthClient();
+  if (!client) {
+    setAccessFeedback("O backend Supabase ainda nao foi configurado.", "is-error");
+    return;
+  }
+
+  const { error } = await client.auth.resetPasswordForEmail(email, {
+    redirectTo: appConfig.siteUrl,
+  });
+
+  if (error) {
+    setAccessFeedback(error.message, "is-error");
+    return;
+  }
+
+  setAccessFeedback("Link de redefinicao enviado para o e-mail informado.", "is-success");
+}
+
+async function signOutFromSupabase() {
+  const client = await getAuthClient();
+  if (!client) return;
+  await client.auth.signOut();
+  authState.session = null;
+  authState.user = null;
+  authState.accessGranted = false;
+  syncAccessModeUi();
+  openAccessModal("A sessao foi encerrada. Entre novamente para acessar o curso.");
+}
+
+async function applySupabaseSession(session) {
+  authState.session = session || null;
+  authState.user = session?.user || null;
+
+  if (!authState.session) {
+    authState.accessGranted = false;
+    syncAccessModeUi();
+    openAccessModal("Entre com seu e-mail e senha para liberar a area de membros.");
+    return;
+  }
+
+  await loadRemoteProfile();
+  await refreshRemoteAccessStatus();
+  syncAccessModeUi();
+
+  if (!authState.accessGranted) {
+    openAccessModal(
+      "Conta autenticada. Agora libere este aluno no backend para abrir o curso com acesso individual."
+    );
+    setAccessFeedback(
+      "Depois que voce ativar este aluno na tabela course_access, clique em Atualizar acesso.",
+      ""
+    );
+    return;
+  }
+
+  await pullRemoteState();
+  saveState();
+  closeAccessModal();
+  renderAll();
+
+  if (!state.member?.name || !state.member?.email) {
+    openAuthModal(false);
+  } else {
+    closeAuthModal();
+  }
+}
+
+async function bootstrapSupabaseAuth() {
+  if (!isSupabaseMode()) return;
+
+  syncAccessModeUi();
+
+  if (!hasSupabaseConfig()) {
+    openAccessModal(
+      "Modo profissional preparado. Preencha app-config.js com a URL e a chave publica do Supabase para ativar contas individuais."
+    );
+    return;
+  }
+
+  const client = await getAuthClient();
+  if (!client) return;
+
+  const { data } = await client.auth.getSession();
+  await applySupabaseSession(data.session);
+
+  client.auth.onAuthStateChange((_event, session) => {
+    void applySupabaseSession(session);
+  });
+}
+
 async function handleAccessSubmit(event) {
   event.preventDefault();
+
+  if (isSupabaseMode()) {
+    await signInWithSupabase();
+    return;
+  }
+
   const accessCode = dom.accessCodeInput.value.trim();
 
   if (!accessCode) {
@@ -1254,6 +1692,11 @@ async function handleAccessSubmit(event) {
 }
 
 function logoutMemberArea() {
+  if (isSupabaseMode()) {
+    void signOutFromSupabase();
+    return;
+  }
+
   clearAccessSession();
   closeAuthModal();
   openAccessModal(
@@ -1273,9 +1716,24 @@ dom.memberForm.addEventListener("submit", (event) => {
   saveState();
   closeAuthModal();
   renderAll();
+  if (isSupabaseMode()) {
+    void pushRemoteState();
+  }
 });
 
 dom.accessForm.addEventListener("submit", handleAccessSubmit);
+dom.authSignupButton.addEventListener("click", () => {
+  void signUpWithSupabase();
+});
+dom.authResetButton.addEventListener("click", () => {
+  void resetSupabasePassword();
+});
+dom.authRefreshAccessButton.addEventListener("click", () => {
+  void applySupabaseSession(authState.session);
+});
+dom.authSignoutButton.addEventListener("click", () => {
+  void signOutFromSupabase();
+});
 
 dom.editProfile.addEventListener("click", () => {
   openAuthModal(true);
@@ -1360,6 +1818,13 @@ dom.printCertificate.addEventListener("click", () => {
 });
 
 window.addEventListener("focus", () => {
+  if (isSupabaseMode()) {
+    if (authState.session && !authState.accessGranted) {
+      void applySupabaseSession(authState.session);
+    }
+    return;
+  }
+
   if (!hasActiveAccess()) {
     openAccessModal(
       "Sua sessao expirou ou ainda nao foi validada. Digite o codigo de acesso para continuar."
@@ -1369,7 +1834,11 @@ window.addEventListener("focus", () => {
 
 renderAll();
 
-if (!hasActiveAccess()) {
+syncAccessModeUi();
+
+if (isSupabaseMode()) {
+  void bootstrapSupabaseAuth();
+} else if (!hasActiveAccess()) {
   openAccessModal(accessConfig.accessMessage);
 } else {
   closeAccessModal();

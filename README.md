@@ -7,15 +7,18 @@ Esta pasta agora contém uma plataforma web local em formato de área de membros
 - `index.html`: interface principal da plataforma.
 - `styles.css`: identidade visual premium, responsiva e com modo de impressão do certificado.
 - `script.js`: lógica da área de membros, perfil do aluno, progresso, favoritos, anotações, quiz e certificado.
+- `app-config.js`: chaveia entre modo local e autenticação real com Supabase.
 - `access-config.js`: configuração do bloqueio de acesso da área de membros.
 - `course-data.js`: conteúdo completo do curso embutido para funcionar direto no navegador.
 - `conteudo/curso-eletronica.md`: texto-base limpo extraído do material bruto.
 - `gerar-acesso.html`: ferramenta local para gerar um novo hash de acesso.
+- `supabase-schema.sql`: estrutura do backend para contas individuais, liberação por aluno e estado remoto.
 
 ## Recursos da plataforma
 
 - onboarding do aluno com perfil salvo localmente
 - area de membros bloqueada por codigo de acesso com sessao expirada automaticamente
+- modo profissional pronto para Supabase com login por e-mail e liberação individual
 - painel de membro com métricas e conquistas
 - player do curso com módulos, busca e progresso
 - favoritos e anotações por aula
@@ -36,6 +39,7 @@ O workflow fica em `.github/workflows/deploy-pages.yml` e publica apenas os arqu
 - `index.html`
 - `styles.css`
 - `script.js`
+- `app-config.js`
 - `access-config.js`
 - `course-data.js`
 - `404.html`
@@ -76,6 +80,25 @@ Para trocar o codigo atual:
 2. Gere um novo bloco de configuracao.
 3. Substitua o conteudo de `access-config.js`.
 4. Publique novamente com `git push`.
+
+## Autenticacao profissional
+
+Se voce quiser sair do modo local e usar contas individuais de verdade:
+
+1. Crie um projeto no Supabase.
+2. Rode `supabase-schema.sql` no SQL Editor.
+3. Preencha `app-config.js` com:
+   - `authMode: "supabase"`
+   - `supabaseUrl`
+   - `supabaseAnonKey`
+4. Publique novamente.
+
+Depois disso:
+
+- cada aluno entra com e-mail e senha
+- o acesso pode ser liberado por aluno na tabela `course_access`
+- progresso, notas e quiz sobem para o backend
+- o codigo de acesso local deixa de ser o fluxo principal
 
 ## Observacao importante
 

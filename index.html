@@ -19,26 +19,60 @@
         <p class="section-kicker">Acesso Protegido</p>
         <h1>Desbloqueie sua area de membros.</h1>
         <p class="auth-copy" id="access-copy">
-          Esta plataforma exige um codigo de acesso antes de liberar aulas, progresso, quiz e certificado.
+          Entre com suas credenciais para liberar a area de membros e sincronizar seu progresso.
         </p>
 
         <form class="auth-form" id="access-form">
-          <label>
-            <span>Codigo de acesso</span>
-            <input
-              id="access-code-input"
-              name="access-code"
-              type="password"
-              placeholder="Digite o codigo recebido apos a matricula"
-              autocomplete="current-password"
-              required
-            />
-          </label>
+          <div id="local-access-fields">
+            <label>
+              <span>Codigo de acesso</span>
+              <input
+                id="access-code-input"
+                name="access-code"
+                type="password"
+                placeholder="Digite o codigo recebido apos a matricula"
+                autocomplete="current-password"
+                required
+              />
+            </label>
+          </div>
+
+          <div id="cloud-auth-fields" hidden>
+            <label>
+              <span>Seu e-mail</span>
+              <input
+                id="auth-email-input"
+                name="auth-email"
+                type="email"
+                placeholder="voce@email.com"
+                autocomplete="email"
+              />
+            </label>
+
+            <label>
+              <span>Sua senha</span>
+              <input
+                id="auth-password-input"
+                name="auth-password"
+                type="password"
+                placeholder="Digite sua senha"
+                autocomplete="current-password"
+              />
+            </label>
+
+            <p class="auth-copy auth-mode-note" id="auth-mode-copy">
+              Entre com seu e-mail e senha. Cada aluno passa a ter conta individual e acesso remoto.
+            </p>
+          </div>
 
           <p class="auth-feedback" id="access-feedback" aria-live="polite"></p>
 
           <div class="auth-actions">
-            <button class="button button-primary" type="submit">Entrar na area protegida</button>
+            <button class="button button-secondary" id="auth-signup-button" type="button" hidden>Criar conta</button>
+            <button class="button button-secondary" id="auth-reset-button" type="button" hidden>Esqueci a senha</button>
+            <button class="button button-secondary" id="auth-refresh-access-button" type="button" hidden>Atualizar acesso</button>
+            <button class="button button-secondary" id="auth-signout-button" type="button" hidden>Sair da conta</button>
+            <button class="button button-primary" id="auth-submit-button" type="submit">Entrar na area protegida</button>
           </div>
         </form>
       </div>
@@ -471,6 +505,7 @@
     </footer>
 
     <script src="course-data.js"></script>
+    <script src="app-config.js"></script>
     <script src="access-config.js"></script>
     <script src="script.js"></script>
   </body>

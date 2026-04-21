@@ -227,6 +227,10 @@ body::before {
   color: var(--muted);
 }
 
+.auth-mode-note {
+  margin: 0;
+}
+
 .auth-feedback.is-error {
   color: #ffd0c8;
 }

@@ -35,6 +35,7 @@ jobs:
           cp index.html _site/index.html
           cp styles.css _site/styles.css
           cp script.js _site/script.js
+          cp app-config.js _site/app-config.js
           cp access-config.js _site/access-config.js
           cp course-data.js _site/course-data.js
           cp 404.html _site/404.html
