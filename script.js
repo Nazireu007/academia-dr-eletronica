@@ -221,6 +221,7 @@ const dom = {
   adminFilterButtons: [...document.querySelectorAll("[data-admin-filter]")],
   adminStatusCopy: document.querySelector("#admin-status-copy"),
   adminMetrics: document.querySelector("#admin-metrics"),
+  adminSelfCard: document.querySelector("#admin-self-card"),
   adminMemberList: document.querySelector("#admin-member-list"),
 };
 
@@ -1847,7 +1848,9 @@ function renderCertificate() {
 function renderAdminPanel() {
   const query = normalize(state.adminQuery);
   const allMembers = authState.adminMembers || [];
-  const members = allMembers.filter((member) => {
+  const selfMember = allMembers.find((member) => member.userId === authState.user?.id) || null;
+  const manageableMembers = allMembers.filter((member) => member.userId !== authState.user?.id);
+  const members = manageableMembers.filter((member) => {
     const matchesFilter =
       state.adminFilter === "all"
         ? true
@@ -1861,18 +1864,18 @@ function renderAdminPanel() {
   });
 
   const metrics = [
-    { label: "Membros", value: String(allMembers.length) },
+    { label: "Cadastros", value: String(manageableMembers.length) },
     {
       label: "Ativos",
-      value: String(allMembers.filter((member) => member.accessStatus === "active").length),
+      value: String(manageableMembers.filter((member) => member.accessStatus === "active").length),
     },
     {
       label: "Pendentes",
-      value: String(allMembers.filter((member) => member.accessStatus === "pending").length),
+      value: String(manageableMembers.filter((member) => member.accessStatus === "pending").length),
     },
     {
       label: "Admins",
-      value: String(allMembers.filter((member) => member.role === "admin").length),
+      value: String(manageableMembers.filter((member) => member.role === "admin").length),
     },
   ];
 
@@ -1890,6 +1893,24 @@ function renderAdminPanel() {
       `
     )
     .join("");
+
+  dom.adminSelfCard.innerHTML = selfMember
+    ? `
+        <article class="admin-self-item">
+          <strong>${escapeHtml(selfMember.name)}</strong>
+          <span>${escapeHtml(selfMember.email || "Sem e-mail")}</span>
+          <div class="admin-tag-row">
+            <span class="admin-role-badge is-${escapeHtml(selfMember.role)}">${escapeHtml(
+              getAdminRoleLabel(selfMember.role)
+            )}</span>
+            <span class="admin-status-badge is-${escapeHtml(selfMember.accessStatus)}">${escapeHtml(
+              getAdminAccessLabel(selfMember.accessStatus)
+            )}</span>
+          </div>
+          <span>Essa e a sua conta principal de administracao.</span>
+        </article>
+      `
+    : `<div class="empty-state">Sua conta administradora sera exibida aqui.</div>`;
 
   dom.adminMemberList.innerHTML =
     members.length > 0
@@ -1932,7 +1953,7 @@ function renderAdminPanel() {
             `
           )
           .join("")
-      : `<div class="empty-state">Nenhum membro encontrado neste filtro. Peça para o aluno criar a conta e depois clique em Atualizar lista.</div>`;
+      : `<div class="empty-state">Nenhum cadastro encontrado neste filtro. Quando um aluno criar a conta, ele aparecera aqui.</div>`;
 
   dom.adminMemberList.querySelectorAll("[data-access-action]").forEach((button) => {
     button.addEventListener("click", () => {

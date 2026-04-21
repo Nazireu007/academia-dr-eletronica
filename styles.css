@@ -413,6 +413,17 @@ body::before {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.admin-self-item {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 149, 80, 0.08), transparent),
+    rgba(255, 255, 255, 0.03);
+}
+
 .admin-member-copy {
   display: grid;
   gap: 0.2rem;
@@ -1358,6 +1369,7 @@ body.access-locked .site-footer {
     grid-template-columns: 1fr;
   }
 
+  .admin-self-item,
   .admin-member-head {
     align-items: flex-start;
   }
