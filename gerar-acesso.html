@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gerador de Hash de Acesso</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="member-app shell">
+      <section class="member-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Ferramenta local</p>
+          <h1>Gere um novo hash para proteger o curso.</h1>
+          <p class="hero-text">
+            Informe um novo codigo de acesso. Esta pagina gera o salt e o hash PBKDF2 para voce colar
+            em <code>access-config.js</code>.
+          </p>
+        </div>
+
+        <aside class="hero-panel">
+          <article class="panel-card panel-card-secondary">
+            <p class="panel-label">Como usar</p>
+            <ul class="panel-list">
+              <li>digite um codigo forte</li>
+              <li>clique em gerar configuracao</li>
+              <li>copie os campos para <code>access-config.js</code></li>
+              <li>publique de novo no GitHub Pages</li>
+            </ul>
+          </article>
+        </aside>
+      </section>
+
+      <section class="workspace">
+        <div class="workspace-main">
+          <section class="member-panel is-active">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Gerador</p>
+                <h2>Nova configuracao de acesso</h2>
+              </div>
+            </div>
+
+            <article class="dashboard-card dashboard-card-hero">
+              <form class="auth-form" id="access-generator-form">
+                <label>
+                  <span>Novo codigo de acesso</span>
+                  <input id="generator-code" type="password" required />
+                </label>
+
+                <label>
+                  <span>Confirmacao do codigo</span>
+                  <input id="generator-code-confirm" type="password" required />
+                </label>
+
+                <div class="auth-actions">
+                  <button class="button button-primary" type="submit">Gerar configuracao</button>
+                </div>
+              </form>
+
+              <p class="auth-feedback" id="generator-feedback" aria-live="polite"></p>
+
+              <label class="auth-form">
+                <span>Bloco para colar em <code>access-config.js</code></span>
+                <textarea class="note-editor" id="generator-output" spellcheck="false" readonly></textarea>
+              </label>
+            </article>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="access-generator.js"></script>
+  </body>
+</html>

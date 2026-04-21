@@ -14,13 +14,42 @@
     <div class="page-glow page-glow-left"></div>
     <div class="page-glow page-glow-right"></div>
 
+    <div class="auth-modal" id="access-modal" aria-hidden="true">
+      <div class="auth-card">
+        <p class="section-kicker">Acesso Protegido</p>
+        <h1>Desbloqueie sua area de membros.</h1>
+        <p class="auth-copy" id="access-copy">
+          Esta plataforma exige um codigo de acesso antes de liberar aulas, progresso, quiz e certificado.
+        </p>
+
+        <form class="auth-form" id="access-form">
+          <label>
+            <span>Codigo de acesso</span>
+            <input
+              id="access-code-input"
+              name="access-code"
+              type="password"
+              placeholder="Digite o codigo recebido apos a matricula"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+
+          <p class="auth-feedback" id="access-feedback" aria-live="polite"></p>
+
+          <div class="auth-actions">
+            <button class="button button-primary" type="submit">Entrar na area protegida</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div class="auth-modal" id="auth-modal" aria-hidden="true">
       <div class="auth-card">
-        <p class="section-kicker">Área de Membros</p>
-        <h1>Ative seu acesso ao curso.</h1>
-        <p class="auth-copy">
-          Esta plataforma salva progresso, favoritos, anotações e quiz neste navegador
-          para criar uma experiência de aluno completa, mesmo sem backend.
+        <p class="section-kicker">Perfil do Aluno</p>
+        <h1 id="profile-modal-title">Complete seu perfil inicial.</h1>
+        <p class="auth-copy" id="profile-modal-copy">
+          Seu perfil salva nome, e-mail, meta e ritmo de estudo neste navegador para personalizar a jornada.
         </p>
 
         <form class="auth-form" id="member-form">
@@ -54,6 +83,7 @@
           </label>
 
           <div class="auth-actions">
+            <button class="button button-secondary" id="close-profile-modal" type="button">Fechar</button>
             <button class="button button-primary" type="submit">Entrar na plataforma</button>
           </div>
         </form>
@@ -81,6 +111,8 @@
         </div>
 
         <div class="header-right">
+          <button class="button button-secondary button-small" id="logout-button" type="button">Sair</button>
+
           <div class="header-hud" aria-label="Resumo rápido da conta">
             <article class="hud-chip">
               <span class="hud-label">Progresso</span>
@@ -439,6 +471,7 @@
     </footer>
 
     <script src="course-data.js"></script>
+    <script src="access-config.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

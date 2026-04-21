@@ -109,16 +109,26 @@ const storageKeys = {
   activePanel: "academia-dr-panel-v4",
   quizAnswers: "academia-dr-quiz-answers-v4",
   quizResult: "academia-dr-quiz-result-v4",
+  accessSession: "academia-dr-access-session-v1",
 };
 
 const dom = {
+  accessModal: document.querySelector("#access-modal"),
+  accessForm: document.querySelector("#access-form"),
+  accessCodeInput: document.querySelector("#access-code-input"),
+  accessCopy: document.querySelector("#access-copy"),
+  accessFeedback: document.querySelector("#access-feedback"),
   authModal: document.querySelector("#auth-modal"),
   memberForm: document.querySelector("#member-form"),
   memberNameInput: document.querySelector("#member-name-input"),
   memberEmailInput: document.querySelector("#member-email-input"),
   memberGoalInput: document.querySelector("#member-goal-input"),
   memberRhythmInput: document.querySelector("#member-rhythm-input"),
+  closeProfileModal: document.querySelector("#close-profile-modal"),
+  profileModalTitle: document.querySelector("#profile-modal-title"),
+  profileModalCopy: document.querySelector("#profile-modal-copy"),
   editProfile: document.querySelector("#edit-profile"),
+  logoutButton: document.querySelector("#logout-button"),
   topNavLinks: [...document.querySelectorAll(".top-nav-link")],
   sidebarLinks: [...document.querySelectorAll(".sidebar-link")],
   panels: [...document.querySelectorAll(".member-panel")],
@@ -231,6 +241,77 @@ function loadJSON(key, fallback) {
 
 function saveJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+function removeStored(key) {
+  localStorage.removeItem(key);
+}
+
+const defaultAccessConfig = {
+  courseTitle: "Academia DR",
+  accessMessage:
+    "Digite o codigo de acesso entregue ao aluno. Troque o hash padrao antes de vender o curso.",
+  sessionHours: 12,
+  passwordVersion: "v1",
+  pbkdf2Iterations: 150000,
+  saltBase64: "L83p4kLEhKVRIOI9fe6Fag==",
+  codeHashBase64: "iiKH2pVjXMnnBer9m/mxgLLTbXM/ZMLU57ZnbR6hCKQ=",
+};
+
+const accessConfig = {
+  ...defaultAccessConfig,
+  ...(window.MEMBER_ACCESS_CONFIG || {}),
+};
+
+function decodeBase64(value) {
+  const binary = window.atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function encodeBase64(bytes) {
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return window.btoa(binary);
+}
+
+async function deriveAccessHash(code) {
+  if (!window.crypto?.subtle) {
+    throw new Error("Este navegador nao oferece Web Crypto para validar o acesso.");
+  }
+
+  const keyMaterial = await window.crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(code),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  );
+
+  const derivedBits = await window.crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: decodeBase64(accessConfig.saltBase64),
+      iterations: accessConfig.pbkdf2Iterations,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    256
+  );
+
+  return encodeBase64(new Uint8Array(derivedBits));
+}
+
+async function verifyAccessCode(code) {
+  const normalizedCode = String(code || "").trim();
+  if (!normalizedCode) return false;
+  const derived = await deriveAccessHash(normalizedCode);
+  return derived === accessConfig.codeHashBase64;
 }
 
 function parseCourse(markdown) {
@@ -449,18 +530,58 @@ function extractGlossary(course) {
 }
 
 const course = parseCourse(window.COURSE_MARKDOWN || "");
+const validLessonIds = new Set(course.lessons.map((lesson) => lesson.id));
+
+function sanitizeLessonIdCollection(values) {
+  return (Array.isArray(values) ? values : []).filter((value) => validLessonIds.has(value));
+}
+
+function sanitizeNotesMap(value) {
+  return Object.fromEntries(
+    Object.entries(value && typeof value === "object" ? value : {}).filter(([lessonId]) =>
+      validLessonIds.has(lessonId)
+    )
+  );
+}
+
+function sanitizeQuizAnswers(value) {
+  const source = value && typeof value === "object" ? value : {};
+  return quizQuestions.reduce((accumulator, question) => {
+    if (Number.isInteger(source[question.id])) {
+      accumulator[question.id] = source[question.id];
+    }
+    return accumulator;
+  }, {});
+}
+
+function getValidAccessSession() {
+  const session = loadJSON(storageKeys.accessSession, null);
+  if (!session || typeof session !== "object") return null;
+  if (session.passwordVersion !== accessConfig.passwordVersion) return null;
+  if (!session.expiresAt) return null;
+
+  const expiresAt = new Date(session.expiresAt).getTime();
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+    removeStored(storageKeys.accessSession);
+    return null;
+  }
+
+  return session;
+}
 
 const state = {
   member: loadJSON(storageKeys.member, null),
-  completed: new Set(loadJSON(storageKeys.completed, [])),
-  favorites: new Set(loadJSON(storageKeys.favorites, [])),
-  notes: loadJSON(storageKeys.notes, {}),
-  quizAnswers: loadJSON(storageKeys.quizAnswers, {}),
+  completed: new Set(sanitizeLessonIdCollection(loadJSON(storageKeys.completed, []))),
+  favorites: new Set(sanitizeLessonIdCollection(loadJSON(storageKeys.favorites, []))),
+  notes: sanitizeNotesMap(loadJSON(storageKeys.notes, {})),
+  quizAnswers: sanitizeQuizAnswers(loadJSON(storageKeys.quizAnswers, {})),
   quizResult: loadJSON(storageKeys.quizResult, null),
-  selectedLessonId:
-    loadJSON(storageKeys.selectedLesson, course.lessons[0]?.id) || course.lessons[0]?.id,
+  selectedLessonId: validLessonIds.has(loadJSON(storageKeys.selectedLesson, course.lessons[0]?.id))
+    ? loadJSON(storageKeys.selectedLesson, course.lessons[0]?.id)
+    : course.lessons[0]?.id,
   activePanel: loadJSON(storageKeys.activePanel, "dashboard"),
   query: "",
+  accessSession: getValidAccessSession(),
 };
 
 function saveState() {
@@ -472,6 +593,11 @@ function saveState() {
   saveJSON(storageKeys.quizResult, state.quizResult);
   saveJSON(storageKeys.selectedLesson, state.selectedLessonId);
   saveJSON(storageKeys.activePanel, state.activePanel);
+  if (state.accessSession) {
+    saveJSON(storageKeys.accessSession, state.accessSession);
+  } else {
+    removeStored(storageKeys.accessSession);
+  }
 }
 
 function getLessonById(id) {
@@ -512,7 +638,66 @@ function hasUnlockedCertificate() {
   return state.completed.size === course.lessons.length && Boolean(state.quizResult?.passed);
 }
 
+function hasActiveAccess() {
+  state.accessSession = getValidAccessSession();
+  return Boolean(state.accessSession);
+}
+
+function setAccessFeedback(message = "", tone = "") {
+  dom.accessFeedback.textContent = message;
+  dom.accessFeedback.classList.remove("is-error", "is-success");
+  if (tone) {
+    dom.accessFeedback.classList.add(tone);
+  }
+}
+
+function openAccessModal(message = accessConfig.accessMessage) {
+  dom.accessCopy.textContent = message;
+  dom.accessModal.classList.add("is-open");
+  dom.accessModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open", "access-locked");
+  dom.accessCodeInput.value = "";
+  setAccessFeedback("", "");
+  dom.accessCodeInput.focus();
+}
+
+function closeAccessModal() {
+  dom.accessModal.classList.remove("is-open");
+  dom.accessModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("access-locked");
+  if (!dom.authModal.classList.contains("is-open")) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function createAccessSession() {
+  const now = Date.now();
+  state.accessSession = {
+    grantedAt: new Date(now).toISOString(),
+    expiresAt: new Date(now + accessConfig.sessionHours * 60 * 60 * 1000).toISOString(),
+    passwordVersion: accessConfig.passwordVersion,
+  };
+  saveState();
+}
+
+function clearAccessSession() {
+  state.accessSession = null;
+  saveState();
+}
+
+function syncProfileModalCopy() {
+  const isEditing = Boolean(state.member);
+  dom.profileModalTitle.textContent = isEditing
+    ? "Atualize seu perfil de aluno."
+    : "Complete seu perfil inicial.";
+  dom.profileModalCopy.textContent = isEditing
+    ? "Ajuste seus dados, meta e ritmo de estudo sem perder o progresso salvo neste navegador."
+    : "Seu perfil salva nome, e-mail, meta e ritmo de estudo neste navegador para personalizar a jornada.";
+  dom.closeProfileModal.hidden = !isEditing;
+}
+
 function openAuthModal(prefill = false) {
+  syncProfileModalCopy();
   dom.authModal.classList.add("is-open");
   dom.authModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
@@ -528,7 +713,9 @@ function openAuthModal(prefill = false) {
 function closeAuthModal() {
   dom.authModal.classList.remove("is-open");
   dom.authModal.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("modal-open");
+  if (!dom.accessModal.classList.contains("is-open")) {
+    document.body.classList.remove("modal-open");
+  }
 }
 
 function setActivePanel(panelName) {
@@ -1005,6 +1192,12 @@ function openLessonFromLibrary(lessonId) {
 }
 
 function handleQuizSubmit() {
+  if (getAnsweredQuizCount() < quizQuestions.length) {
+    dom.quizScoreLabel.textContent = "Quiz incompleto";
+    dom.quizResultCopy.textContent = `Responda as ${quizQuestions.length} questoes antes de corrigir o quiz final.`;
+    return;
+  }
+
   const correctAnswers = quizQuestions.reduce((sum, question) => {
     return sum + (state.quizAnswers[question.id] === question.answer ? 1 : 0);
   }, 0);
@@ -1028,6 +1221,46 @@ function openNextLesson(panel = true) {
   renderAll();
 }
 
+async function handleAccessSubmit(event) {
+  event.preventDefault();
+  const accessCode = dom.accessCodeInput.value.trim();
+
+  if (!accessCode) {
+    setAccessFeedback("Digite o codigo de acesso para liberar a area de membros.", "is-error");
+    return;
+  }
+
+  setAccessFeedback("Validando acesso protegido...", "");
+
+  try {
+    const isValid = await verifyAccessCode(accessCode);
+
+    if (!isValid) {
+      setAccessFeedback("Codigo invalido. Confira o acesso enviado apos a matricula.", "is-error");
+      return;
+    }
+
+    createAccessSession();
+    setAccessFeedback("Acesso validado. Abrindo a plataforma...", "is-success");
+    closeAccessModal();
+    renderAll();
+
+    if (!state.member) {
+      openAuthModal(false);
+    }
+  } catch (error) {
+    setAccessFeedback(error.message, "is-error");
+  }
+}
+
+function logoutMemberArea() {
+  clearAccessSession();
+  closeAuthModal();
+  openAccessModal(
+    "Sua sessao foi encerrada. Digite novamente o codigo de acesso para liberar a area de membros."
+  );
+}
+
 dom.memberForm.addEventListener("submit", (event) => {
   event.preventDefault();
   state.member = {
@@ -1042,8 +1275,18 @@ dom.memberForm.addEventListener("submit", (event) => {
   renderAll();
 });
 
+dom.accessForm.addEventListener("submit", handleAccessSubmit);
+
 dom.editProfile.addEventListener("click", () => {
   openAuthModal(true);
+});
+
+dom.closeProfileModal.addEventListener("click", () => {
+  closeAuthModal();
+});
+
+dom.logoutButton.addEventListener("click", () => {
+  logoutMemberArea();
 });
 
 [...dom.topNavLinks, ...dom.sidebarLinks].forEach((button) => {
@@ -1116,10 +1359,23 @@ dom.printCertificate.addEventListener("click", () => {
   window.print();
 });
 
-if (!state.member) {
-  openAuthModal(false);
-} else {
-  closeAuthModal();
-}
+window.addEventListener("focus", () => {
+  if (!hasActiveAccess()) {
+    openAccessModal(
+      "Sua sessao expirou ou ainda nao foi validada. Digite o codigo de acesso para continuar."
+    );
+  }
+});
 
 renderAll();
+
+if (!hasActiveAccess()) {
+  openAccessModal(accessConfig.accessMessage);
+} else {
+  closeAccessModal();
+  if (!state.member) {
+    openAuthModal(false);
+  } else {
+    closeAuthModal();
+  }
+}
