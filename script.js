@@ -300,19 +300,19 @@ const defaultAppConfig = {
   supabaseUrl: "",
   supabaseAnonKey: "",
   commerceMode: "hybrid",
-  offerTitle: "Curso completo grátis com anúncios ou premium sem anúncios",
+  offerTitle: "Curso completo com acesso livre ou premium",
   offerCopy:
-    "Estude grátis com anúncios ou desbloqueie a experiência sem anúncios por R$ 50, com acesso individual, progresso salvo, quiz final e certificado.",
+    "Conheça a formação em acesso livre com anúncios ou ative a experiência premium sem anúncios por R$ 50, com acesso individual, progresso salvo, quiz final e certificado.",
   priceLabel: "R$ 50",
-  billingLabel: "premium sem anuncios",
+  billingLabel: "assinatura premium",
   paymentProviderLabel: "Checkout direto",
   checkoutUrl: "",
   hotmartCheckoutUrl: "",
   hotmartMembersUrl: "",
   whatsappNumber: "",
-  whatsappMessage: "Ola! Quero assinar o plano premium sem anuncios do Curso Completo de Eletronica por R$ 50.",
-  freePlanLabel: "Gratis com anuncios",
-  premiumPlanLabel: "Premium sem anuncios",
+  whatsappMessage: "Ola! Quero ativar o plano premium do Curso Completo de Eletronica por R$ 50.",
+  freePlanLabel: "Acesso livre com anúncios",
+  premiumPlanLabel: "Premium sem anúncios",
   adsEnabled: true,
   adSenseClient: "",
   freeModuleNumbers: ["01"],
@@ -1155,9 +1155,9 @@ function syncAccessModeUi() {
   }
 
   dom.accessCopy.textContent =
-    "Entre com seu e-mail e senha. O plano gratis exibe anuncios e o premium remove os anuncios.";
+    "Entre com seu e-mail e senha. O acesso livre exibe inserções patrocinadas e o premium oferece experiência sem anúncios.";
   dom.authModeCopy.textContent =
-    "Crie sua conta para começar gratis ou entre para continuar seus estudos.";
+    "Crie sua conta para conhecer a plataforma ou entre para continuar seus estudos.";
   dom.authSubmitButton.textContent = signedIn ? "Entrar com outra conta" : "Entrar com e-mail";
 }
 
@@ -1273,9 +1273,9 @@ function setActivePanel(panelName) {
 }
 
 function getAdminAccessLabel(status) {
-  if (status === "active") return appConfig.premiumPlanLabel || "Premium sem anuncios";
+  if (status === "active") return appConfig.premiumPlanLabel || "Premium sem anúncios";
   if (status === "blocked") return "Acesso bloqueado";
-  return appConfig.freePlanLabel || "Gratis com anuncios";
+  return appConfig.freePlanLabel || "Acesso livre com anúncios";
 }
 
 function getAdminRoleLabel(role) {
@@ -1309,14 +1309,16 @@ function renderProfile() {
   if (hasAccess) {
     dom.memberName.textContent = member.name;
     dom.memberPlan.textContent =
-      planKind === "premium" ? appConfig.premiumPlanLabel || "Premium sem anuncios" : appConfig.freePlanLabel || "Gratis com anuncios";
+      planKind === "premium"
+        ? appConfig.premiumPlanLabel || "Premium sem anúncios"
+        : appConfig.freePlanLabel || "Acesso livre com anúncios";
     dom.memberAvatar.textContent = initials(member.name);
     dom.heroSubtitle.textContent = `Área do aluno ${member.name}`;
     dom.heroTitle.textContent = course.title || "Curso Completo de Eletrônica";
     dom.heroText.textContent =
       planKind === "premium"
         ? "Uma experiência premium, sem anúncios, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado."
-        : "Seu acesso gratuito com anúncios já está liberado, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
+        : "Seu acesso livre com anúncios já está liberado, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
     dom.memberGreeting.textContent = `Olá, ${member.name}. Seu laboratório digital está pronto.`;
     dom.memberGoalCopy.textContent =
       planKind === "premium"
@@ -1329,17 +1331,17 @@ function renderProfile() {
   }
 
   dom.memberName.textContent = "Visitante";
-  dom.memberPlan.textContent = "Preview gratuito";
+  dom.memberPlan.textContent = "Acesso de apresentação";
   dom.memberAvatar.textContent = "DR";
-  dom.heroSubtitle.textContent = "Vitrine pública com aulas abertas";
+  dom.heroSubtitle.textContent = "Conheça a plataforma";
   dom.heroTitle.textContent = course.title || "Curso Completo de Eletrônica";
   dom.heroText.textContent =
     "Conheça a plataforma, explore aulas de demonstração e entre na área premium quando quiser liberar o curso completo.";
   dom.memberGreeting.textContent = "Veja por dentro da Academia DR.";
   dom.memberGoalCopy.textContent =
     "Você está navegando na área pública. Crie sua conta para salvar progresso, fazer o quiz final e emitir o certificado.";
-  dom.memberRhythm.textContent = "Acesso: preview aberto";
-  dom.memberGoal.textContent = "Plano: premium sob demanda";
+  dom.memberRhythm.textContent = "Acesso: apresentação";
+  dom.memberGoal.textContent = "Plano: assinatura premium";
   dom.certificateStudent.textContent = "Aluno";
 }
 
@@ -1360,16 +1362,16 @@ function renderPublicOffer() {
   const checkoutUrl = getCheckoutUrl();
   const whatsappUrl = getWhatsAppUrl();
   const offerMetrics = [
-    { label: "Plano grátis", value: appConfig.freePlanLabel || "Gratis com anuncios" },
+    { label: "Acesso livre", value: appConfig.freePlanLabel || "Acesso livre com anúncios" },
     { label: "Plano premium", value: appConfig.priceLabel || "R$ 50" },
     { label: "Entrega", value: isSupabaseMode() ? "login individual" : "acesso local ou protegido" },
-    { label: "Preview aberto", value: `${previewLessons.length} aula(s)` },
+    { label: "Aulas abertas", value: `${previewLessons.length} aula(s)` },
   ];
 
   dom.offerTitle.textContent = appConfig.offerTitle;
   dom.offerCopy.textContent = appConfig.offerCopy;
-  dom.primaryCheckoutLink.textContent = `Estudar sem anuncios por ${appConfig.priceLabel || "R$ 50"}`;
-  dom.enterMemberArea.textContent = "Começar grátis";
+  dom.primaryCheckoutLink.textContent = `Ativar premium por ${appConfig.priceLabel || "R$ 50"}`;
+  dom.enterMemberArea.textContent = "Entrar na área";
   dom.primaryCheckoutLink.href = checkoutUrl;
   dom.primaryCheckoutLink.classList.toggle("is-disabled-link", checkoutUrl === "#");
   dom.whatsappSalesLink.href = whatsappUrl;
@@ -1398,12 +1400,12 @@ function renderPublicOffer() {
             `
           )
           .join("")
-      : `<div class="empty-state">Defina aulas abertas em app-config.js para ativar o preview gratis.</div>`;
+      : `<div class="empty-state">As aulas de apresentação aparecerão aqui assim que forem disponibilizadas.</div>`;
 
   const offerLinks = [
     {
       title: "Plano premium",
-      meta: appConfig.paymentProviderLabel || "Acesso sem anuncios",
+      meta: appConfig.paymentProviderLabel || "Acesso premium sem anúncios",
       href: checkoutUrl,
     },
     {
@@ -2005,7 +2007,7 @@ function renderAdminPanel() {
                   }>Ativar premium</button>
                   <button class="button button-secondary button-small" data-access-action="pending" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "pending" ? "disabled" : ""
-                  }>Plano grátis</button>
+                  }>Acesso livre</button>
                   <button class="button button-secondary button-small" data-access-action="blocked" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "blocked" ? "disabled" : ""
                   }>Bloquear</button>
