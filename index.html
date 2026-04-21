@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Academia DR | Curso Completo de Eletrônica</title>
+    <meta
+      name="description"
+      content="Área de membros do Curso Completo de Eletrônica, com dashboard, aulas, biblioteca pessoal, quiz final e certificado."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-glow page-glow-left"></div>
+    <div class="page-glow page-glow-right"></div>
+
+    <div class="auth-modal" id="auth-modal" aria-hidden="true">
+      <div class="auth-card">
+        <p class="section-kicker">Área de Membros</p>
+        <h1>Ative seu acesso ao curso.</h1>
+        <p class="auth-copy">
+          Esta plataforma salva progresso, favoritos, anotações e quiz neste navegador
+          para criar uma experiência de aluno completa, mesmo sem backend.
+        </p>
+
+        <form class="auth-form" id="member-form">
+          <label>
+            <span>Seu nome</span>
+            <input id="member-name-input" name="name" type="text" placeholder="Ex.: Davi Rodriguez" required />
+          </label>
+
+          <label>
+            <span>Seu e-mail</span>
+            <input id="member-email-input" name="email" type="email" placeholder="voce@email.com" required />
+          </label>
+
+          <label>
+            <span>Objetivo principal</span>
+            <select id="member-goal-input" name="goal">
+              <option value="dominar fundamentos">Dominar fundamentos</option>
+              <option value="trabalhar com bancada">Trabalhar com bancada</option>
+              <option value="reparo de placas">Reparo de placas</option>
+              <option value="criar conteúdo">Criar conteúdo e ensinar</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Ritmo de estudo</span>
+            <select id="member-rhythm-input" name="rhythm">
+              <option value="30 min por dia">30 min por dia</option>
+              <option value="1 hora por dia">1 hora por dia</option>
+              <option value="estudo intensivo">Estudo intensivo</option>
+            </select>
+          </label>
+
+          <div class="auth-actions">
+            <button class="button button-primary" type="submit">Entrar na plataforma</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <header class="site-header">
+      <div class="site-header-shell shell">
+        <a class="brand" href="#topo">
+          <span class="brand-mark">DR</span>
+          <span class="brand-text">
+            <strong>Academia DR</strong>
+            <small>Curso Completo de Eletrônica</small>
+          </span>
+        </a>
+
+        <div class="header-center">
+          <nav class="top-nav">
+            <button class="top-nav-link is-active" data-panel-target="dashboard" type="button">Painel</button>
+            <button class="top-nav-link" data-panel-target="course" type="button">Curso</button>
+            <button class="top-nav-link" data-panel-target="library" type="button">Biblioteca</button>
+            <button class="top-nav-link" data-panel-target="quiz" type="button">Quiz</button>
+            <button class="top-nav-link" data-panel-target="certificate" type="button">Certificado</button>
+          </nav>
+        </div>
+
+        <div class="header-right">
+          <div class="header-hud" aria-label="Resumo rápido da conta">
+            <article class="hud-chip">
+              <span class="hud-label">Progresso</span>
+              <strong id="hud-progress-percent">0%</strong>
+            </article>
+            <article class="hud-chip">
+              <span class="hud-label">Quiz</span>
+              <strong id="hud-quiz-status">Pendente</strong>
+            </article>
+            <article class="hud-chip hud-chip-active">
+              <span class="hud-label">Certificado</span>
+              <strong id="hud-certificate-status">Bloqueado</strong>
+            </article>
+          </div>
+
+          <button class="member-pill" id="edit-profile" type="button">
+            <span class="member-avatar" id="member-avatar">DR</span>
+            <span class="member-pill-copy">
+              <strong id="member-name">Aluno</strong>
+              <small id="member-plan">Plano local</small>
+            </span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="member-app shell" id="topo">
+      <section class="member-hero">
+        <div class="hero-copy">
+          <p class="eyebrow" id="hero-subtitle">Experiência profissional de aluno</p>
+          <h1 id="hero-title">Sua área de membros agora existe como plataforma.</h1>
+          <p class="hero-text" id="hero-text">
+            Curso, painel, biblioteca pessoal, quiz final, certificado e acompanhamento de estudo no mesmo lugar.
+          </p>
+
+          <div class="hero-actions">
+            <button class="button button-primary" id="resume-course" type="button">Continuar de onde parei</button>
+            <button class="button button-secondary" id="go-to-quiz" type="button">Abrir quiz final</button>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <strong id="stat-modules">0</strong>
+              <span>módulos</span>
+            </article>
+            <article class="stat-card">
+              <strong id="stat-lessons">0</strong>
+              <span>aulas</span>
+            </article>
+            <article class="stat-card">
+              <strong id="stat-hours">0h</strong>
+              <span>carga estimada</span>
+            </article>
+            <article class="stat-card">
+              <strong id="stat-notes">0</strong>
+              <span>anotações</span>
+            </article>
+          </div>
+        </div>
+
+        <aside class="hero-panel">
+          <article class="panel-card panel-card-primary">
+            <p class="panel-label">Perfil do aluno</p>
+            <h2 id="member-greeting">Bem-vindo à sua trilha.</h2>
+            <p id="member-goal-copy">
+              Configure seu perfil para personalizar a experiência e seguir um caminho de estudo mais claro.
+            </p>
+            <div class="profile-meta">
+              <span id="member-rhythm">Ritmo: -</span>
+              <span id="member-goal">Objetivo: -</span>
+            </div>
+          </article>
+
+          <article class="panel-card panel-card-secondary">
+            <p class="panel-label">O que a plataforma entrega</p>
+            <ul class="panel-list">
+              <li>aulas navegáveis e salvas por progresso</li>
+              <li>favoritos e anotações por lição</li>
+              <li>biblioteca pessoal de revisão</li>
+              <li>quiz final com resultado</li>
+              <li>certificado dinâmico liberado por desempenho</li>
+            </ul>
+          </article>
+        </aside>
+      </section>
+
+      <section class="workspace">
+        <aside class="member-sidebar">
+          <div class="sidebar-card">
+            <p class="section-kicker">Navegação</p>
+            <div class="sidebar-nav">
+              <button class="sidebar-link is-active" data-panel-target="dashboard" type="button">Painel do aluno</button>
+              <button class="sidebar-link" data-panel-target="course" type="button">Player do curso</button>
+              <button class="sidebar-link" data-panel-target="library" type="button">Biblioteca pessoal</button>
+              <button class="sidebar-link" data-panel-target="quiz" type="button">Quiz final</button>
+              <button class="sidebar-link" data-panel-target="certificate" type="button">Certificado</button>
+            </div>
+          </div>
+
+          <div class="sidebar-card">
+            <p class="section-kicker">Progresso geral</p>
+            <div class="progress-card progress-card-sidebar">
+              <div class="progress-text">
+                <strong id="progress-count">0 de 0 aulas concluídas</strong>
+                <span id="progress-copy">Seu avanço fica salvo neste navegador.</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-card">
+            <p class="section-kicker">Desbloqueio</p>
+            <ul class="checklist" id="unlock-checklist"></ul>
+          </div>
+        </aside>
+
+        <div class="workspace-main">
+          <section class="member-panel is-active" data-panel="dashboard">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Painel do aluno</p>
+                <h2>Controle sua jornada de estudo.</h2>
+              </div>
+            </div>
+
+            <div class="dashboard-grid">
+              <article class="dashboard-card dashboard-card-hero">
+                <p class="panel-label">Próxima ação</p>
+                <h3 id="next-lesson-title">Carregando trilha...</h3>
+                <p id="next-lesson-summary">
+                  Sua próxima aula recomendada aparecerá aqui assim que a plataforma terminar de montar o plano.
+                </p>
+                <div class="dashboard-actions">
+                  <button class="button button-primary" id="open-next-lesson" type="button">Abrir próxima aula</button>
+                  <button class="button button-secondary" id="open-course-panel" type="button">Ver player do curso</button>
+                </div>
+              </article>
+
+              <article class="dashboard-card">
+                <p class="panel-label">Indicadores</p>
+                <div class="metric-list" id="member-metrics"></div>
+              </article>
+
+              <article class="dashboard-card">
+                <p class="panel-label">Conquistas</p>
+                <div class="achievement-grid" id="achievement-grid"></div>
+              </article>
+
+              <article class="dashboard-card">
+                <p class="panel-label">Rota sugerida</p>
+                <div class="timeline-list" id="timeline-list"></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="member-panel" data-panel="course">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Player do curso</p>
+                <h2>Estude módulo por módulo com controle total.</h2>
+              </div>
+
+              <div class="lesson-toolbar">
+                <button class="button button-secondary button-small" id="favorite-lesson" type="button">Favoritar aula</button>
+                <button class="button button-secondary button-small" id="mark-complete" type="button">Marcar como concluída</button>
+              </div>
+            </div>
+
+            <div class="course-layout">
+              <aside class="course-sidebar">
+                <label class="search-box" for="lesson-search">
+                  <span>Buscar por módulo, aula ou tema</span>
+                  <input id="lesson-search" type="search" placeholder="Ex.: soldagem, bancada, SMD..." />
+                </label>
+
+                <div class="module-nav" id="module-nav"></div>
+              </aside>
+
+              <div class="course-stage">
+                <article class="lesson-card">
+                  <div class="lesson-breadcrumb" id="lesson-breadcrumb"></div>
+                  <p class="lesson-overline" id="lesson-overline">Aula atual</p>
+                  <h3 class="lesson-title" id="lesson-title"></h3>
+                  <p class="lesson-summary" id="lesson-summary"></p>
+
+                  <div class="lesson-meta-grid">
+                    <article class="lesson-meta-card">
+                      <span>Posição</span>
+                      <strong id="lesson-position">-</strong>
+                    </article>
+                    <article class="lesson-meta-card">
+                      <span>Tempo estimado</span>
+                      <strong id="lesson-duration">-</strong>
+                    </article>
+                    <article class="lesson-meta-card">
+                      <span>Status</span>
+                      <strong id="lesson-status">-</strong>
+                    </article>
+                    <article class="lesson-meta-card">
+                      <span>Módulo</span>
+                      <strong id="lesson-module-name">-</strong>
+                    </article>
+                  </div>
+
+                  <div class="lesson-content" id="lesson-content"></div>
+
+                  <div class="lesson-nav">
+                    <button class="button button-secondary button-small" id="prev-lesson" type="button">Aula anterior</button>
+                    <button class="button button-primary button-small" id="next-lesson" type="button">Próxima aula</button>
+                  </div>
+                </article>
+
+                <aside class="lesson-side-panel">
+                  <article class="side-card">
+                    <p class="panel-label">Nesta aula</p>
+                    <h3>Resumo e tópicos</h3>
+                    <ul class="side-list" id="lesson-outline"></ul>
+                  </article>
+
+                  <article class="side-card">
+                    <p class="panel-label">Seu módulo</p>
+                    <h3>Progresso local</h3>
+                    <p class="side-copy" id="module-progress-copy"></p>
+                    <div class="progress-track progress-track-tight">
+                      <div class="progress-fill" id="module-progress-fill"></div>
+                    </div>
+                  </article>
+
+                  <article class="side-card">
+                    <p class="panel-label">Anotações</p>
+                    <h3>Seu caderno desta aula</h3>
+                    <textarea class="note-editor" id="lesson-note" placeholder="Escreva aqui seus insights, medições, dúvidas e passos práticos..."></textarea>
+                    <small class="note-hint">Salvamento automático local.</small>
+                  </article>
+                </aside>
+              </div>
+            </div>
+          </section>
+
+          <section class="member-panel" data-panel="library">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Biblioteca pessoal</p>
+                <h2>Revisão rápida, favoritos e anotações salvas.</h2>
+              </div>
+            </div>
+
+            <div class="library-grid">
+              <article class="resource-card">
+                <p class="panel-label">Favoritos</p>
+                <h3>Aulas marcadas</h3>
+                <div class="library-stack" id="favorite-list"></div>
+              </article>
+
+              <article class="resource-card">
+                <p class="panel-label">Anotações</p>
+                <h3>Caderno do aluno</h3>
+                <div class="library-stack" id="note-list"></div>
+              </article>
+
+              <article class="resource-card">
+                <p class="panel-label">Recursos</p>
+                <h3>Materiais de apoio</h3>
+                <div class="resource-links" id="resource-links"></div>
+              </article>
+            </div>
+          </section>
+
+          <section class="member-panel" data-panel="quiz">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Avaliação final</p>
+                <h2>Teste seu domínio do curso.</h2>
+              </div>
+
+              <button class="button button-secondary button-small" id="submit-quiz" type="button">Corrigir quiz</button>
+            </div>
+
+            <div class="quiz-grid">
+              <article class="quiz-card">
+                <div id="quiz-list"></div>
+              </article>
+
+              <aside class="quiz-side-panel">
+                <article class="side-card">
+                  <p class="panel-label">Resultado</p>
+                  <h3 id="quiz-score-label">Quiz ainda não corrigido</h3>
+                  <p class="side-copy" id="quiz-result-copy">
+                    Responda todas as questões e corrija o quiz para liberar o resultado e avançar para o certificado.
+                  </p>
+                </article>
+
+                <article class="side-card">
+                  <p class="panel-label">Regra de aprovação</p>
+                  <h3>70% ou mais</h3>
+                  <p class="side-copy">A aprovação no quiz é obrigatória para desbloquear o certificado.</p>
+                </article>
+              </aside>
+            </div>
+          </section>
+
+          <section class="member-panel" data-panel="certificate">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Certificado</p>
+                <h2>Emissão dinâmica ao concluir a trilha.</h2>
+              </div>
+
+              <button class="button button-primary button-small" id="print-certificate" type="button">Imprimir certificado</button>
+            </div>
+
+            <div class="certificate-layout">
+              <article class="certificate-card" id="certificate-card">
+                <div class="certificate-inner">
+                  <p class="certificate-badge">Academia DR</p>
+                  <h3>Certificado de Conclusão</h3>
+                  <p class="certificate-copy">Certificamos que</p>
+                  <strong class="certificate-student" id="certificate-student">Aluno</strong>
+                  <p class="certificate-copy">
+                    concluiu o <strong>Curso Completo de Eletrônica</strong>, com trilha de fundamentos,
+                    bancada, medição, soldagem, diagnóstico e reparo de placas.
+                  </p>
+                  <div class="certificate-meta">
+                    <span id="certificate-date">Data: -</span>
+                    <span id="certificate-id">Certificado: -</span>
+                  </div>
+                </div>
+              </article>
+
+              <aside class="certificate-side-panel">
+                <article class="side-card">
+                  <p class="panel-label">Status do desbloqueio</p>
+                  <h3 id="certificate-status-title">Ainda bloqueado</h3>
+                  <p class="side-copy" id="certificate-status-copy">
+                    Complete a trilha e seja aprovado no quiz final para liberar o certificado.
+                  </p>
+                </article>
+
+                <article class="side-card">
+                  <p class="panel-label">Glossário rápido</p>
+                  <h3>Termos úteis</h3>
+                  <div class="glossary-preview" id="glossary-preview"></div>
+                </article>
+              </aside>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <p>Plataforma de curso criada localmente, com experiência de área de membros, quiz e certificado.</p>
+      <a href="conteudo/curso-eletronica.md">Abrir texto-base</a>
+    </footer>
+
+    <script src="course-data.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
