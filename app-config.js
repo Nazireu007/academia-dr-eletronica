@@ -2,8 +2,8 @@ window.APP_CONFIG = {
   authMode: "supabase",
   courseSlug: "curso-eletronica-completo",
   siteUrl: "https://nazireu007.github.io/academia-dr-eletronica/",
-  supabaseUrl: "https://hutetmamelqxinufydvv.supabase.co",
-  supabaseAnonKey: "sb_publishable_cQCdgrTzOD0UwXWYYob_Pw_rEncKZGG",
+  supabaseUrl: "https://rncboydsbikprypssbkj.supabase.co",
+  supabaseAnonKey: "sb_publishable_NoROjbognmiGh0XBYX0Acg_pOLr1FO5",
   commerceMode: "hybrid",
   offerTitle: "Curso completo com acesso individual",
   offerCopy:
