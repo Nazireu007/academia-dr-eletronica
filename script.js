@@ -218,6 +218,7 @@ const dom = {
   hudCertificateStatus: document.querySelector("#hud-certificate-status"),
   refreshAdminMembers: document.querySelector("#refresh-admin-members"),
   adminMemberSearch: document.querySelector("#admin-member-search"),
+  adminFilterButtons: [...document.querySelectorAll("[data-admin-filter]")],
   adminStatusCopy: document.querySelector("#admin-status-copy"),
   adminMetrics: document.querySelector("#admin-metrics"),
   adminMemberList: document.querySelector("#admin-member-list"),
@@ -695,6 +696,7 @@ const state = {
   query: "",
   accessSession: getValidAccessSession(),
   adminQuery: "",
+  adminFilter: "all",
 };
 
 function saveState() {
@@ -892,6 +894,29 @@ async function updateMemberAccess(userId, accessStatus) {
   }
 
   dom.adminStatusCopy.textContent = `Acesso atualizado para ${accessStatus}.`;
+  await refreshAdminMembers();
+}
+
+async function updateMemberRole(userId, role) {
+  const client = await getAuthClient();
+  if (!client || !authState.isAdmin) return;
+
+  dom.adminStatusCopy.textContent = `Atualizando perfil para ${role === "admin" ? "admin" : "aluno"}...`;
+
+  const { error } = await client
+    .from("member_profiles")
+    .update({
+      role,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId);
+
+  if (error) {
+    dom.adminStatusCopy.textContent = error.message;
+    return;
+  }
+
+  dom.adminStatusCopy.textContent = `Perfil atualizado para ${role === "admin" ? "admin" : "aluno"}.`;
   await refreshAdminMembers();
 }
 
@@ -1182,6 +1207,34 @@ function setActivePanel(panelName) {
 
   [...dom.topNavLinks, ...dom.sidebarLinks].forEach((button) => {
     button.classList.toggle("is-active", button.dataset.panelTarget === panelName);
+  });
+
+  if (panelName === "admin" && isAdminPanelAvailable()) {
+    void refreshAdminMembers();
+  }
+}
+
+function getAdminAccessLabel(status) {
+  if (status === "active") return "Acesso liberado";
+  if (status === "blocked") return "Acesso bloqueado";
+  return "Aguardando liberação";
+}
+
+function getAdminRoleLabel(role) {
+  return role === "admin" ? "Administrador" : "Aluno";
+}
+
+function formatAdminDate(value) {
+  if (!value) return "Ainda sem atualização";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Data indisponível";
+  return date.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -1793,26 +1846,39 @@ function renderCertificate() {
 
 function renderAdminPanel() {
   const query = normalize(state.adminQuery);
-  const members = (authState.adminMembers || []).filter((member) => {
+  const allMembers = authState.adminMembers || [];
+  const members = allMembers.filter((member) => {
+    const matchesFilter =
+      state.adminFilter === "all"
+        ? true
+        : state.adminFilter === "admins"
+          ? member.role === "admin"
+          : member.accessStatus === state.adminFilter;
+
+    if (!matchesFilter) return false;
     if (!query) return true;
     return normalize(`${member.name} ${member.email} ${member.accessStatus}`).includes(query);
   });
 
   const metrics = [
-    { label: "Membros", value: String(authState.adminMembers.length) },
+    { label: "Membros", value: String(allMembers.length) },
     {
       label: "Ativos",
-      value: String(authState.adminMembers.filter((member) => member.accessStatus === "active").length),
+      value: String(allMembers.filter((member) => member.accessStatus === "active").length),
     },
     {
       label: "Pendentes",
-      value: String(authState.adminMembers.filter((member) => member.accessStatus === "pending").length),
+      value: String(allMembers.filter((member) => member.accessStatus === "pending").length),
     },
     {
-      label: "Bloqueados",
-      value: String(authState.adminMembers.filter((member) => member.accessStatus === "blocked").length),
+      label: "Admins",
+      value: String(allMembers.filter((member) => member.role === "admin").length),
     },
   ];
+
+  dom.adminFilterButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.adminFilter === state.adminFilter);
+  });
 
   dom.adminMetrics.innerHTML = metrics
     .map(
@@ -1832,24 +1898,51 @@ function renderAdminPanel() {
             (member) => `
               <article class="admin-member-item">
                 <div class="admin-member-copy">
-                  <strong>${escapeHtml(member.name)}</strong>
+                  <div class="admin-member-head">
+                    <strong>${escapeHtml(member.name)}</strong>
+                    <div class="admin-tag-row">
+                      <span class="admin-status-badge is-${escapeHtml(member.accessStatus)}">${escapeHtml(
+                        getAdminAccessLabel(member.accessStatus)
+                      )}</span>
+                      <span class="admin-role-badge is-${escapeHtml(member.role)}">${escapeHtml(
+                        getAdminRoleLabel(member.role)
+                      )}</span>
+                    </div>
+                  </div>
                   <span>${escapeHtml(member.email || "Sem e-mail")}</span>
-                  <span>Perfil: ${escapeHtml(member.role)} • Status: ${escapeHtml(member.accessStatus)}</span>
+                  <span>Atualizado em ${escapeHtml(formatAdminDate(member.updatedAt))}</span>
                 </div>
                 <div class="admin-member-actions">
-                  <button class="button button-secondary button-small" data-access-action="pending" data-member-id="${member.userId}" type="button">Pendente</button>
-                  <button class="button button-secondary button-small" data-access-action="active" data-member-id="${member.userId}" type="button">Liberar</button>
-                  <button class="button button-secondary button-small" data-access-action="blocked" data-member-id="${member.userId}" type="button">Bloquear</button>
+                  <button class="button button-secondary button-small" data-access-action="active" data-member-id="${member.userId}" type="button" ${
+                    member.accessStatus === "active" ? "disabled" : ""
+                  }>Liberar acesso</button>
+                  <button class="button button-secondary button-small" data-access-action="pending" data-member-id="${member.userId}" type="button" ${
+                    member.accessStatus === "pending" ? "disabled" : ""
+                  }>Deixar pendente</button>
+                  <button class="button button-secondary button-small" data-access-action="blocked" data-member-id="${member.userId}" type="button" ${
+                    member.accessStatus === "blocked" ? "disabled" : ""
+                  }>Bloquear</button>
+                  <button class="button button-secondary button-small" data-role-action="${
+                    member.role === "admin" ? "student" : "admin"
+                  }" data-member-id="${member.userId}" type="button">${
+                    member.role === "admin" ? "Remover admin" : "Tornar admin"
+                  }</button>
                 </div>
               </article>
             `
           )
           .join("")
-      : `<div class="empty-state">Nenhum membro encontrado para o filtro atual.</div>`;
+      : `<div class="empty-state">Nenhum membro encontrado neste filtro. Peça para o aluno criar a conta e depois clique em Atualizar lista.</div>`;
 
   dom.adminMemberList.querySelectorAll("[data-access-action]").forEach((button) => {
     button.addEventListener("click", () => {
       void updateMemberAccess(button.dataset.memberId, button.dataset.accessAction);
+    });
+  });
+
+  dom.adminMemberList.querySelectorAll("[data-role-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      void updateMemberRole(button.dataset.memberId, button.dataset.roleAction);
     });
   });
 }
@@ -2292,6 +2385,13 @@ dom.refreshAdminMembers?.addEventListener("click", () => {
 dom.adminMemberSearch?.addEventListener("input", (event) => {
   state.adminQuery = event.target.value;
   renderAdminPanel();
+});
+
+dom.adminFilterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    state.adminFilter = button.dataset.adminFilter || "all";
+    renderAdminPanel();
+  });
 });
 
 window.addEventListener("focus", () => {

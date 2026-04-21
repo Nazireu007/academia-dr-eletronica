@@ -385,6 +385,23 @@ body::before {
   grid-column: span 2;
 }
 
+.admin-guide-list,
+.admin-filter-row,
+.admin-tag-row,
+.admin-member-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.admin-guide-list {
+  margin: 0.85rem 0 0.2rem;
+}
+
+.admin-filter-row {
+  margin-top: 0.95rem;
+}
+
 .admin-member-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -402,8 +419,54 @@ body::before {
   min-width: 0;
 }
 
+.admin-member-head {
+  align-items: center;
+  justify-content: space-between;
+}
+
 .admin-member-copy strong {
   display: block;
+}
+
+.admin-status-badge,
+.admin-role-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.34rem 0.7rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.admin-status-badge.is-active {
+  border-color: rgba(123, 226, 200, 0.28);
+  background: rgba(123, 226, 200, 0.12);
+  color: #b8f5e5;
+}
+
+.admin-status-badge.is-pending {
+  border-color: rgba(255, 191, 102, 0.28);
+  background: rgba(255, 191, 102, 0.12);
+  color: #ffd38d;
+}
+
+.admin-status-badge.is-blocked {
+  border-color: rgba(255, 113, 113, 0.28);
+  background: rgba(255, 113, 113, 0.12);
+  color: #ffb0b0;
+}
+
+.admin-role-badge.is-admin {
+  border-color: rgba(255, 149, 80, 0.28);
+  background: rgba(255, 149, 80, 0.12);
+  color: #ffbe96;
+}
+
+.admin-role-badge.is-student {
+  color: var(--muted);
 }
 
 .admin-member-actions {
@@ -1293,6 +1356,10 @@ body.access-locked .site-footer {
 
   .admin-member-item {
     grid-template-columns: 1fr;
+  }
+
+  .admin-member-head {
+    align-items: flex-start;
   }
 
   .admin-member-actions {
