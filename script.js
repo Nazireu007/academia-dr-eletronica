@@ -149,6 +149,8 @@ const dom = {
   primaryCheckoutLink: document.querySelector("#primary-checkout-link"),
   enterMemberArea: document.querySelector("#enter-member-area"),
   whatsappSalesLink: document.querySelector("#whatsapp-sales-link"),
+  paymentTrustList: document.querySelector("#payment-trust-list"),
+  paymentTrustNote: document.querySelector("#payment-trust-note"),
   salesMetrics: document.querySelector("#sales-metrics"),
   previewLessonList: document.querySelector("#preview-lesson-list"),
   offerLinks: document.querySelector("#offer-links"),
@@ -1414,6 +1416,7 @@ function renderPublicOffer() {
   const previewLessons = getPreviewLessons();
   const checkoutUrl = getCheckoutUrl();
   const whatsappUrl = getWhatsAppUrl();
+  const isProtectedSite = window.location.protocol === "https:";
   const offerMetrics = [
     { label: "Acesso livre", value: appConfig.freePlanLabel || "Acesso livre com anúncios" },
     { label: "Plano premium", value: appConfig.priceLabel || "R$ 50" },
@@ -1430,6 +1433,16 @@ function renderPublicOffer() {
   dom.whatsappSalesLink.href = whatsappUrl;
   dom.whatsappSalesLink.classList.toggle("is-disabled-link", whatsappUrl === "#");
 
+  const trustItems = [
+    { title: "Pagamento processado", copy: appConfig.paymentProviderLabel || "PicPay • Pix e cartões" },
+    { title: "Pix e cartões", copy: "Escolha a forma de pagamento mais confortável para você" },
+    {
+      title: "Ambiente protegido",
+      copy: isProtectedSite ? "Site em HTTPS com redirecionamento para checkout externo" : "Checkout externo e protegido",
+    },
+    { title: "Dados fora do site", copy: "As informações do pagamento são digitadas no ambiente do provedor" },
+  ];
+
   dom.salesMetrics.innerHTML = offerMetrics
     .map(
       (item) => `
@@ -1440,6 +1453,22 @@ function renderPublicOffer() {
       `
     )
     .join("");
+
+  dom.paymentTrustList.innerHTML = trustItems
+    .map(
+      (item) => `
+        <article class="payment-trust-item">
+          <strong>${escapeHtml(item.title)}</strong>
+          <span>${escapeHtml(item.copy)}</span>
+        </article>
+      `
+    )
+    .join("");
+
+  dom.paymentTrustNote.textContent =
+    checkoutUrl !== "#"
+      ? `Ao clicar em comprar, você será direcionado ao ${appConfig.paymentProviderLabel || "checkout protegido"} para concluir o pagamento com segurança.`
+      : "O checkout premium será exibido aqui assim que o meio de pagamento estiver disponível.";
 
   dom.previewLessonList.innerHTML =
     previewLessons.length > 0
