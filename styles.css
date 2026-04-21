@@ -42,6 +42,11 @@ body.modal-open {
   overflow: hidden;
 }
 
+body.guest-mode #logout-button,
+body.guest-mode #edit-profile {
+  display: none !important;
+}
+
 body::before {
   content: "";
   position: fixed;

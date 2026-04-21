@@ -1227,6 +1227,8 @@ function renderProfile() {
 
 function renderSessionChrome() {
   const hasAccess = hasMemberAreaAccess();
+  document.body.classList.toggle("guest-mode", !hasAccess);
+  document.body.classList.toggle("member-mode", hasAccess);
   dom.logoutButton.hidden = !hasAccess;
   dom.editProfile.hidden = !hasAccess;
 }
