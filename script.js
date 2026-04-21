@@ -1074,7 +1074,7 @@ function syncAccessModeUi() {
   dom.accessCopy.textContent =
     "Entre com seu e-mail e senha. Cada aluno passa a ter conta individual, acesso remoto e dados sincronizados.";
   dom.authModeCopy.textContent =
-    "Crie uma conta para o aluno ou entre com as credenciais ja liberadas no backend.";
+    "Crie sua conta ou entre com seus dados para acessar a area premium do curso.";
   dom.authSubmitButton.textContent = signedIn ? "Entrar com outra conta" : "Entrar com e-mail";
 }
 
@@ -1986,9 +1986,12 @@ async function signOutFromSupabase() {
   authState.isAdmin = false;
   authState.profileRole = "student";
   authState.adminMembers = [];
+  state.activePanel = "public";
+  saveState();
   syncAccessModeUi();
   syncAdminUi();
-  openAccessModal("A sessao foi encerrada. Entre novamente para acessar o curso.");
+  closeAccessModal();
+  renderAll();
 }
 
 async function applySupabaseSession(session) {
@@ -1999,8 +2002,11 @@ async function applySupabaseSession(session) {
     authState.accessGranted = false;
     authState.isAdmin = false;
     authState.profileRole = "student";
+    state.activePanel = "public";
+    saveState();
     syncAccessModeUi();
-    openAccessModal("Entre com seu e-mail e senha para liberar a area de membros.");
+    closeAccessModal();
+    renderAll();
     return;
   }
 
@@ -2062,6 +2068,8 @@ async function bootstrapSupabaseAuth() {
     authState.accessGranted = false;
     authState.isAdmin = false;
     authState.profileRole = "student";
+    state.activePanel = "public";
+    saveState();
     closeAccessModal();
     renderAll();
   }
