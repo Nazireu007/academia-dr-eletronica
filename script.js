@@ -1231,6 +1231,10 @@ function renderSessionChrome() {
   document.body.classList.toggle("member-mode", hasAccess);
   dom.logoutButton.hidden = !hasAccess;
   dom.editProfile.hidden = !hasAccess;
+  dom.logoutButton.style.display = hasAccess ? "" : "none";
+  dom.editProfile.style.display = hasAccess ? "" : "none";
+  dom.logoutButton.setAttribute("aria-hidden", hasAccess ? "false" : "true");
+  dom.editProfile.setAttribute("aria-hidden", hasAccess ? "false" : "true");
 }
 
 function renderPublicOffer() {
