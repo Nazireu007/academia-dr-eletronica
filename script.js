@@ -1489,11 +1489,13 @@ function renderPublicOffer() {
       title: "Pagar no PicPay",
       meta: appConfig.paymentProviderLabel || "PicPay • Pix e cartões",
       href: checkoutUrl,
+      variant: "primary-payment",
     },
     {
       title: "Copiar chave Pix",
       meta: appConfig.pixKey ? "Copiar chave Pix para pagamento manual" : "Chave Pix indisponivel",
       href: appConfig.pixKey ? "__copy_pix__" : "#",
+      variant: "secondary-payment",
     },
     {
       title: "Falar no WhatsApp",
@@ -1510,7 +1512,7 @@ function renderPublicOffer() {
   dom.offerLinks.innerHTML = offerLinks
     .map(
       (item) => `
-        <a class="resource-link-card ${item.href === "#" ? "is-disabled-link" : ""}" href="${
+        <a class="resource-link-card ${item.variant ? `is-${item.variant}` : ""} ${item.href === "#" ? "is-disabled-link" : ""}" href="${
           item.href === "__copy_pix__" ? "#" : item.href
         }" ${
           item.href === "#"
@@ -1987,6 +1989,7 @@ function renderCertificate() {
   const unlocked = hasUnlockedCertificate();
   dom.printCertificate.disabled = !unlocked;
   dom.certificateCard.classList.toggle("is-locked", !unlocked);
+  dom.printCertificate.textContent = unlocked ? "Preencher e imprimir" : "Certificado bloqueado";
 
   if (unlocked) {
     const date = new Date(state.quizResult.completedAt);
@@ -1999,7 +2002,7 @@ function renderCertificate() {
     dom.certificateId.textContent = `Certificado: ${certificateCode}`;
     dom.certificateStatusTitle.textContent = "Certificado liberado";
     dom.certificateStatusCopy.textContent =
-      "Você concluiu a trilha e foi aprovado no quiz final. O certificado já pode ser impresso.";
+      "Seu certificado já está preenchido com nome, data e código. Agora basta clicar em Preencher e imprimir.";
   } else {
     dom.certificateDate.textContent = "Data: aguardando conclusão";
     dom.certificateId.textContent = "Certificado: indisponível";
