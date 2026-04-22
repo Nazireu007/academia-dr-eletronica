@@ -1600,6 +1600,34 @@ body.access-locked .site-footer {
     rgba(255, 255, 255, 0.03);
 }
 
+.certificate-upsell-card.is-ready {
+  border-color: rgba(126, 236, 255, 0.34);
+  background:
+    linear-gradient(180deg, rgba(126, 236, 255, 0.12), transparent),
+    rgba(255, 255, 255, 0.03);
+}
+
+.certificate-upsell-kicker {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.28rem 0.56rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 149, 80, 0.24);
+  color: #ffd8bc;
+  background: rgba(255, 149, 80, 0.08);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.certificate-upsell-card.is-ready .certificate-upsell-kicker {
+  border-color: rgba(126, 236, 255, 0.34);
+  color: #9af5ff;
+  background: rgba(126, 236, 255, 0.1);
+}
+
 .certificate-upsell-card strong {
   color: #fff1df;
 }

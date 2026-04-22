@@ -2164,11 +2164,14 @@ function renderCertificate() {
   if (dom.certificateUpsell) {
     if (freeMember) {
       dom.certificateUpsell.innerHTML = `
-        <div class="certificate-upsell-card">
-          <strong>${completedJourney ? "Seu progresso já está pronto" : "Certificado disponível no premium"}</strong>
+        <div class="certificate-upsell-card ${completedJourney ? "is-ready" : ""}">
+          <span class="certificate-upsell-kicker">${
+            completedJourney ? "Apto para emissão" : "Benefício do premium"
+          }</span>
+          <strong>${completedJourney ? "Você já está apto para emissão" : "Certificado disponível no premium"}</strong>
           <p>${
             completedJourney
-              ? "Você já cumpriu as etapas técnicas do curso. Agora falta só ativar o plano premium para emitir o certificado sem anúncios."
+              ? "Você já concluiu a trilha e atingiu a nota mínima no quiz. Agora falta só ativar o plano premium para emitir o certificado sem anúncios."
               : "A conta gratuita permite estudar com anúncios. Para emitir o certificado ao concluir a trilha, ative o plano premium."
           }</p>
           <div class="certificate-upsell-actions">
