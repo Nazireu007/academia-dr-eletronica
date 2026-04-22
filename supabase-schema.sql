@@ -89,6 +89,13 @@ to authenticated
 using (public.is_admin())
 with check (public.is_admin());
 
+drop policy if exists "profiles_delete_admin" on public.member_profiles;
+create policy "profiles_delete_admin"
+on public.member_profiles
+for delete
+to authenticated
+using (public.is_admin());
+
 drop policy if exists "course_access_select_own" on public.course_access;
 create policy "course_access_select_own"
 on public.course_access
@@ -118,6 +125,13 @@ to authenticated
 using (public.is_admin())
 with check (public.is_admin());
 
+drop policy if exists "course_access_delete_admin" on public.course_access;
+create policy "course_access_delete_admin"
+on public.course_access
+for delete
+to authenticated
+using (public.is_admin());
+
 drop policy if exists "member_states_select_own" on public.member_states;
 create policy "member_states_select_own"
 on public.member_states
@@ -139,6 +153,13 @@ for update
 to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
+
+drop policy if exists "member_states_delete_admin" on public.member_states;
+create policy "member_states_delete_admin"
+on public.member_states
+for delete
+to authenticated
+using (public.is_admin());
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -192,6 +213,34 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row
 execute procedure public.handle_new_user();
+
+create or replace function public.admin_remove_member(target_user_id uuid, target_course_slug text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Apenas administradores podem remover inscritos.';
+  end if;
+
+  if auth.uid() = target_user_id then
+    raise exception 'Nao e permitido remover a propria conta administradora.';
+  end if;
+
+  delete from public.member_states
+  where user_id = target_user_id
+    and course_slug = target_course_slug;
+
+  delete from public.course_access
+  where user_id = target_user_id
+    and course_slug = target_course_slug;
+
+  delete from public.member_profiles
+  where user_id = target_user_id;
+end;
+$$;
 
 comment on table public.course_access is
 'Defina access_status = active para liberar o curso ao aluno autenticado.';

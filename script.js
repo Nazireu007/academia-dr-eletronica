@@ -891,11 +891,15 @@ async function refreshAdminMembers() {
 async function updateMemberAccess(userId, accessStatus) {
   const client = await getAuthClient();
   if (!client || !authState.isAdmin) return;
+  const currentMember = (authState.adminMembers || []).find((member) => member.userId === userId);
+  const isUnblocking = currentMember?.accessStatus === "blocked" && accessStatus === "pending";
 
   dom.adminStatusCopy.textContent =
     accessStatus === "active"
       ? "Ativando plano premium..."
-      : accessStatus === "pending"
+      : isUnblocking
+        ? "Desbloqueando conta..."
+        : accessStatus === "pending"
         ? "Movendo conta para o plano gratuito..."
         : "Bloqueando acesso da conta...";
 
@@ -920,7 +924,9 @@ async function updateMemberAccess(userId, accessStatus) {
   dom.adminStatusCopy.textContent =
     accessStatus === "active"
       ? "Plano premium ativado com sucesso."
-      : accessStatus === "pending"
+      : isUnblocking
+        ? "Conta desbloqueada com sucesso."
+        : accessStatus === "pending"
         ? "Conta colocada no plano gratuito."
         : "Conta bloqueada com sucesso.";
   await refreshAdminMembers();
@@ -946,6 +952,56 @@ async function updateMemberRole(userId, role) {
   }
 
   dom.adminStatusCopy.textContent = `Perfil atualizado para ${role === "admin" ? "administrador" : "aluno"}.`;
+  await refreshAdminMembers();
+}
+
+async function removeMemberEnrollment(userId) {
+  const client = await getAuthClient();
+  if (!client || !authState.isAdmin) return;
+
+  if (userId === authState.user?.id) {
+    dom.adminStatusCopy.textContent = "Sua conta administradora principal não pode ser removida por aqui.";
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Tem certeza que deseja remover este inscrito? Isso retira o acesso, o progresso salvo e o cadastro do curso."
+  );
+
+  if (!confirmed) return;
+
+  dom.adminStatusCopy.textContent = "Removendo inscrito do curso...";
+
+  let { error } = await client.rpc("admin_remove_member", {
+    target_user_id: userId,
+    target_course_slug: appConfig.courseSlug,
+  });
+
+  if (error) {
+    const cleanupStates = await client
+      .from("member_states")
+      .delete()
+      .eq("user_id", userId)
+      .eq("course_slug", appConfig.courseSlug);
+
+    const cleanupAccess = await client
+      .from("course_access")
+      .delete()
+      .eq("user_id", userId)
+      .eq("course_slug", appConfig.courseSlug);
+
+    const cleanupProfile = await client.from("member_profiles").delete().eq("user_id", userId);
+
+    error = cleanupProfile.error || cleanupAccess.error || cleanupStates.error || null;
+  }
+
+  if (error) {
+    dom.adminStatusCopy.textContent =
+      "Nao foi possivel remover este inscrito ainda. Atualize o SQL do Supabase e tente novamente.";
+    return;
+  }
+
+  dom.adminStatusCopy.textContent = "Inscrito removido com sucesso.";
   await refreshAdminMembers();
 }
 
@@ -2206,14 +2262,17 @@ function renderAdminPanel() {
                   <button class="button button-secondary button-small" data-access-action="pending" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "pending" ? "disabled" : ""
                   }>Deixar no gratuito</button>
-                  <button class="button button-secondary button-small" data-access-action="blocked" data-member-id="${member.userId}" type="button" ${
-                    member.accessStatus === "blocked" ? "disabled" : ""
-                  }>Bloquear</button>
+                  <button class="button button-secondary button-small" data-access-action="${
+                    member.accessStatus === "blocked" ? "pending" : "blocked"
+                  }" data-member-id="${member.userId}" type="button">${
+                    member.accessStatus === "blocked" ? "Desbloquear" : "Bloquear"
+                  }</button>
                   <button class="button button-secondary button-small" data-role-action="${
                     member.role === "admin" ? "student" : "admin"
                   }" data-member-id="${member.userId}" type="button">${
                     member.role === "admin" ? "Remover admin" : "Tornar admin"
                   }</button>
+                  <button class="button button-secondary button-small" data-remove-member="${member.userId}" type="button">Remover inscrito</button>
                   <button class="button button-secondary button-small" data-copy-welcome="${member.userId}" type="button">Copiar boas-vindas</button>
                 </div>
               </article>
@@ -2248,6 +2307,12 @@ function renderAdminPanel() {
       dom.adminStatusCopy.textContent = copied
         ? `Mensagem de boas-vindas copiada para ${member.name}.`
         : "Nao foi possivel copiar a mensagem de boas-vindas.";
+    });
+  });
+
+  dom.adminMemberList.querySelectorAll("[data-remove-member]").forEach((button) => {
+    button.addEventListener("click", () => {
+      void removeMemberEnrollment(button.dataset.removeMember);
     });
   });
 }
@@ -2526,6 +2591,7 @@ async function applySupabaseSession(session) {
     return;
   }
 
+  await ensureRemoteProfile();
   await loadRemoteProfile();
   await refreshRemoteAccessStatus();
   syncAccessModeUi();
