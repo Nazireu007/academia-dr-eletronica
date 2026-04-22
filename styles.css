@@ -1985,8 +1985,50 @@ body.access-locked .site-footer {
 }
 
 @media (max-width: 720px) {
+  .page-glow {
+    opacity: 0.16;
+  }
+
   .shell {
     width: min(100% - 1rem, 1360px);
+  }
+
+  .site-header {
+    padding: 0.55rem 0;
+  }
+
+  .site-header-shell {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+    align-items: stretch;
+  }
+
+  .header-center,
+  .header-right,
+  .brand,
+  .member-pill {
+    width: 100%;
+  }
+
+  .header-right {
+    gap: 0.65rem;
+  }
+
+  .brand {
+    min-width: 0;
+  }
+
+  .brand-text {
+    min-width: 0;
+  }
+
+  .brand-text strong,
+  .brand-text small,
+  .member-pill-copy strong,
+  .member-pill-copy small,
+  #member-account {
+    overflow-wrap: anywhere;
   }
 
   .auth-card,
@@ -2005,11 +2047,132 @@ body.access-locked .site-footer {
   }
 
   .top-nav {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.45rem;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .top-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .top-nav-link {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+    padding: 0.58rem 0.82rem;
   }
 
   .header-hud {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .hud-chip {
+    padding: 0.65rem 0.7rem;
+  }
+
+  .hud-chip strong {
+    font-size: 0.96rem;
+  }
+
+  .member-app {
+    gap: 1rem;
+    padding: 1rem 0 2rem;
+  }
+
+  .member-hero {
+    gap: 0.9rem;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2.2rem, 10vw, 3.3rem);
+    line-height: 0.98;
+  }
+
+  .hero-text {
+    margin-top: 1rem;
+    font-size: 0.98rem;
+    line-height: 1.6;
+  }
+
+  .hero-actions,
+  .dashboard-actions,
+  .lesson-toolbar,
+  .lesson-nav,
+  .admin-member-actions,
+  .auth-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-actions .button,
+  .dashboard-actions .button,
+  .lesson-toolbar .button,
+  .lesson-nav .button,
+  .admin-member-actions .button,
+  .auth-actions .button {
+    width: 100%;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .stat-card strong {
+    font-size: 1.55rem;
+  }
+
+  .panel-head h2 {
+    font-size: clamp(1.5rem, 7vw, 2.2rem);
+  }
+
+  .dashboard-card h3,
+  .resource-card h3,
+  .side-card h3,
+  .quiz-question h3 {
+    font-size: 1.18rem;
+  }
+
+  .metric-list,
+  .achievement-grid {
     grid-template-columns: 1fr;
+  }
+
+  .timeline-item,
+  .admin-pending-item,
+  .module-group-head {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .payment-trust-item span,
+  .faq-item p,
+  .lesson-summary,
+  .lesson-breadcrumb {
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+  }
+
+  .lesson-title {
+    font-size: 1.6rem;
+    line-height: 1.08;
+  }
+
+  .lesson-meta-card,
+  .metric-item,
+  .timeline-item,
+  .achievement-card,
+  .faq-item,
+  .library-item,
+  .resource-link-card {
+    min-width: 0;
   }
 
   .site-footer-links {
