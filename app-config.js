@@ -11,7 +11,7 @@ window.APP_CONFIG = {
   priceLabel: "R$ 50",
   billingLabel: "pagamento único",
   merchantBrand: "Nitro Scan Pro",
-  paymentProviderLabel: "PicPay • cartões e Pix",
+  paymentProviderLabel: "Checkout PicPay",
   checkoutUrl: "https://link.picpay.com/p/177680403069e7e0bedeb04",
   hotmartCheckoutUrl: "",
   hotmartMembersUrl: "",

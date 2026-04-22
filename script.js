@@ -310,7 +310,7 @@ const defaultAppConfig = {
   priceLabel: "R$ 50",
   billingLabel: "pagamento único",
   merchantBrand: "Nitro Scan Pro",
-  paymentProviderLabel: "PicPay • cartões e Pix",
+  paymentProviderLabel: "Checkout PicPay",
   checkoutUrl: "",
   hotmartCheckoutUrl: "",
   hotmartMembersUrl: "",
@@ -1530,7 +1530,7 @@ function renderPublicOffer() {
   const whatsappUrl = getWhatsAppUrl();
   const isProtectedSite = window.location.protocol === "https:";
   const merchantBrand = String(appConfig.merchantBrand || "Nitro Scan Pro").trim();
-  const paymentProviderLabel = appConfig.paymentProviderLabel || "PicPay • cartões e Pix";
+  const paymentProviderLabel = appConfig.paymentProviderLabel || "Checkout PicPay";
   const signedIn = Boolean(authState.session);
   const offerMetrics = [
     { label: "Conta gratuita", value: appConfig.freePlanLabel || "Conta gratuita" },
@@ -1549,8 +1549,8 @@ function renderPublicOffer() {
   dom.whatsappSalesLink.classList.toggle("is-disabled-link", whatsappUrl === "#");
 
   const trustItems = [
-    { title: "Cobrança profissional", copy: `${merchantBrand} no PicPay` },
-    { title: "Pix e cartões", copy: "Escolha a forma de pagamento mais confortável para você" },
+    { title: "Cobrança profissional", copy: `${merchantBrand} em checkout externo` },
+    { title: "Pagamento protegido", copy: "Escolha a forma de pagamento mais confortável para você" },
     {
       title: "Ambiente protegido",
       copy: isProtectedSite ? "Site em HTTPS com redirecionamento para checkout externo" : "Checkout externo e protegido",
@@ -1582,7 +1582,7 @@ function renderPublicOffer() {
 
   dom.paymentTrustNote.textContent =
     checkoutUrl !== "#"
-      ? `Ao clicar em comprar, você será direcionado ao ambiente seguro da ${merchantBrand} no PicPay para concluir o pagamento.`
+      ? `Ao clicar em comprar, você será direcionado ao checkout protegido da ${merchantBrand} para concluir o pagamento.`
       : "O checkout premium será exibido aqui assim que o meio de pagamento estiver disponível.";
 
   dom.previewLessonList.innerHTML =
@@ -1601,13 +1601,13 @@ function renderPublicOffer() {
 
   const offerLinks = [
     {
-      title: "Ativar premium com segurança",
-      meta: `${merchantBrand} no PicPay • cartões e Pix`,
+      title: "Pagar com cartão ou PicPay",
+      meta: `${merchantBrand} em checkout protegido`,
       href: checkoutUrl,
       variant: "primary-payment",
     },
     {
-      title: "Pix sob solicitação",
+      title: "Pagar por Pix",
       meta: appConfig.pixKey ? `Copiar chave Pix da ${merchantBrand}` : "Chave Pix indisponivel",
       href: appConfig.pixKey ? "__copy_pix__" : "#",
       variant: "secondary-payment",
