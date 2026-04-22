@@ -1093,6 +1093,16 @@ function getWhatsAppUrl() {
   return `https://wa.me/${phone}?text=${text}`;
 }
 
+function getPixWhatsAppUrl() {
+  if (!appConfig.whatsappNumber) return "#";
+  const phone = String(appConfig.whatsappNumber).replace(/\D+/g, "");
+  const email = authState.user?.email || state.member?.email || "";
+  const text = encodeURIComponent(
+    `Olá! Acabei de pagar por Pix o plano premium da Nitro Scan Pro.${email ? ` Minha conta é ${email}.` : ""} Vou enviar o comprovante nesta conversa.`
+  );
+  return `https://wa.me/${phone}?text=${text}`;
+}
+
 async function copyPixKey() {
   const key = String(appConfig.pixKey || "").trim();
   if (!key) return false;
@@ -1449,7 +1459,7 @@ function closeAuthModal() {
 function openPixModal() {
   dom.pixKeyDisplay.textContent = String(appConfig.pixKey || "-").trim() || "-";
   dom.pixFeedback.textContent = "Copie a chave, conclua no seu banco e envie o comprovante para liberar o premium.";
-  dom.pixWhatsappLink.href = getWhatsAppUrl();
+  dom.pixWhatsappLink.href = getPixWhatsAppUrl();
   dom.pixWhatsappLink.classList.toggle("is-disabled-link", dom.pixWhatsappLink.href === "#");
   dom.pixModal.classList.add("is-open");
   dom.pixModal.setAttribute("aria-hidden", "false");
