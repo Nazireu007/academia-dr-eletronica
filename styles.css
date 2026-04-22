@@ -841,6 +841,10 @@ body.access-locked .site-footer {
   background: rgba(255, 255, 255, 0.03);
 }
 
+#member-account {
+  overflow-wrap: anywhere;
+}
+
 .workspace {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);

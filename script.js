@@ -169,6 +169,7 @@ const dom = {
   statNotes: document.querySelector("#stat-notes"),
   memberGreeting: document.querySelector("#member-greeting"),
   memberGoalCopy: document.querySelector("#member-goal-copy"),
+  memberAccount: document.querySelector("#member-account"),
   memberRhythm: document.querySelector("#member-rhythm"),
   memberGoal: document.querySelector("#member-goal"),
   progressCount: document.querySelector("#progress-count"),
@@ -1503,6 +1504,7 @@ function renderProfile() {
   };
 
   if (hasAccess) {
+    const accountEmail = authState.user?.email || member.email || "";
     dom.memberName.textContent = member.name;
     dom.memberPlan.textContent =
       planKind === "premium"
@@ -1520,6 +1522,9 @@ function renderProfile() {
       planKind === "premium"
         ? `Objetivo atual: ${member.goal}. Você está no plano premium, sem anúncios, avançando no ritmo "${member.rhythm}".`
         : `Objetivo atual: ${member.goal}. Você está na conta gratuita, avançando no ritmo "${member.rhythm}".`;
+    dom.memberAccount.textContent = accountEmail
+      ? `Conta atual: ${accountEmail}`
+      : "Conta atual: perfil autenticado";
     dom.memberRhythm.textContent = `Ritmo: ${member.rhythm}`;
     dom.memberGoal.textContent = `Objetivo: ${member.goal}`;
     dom.resumeCourse.textContent = "Continuar de onde parei";
@@ -1538,6 +1543,7 @@ function renderProfile() {
   dom.memberGreeting.textContent = "Veja por dentro da Nitro Scan Pro.";
   dom.memberGoalCopy.textContent =
     "Você está navegando na área pública. Crie sua conta para salvar progresso, fazer o quiz final e emitir o certificado.";
+  dom.memberAccount.textContent = "Conta atual: visitante";
   dom.memberRhythm.textContent = "Acesso: apresentação";
   dom.memberGoal.textContent = "Plano: gratuito ou premium";
   dom.resumeCourse.textContent = "Abrir aulas de apresentação";
