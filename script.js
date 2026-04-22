@@ -110,6 +110,7 @@ const storageKeys = {
   quizAnswers: "academia-dr-quiz-answers-v4",
   quizResult: "academia-dr-quiz-result-v4",
   accessSession: "academia-dr-access-session-v1",
+  supabaseUser: "academia-dr-supabase-user-v1",
 };
 
 const dom = {
@@ -737,18 +738,41 @@ function saveState() {
   }
 }
 
+function resetMemberWorkspace() {
+  state.member = null;
+  state.completed = new Set();
+  state.favorites = new Set();
+  state.notes = {};
+  state.quizAnswers = {};
+  state.quizResult = null;
+  state.selectedLessonId = course.lessons[0]?.id;
+  state.activePanel = "public";
+}
+
+function getCurrentMemberSeed() {
+  if (!authState.user) return null;
+  const currentEmail = String(authState.user.email || "").trim().toLowerCase();
+  const memberEmail = String(state.member?.email || "").trim().toLowerCase();
+  return currentEmail && memberEmail && currentEmail === memberEmail ? state.member : null;
+}
+
 async function ensureRemoteProfile() {
   if (!isSupabaseMode() || !authState.user) return;
   const client = await getAuthClient();
   if (!client) return;
 
-  const fullName = state.member?.name || authState.user.user_metadata?.name || "Aluno";
+  const currentMember = getCurrentMemberSeed();
+  const fullName =
+    currentMember?.name ||
+    authState.user.user_metadata?.name ||
+    String(authState.user.email || "").split("@")[0] ||
+    "Aluno";
   const payload = {
     user_id: authState.user.id,
-    email: authState.user.email || state.member?.email || "",
+    email: authState.user.email || currentMember?.email || "",
     full_name: fullName,
-    goal: state.member?.goal || "dominar fundamentos",
-    rhythm: state.member?.rhythm || "30 min por dia",
+    goal: currentMember?.goal || "dominar fundamentos",
+    rhythm: currentMember?.rhythm || "30 min por dia",
     updated_at: new Date().toISOString(),
   };
 
@@ -761,6 +785,7 @@ async function loadRemoteProfile() {
   if (!isSupabaseMode() || !authState.user) return;
   const client = await getAuthClient();
   if (!client) return;
+  const currentMember = getCurrentMemberSeed();
 
   const { data } = await client
     .from("member_profiles")
@@ -769,11 +794,16 @@ async function loadRemoteProfile() {
     .maybeSingle();
 
   state.member = {
-    name: data?.full_name || state.member?.name || "Aluno",
-    email: data?.email || authState.user.email || state.member?.email || "",
-    goal: data?.goal || state.member?.goal || "dominar fundamentos",
-    rhythm: data?.rhythm || state.member?.rhythm || "30 min por dia",
-    joinedAt: data?.created_at || state.member?.joinedAt || new Date().toISOString(),
+    name:
+      data?.full_name ||
+      currentMember?.name ||
+      authState.user.user_metadata?.name ||
+      String(authState.user.email || "").split("@")[0] ||
+      "Aluno",
+    email: data?.email || authState.user.email || currentMember?.email || "",
+    goal: data?.goal || currentMember?.goal || "dominar fundamentos",
+    rhythm: data?.rhythm || currentMember?.rhythm || "30 min por dia",
+    joinedAt: data?.created_at || currentMember?.joinedAt || new Date().toISOString(),
   };
   authState.profileRole = data?.role || "student";
   authState.isAdmin = authState.profileRole === "admin";
@@ -2620,6 +2650,8 @@ async function signOutFromSupabase() {
   authState.isAdmin = false;
   authState.profileRole = "student";
   authState.adminMembers = [];
+  removeStored(storageKeys.supabaseUser);
+  resetMemberWorkspace();
   state.activePanel = "public";
   saveState();
   syncAccessModeUi();
@@ -2629,8 +2661,10 @@ async function signOutFromSupabase() {
 }
 
 async function applySupabaseSession(session) {
+  const previousUserId = loadJSON(storageKeys.supabaseUser, null);
   authState.session = session || null;
   authState.user = session?.user || null;
+  const nextUserId = authState.user?.id || null;
 
   if (!authState.session) {
     authState.accessGranted = false;
@@ -2638,12 +2672,19 @@ async function applySupabaseSession(session) {
     authState.isAdmin = false;
     authState.profileRole = "student";
     state.activePanel = "public";
+    removeStored(storageKeys.supabaseUser);
     saveState();
     syncAccessModeUi();
     closeAccessModal();
     renderAll();
     return;
   }
+
+  if (previousUserId !== nextUserId) {
+    resetMemberWorkspace();
+  }
+
+  saveJSON(storageKeys.supabaseUser, nextUserId);
 
   await ensureRemoteProfile();
   await loadRemoteProfile();
