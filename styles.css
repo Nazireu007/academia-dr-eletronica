@@ -1397,6 +1397,8 @@ body.access-locked .site-footer {
 }
 
 .certificate-card {
+  position: relative;
+  overflow: hidden;
   border-radius: 1.7rem;
   padding: 1rem;
   background:
@@ -1404,20 +1406,50 @@ body.access-locked .site-footer {
     var(--panel-strong);
 }
 
+.certificate-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(106, 247, 255, 0.12), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(255, 170, 102, 0.12), transparent 26%);
+  pointer-events: none;
+}
+
 .certificate-card.is-locked {
   opacity: 0.72;
 }
 
 .certificate-inner {
+  position: relative;
+  overflow: hidden;
   min-height: 100%;
   border: 1px solid rgba(255, 221, 183, 0.35);
   border-radius: 1.35rem;
   padding: 2.2rem 1.8rem;
   background:
+    linear-gradient(135deg, rgba(99, 234, 255, 0.06), transparent 30%),
     radial-gradient(circle at top, rgba(255, 221, 183, 0.08), transparent 50%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent),
     #101722;
   text-align: center;
+}
+
+.certificate-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0.7rem;
+  border: 1px solid rgba(126, 236, 255, 0.14);
+  border-radius: 1rem;
+  pointer-events: none;
+}
+
+.certificate-eyebrow {
+  margin: 0;
+  color: #8cf2ff;
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .certificate-inner h3 {
@@ -1429,6 +1461,14 @@ body.access-locked .site-footer {
   margin: 0;
   line-height: 1.8;
   color: #d6e7f7;
+}
+
+.certificate-copy-emphasis {
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(126, 236, 255, 0.16);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .certificate-workload {
@@ -1494,16 +1534,35 @@ body.access-locked .site-footer {
 }
 
 .certificate-seal {
-  width: 4.2rem;
-  height: 4.2rem;
-  display: grid;
-  place-items: center;
+  min-width: 6rem;
+  min-height: 6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.22rem;
+  padding: 0.7rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 221, 183, 0.4);
-  color: #fff4e3;
-  background: radial-gradient(circle at center, rgba(255, 149, 80, 0.35), rgba(255, 149, 80, 0.08));
+  border: 1px solid rgba(130, 235, 255, 0.45);
+  color: #effcff;
+  background:
+    radial-gradient(circle at center, rgba(93, 240, 255, 0.36), rgba(93, 240, 255, 0.1) 45%, rgba(255, 149, 80, 0.08));
+  box-shadow:
+    0 0 0 6px rgba(93, 240, 255, 0.05),
+    0 0 32px rgba(93, 240, 255, 0.18);
+}
+
+.certificate-seal-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(93, 240, 255, 0.8);
+}
+
+.certificate-seal-copy {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   font-weight: 800;
-  letter-spacing: 0.08em;
 }
 
 .glossary-preview {
@@ -1683,6 +1742,7 @@ body.access-locked .site-footer {
   .certificate-meta,
   .certificate-student,
   .certificate-badge,
+  .certificate-eyebrow,
   .certificate-inner h3 {
     color: #111 !important;
   }
@@ -1700,7 +1760,14 @@ body.access-locked .site-footer {
 
   .certificate-seal {
     border-color: #b88f55;
-    background: radial-gradient(circle at center, #f6d29b, #f0b96f);
+    background: radial-gradient(circle at center, #ffe39f, #f0b96f);
     color: #5a3512;
+    box-shadow: none;
+  }
+
+  .certificate-seal-icon,
+  .certificate-seal-copy {
+    color: #5a3512 !important;
+    text-shadow: none;
   }
 }

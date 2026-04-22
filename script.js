@@ -2124,21 +2124,21 @@ function renderCertificate() {
       .toUpperCase()
       .slice(0, 6)
       .padEnd(6, "X");
-    const certificateCode = `DR-${compactDate}-${identitySeed}`;
+    const certificateCode = `NSP-${compactDate}-${identitySeed}`;
 
     dom.certificateWorkload.textContent = `Carga horária certificada: ${certifiedHours} horas`;
     dom.certificateDate.textContent = `Data: ${formatted}`;
     dom.certificateId.textContent = `Registro: ${certificateCode}`;
     dom.certificateStatusTitle.textContent = "Certificado liberado";
     dom.certificateStatusCopy.textContent =
-      "Seu certificado já está preenchido com nome, data e código. Agora basta clicar em Preencher e imprimir.";
+      "Seu certificado profissional de curso livre já está preenchido com nome, data, carga horária e registro. Agora basta clicar em Preencher e imprimir.";
   } else {
     dom.certificateWorkload.textContent = `Carga horária certificada: ${certifiedHours} horas`;
     dom.certificateDate.textContent = "Data: aguardando conclusão";
     dom.certificateId.textContent = "Registro: aguardando liberação";
     dom.certificateStatusTitle.textContent = "Ainda bloqueado";
     dom.certificateStatusCopy.textContent =
-      "Conclua todas as aulas e alcance 70% ou mais no quiz final para liberar o certificado.";
+      "Conclua todas as aulas e alcance 70% ou mais no quiz final para liberar o certificado profissional de curso livre.";
   }
 
   dom.glossaryPreview.innerHTML = course.glossary
