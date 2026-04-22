@@ -306,7 +306,7 @@ const defaultAppConfig = {
   commerceMode: "hybrid",
   offerTitle: "Comece grátis e avance para o premium quando quiser",
   offerCopy:
-    "Crie sua conta gratuita para estudar na plataforma e, quando quiser uma experiência sem anúncios, ative o plano premium por R$ 50.",
+    "Crie sua conta gratuita para estudar com anúncios. Quando quiser zero anúncios e certificado de conclusão, ative o plano premium por R$ 50.",
   priceLabel: "R$ 50",
   billingLabel: "pagamento único",
   merchantBrand: "Nitro Scan Pro",
@@ -1142,8 +1142,8 @@ function getAdSupportMarkup(title, compact = false) {
     <h3>${escapeHtml(title)}</h3>
     <p class="side-copy">${
       compact
-        ? "Este plano permanece gratuito porque exibe anúncios. Para estudar sem anúncios, assine o premium por R$ 50."
-        : "Este plano permanece gratuito porque exibe anúncios. Para estudar sem anúncios e apoiar o projeto, assine o premium por R$ 50."
+        ? "Esta conta gratuita exibe anúncios. Para estudar sem anúncios e liberar o certificado, ative o premium por R$ 50."
+        : "Esta conta gratuita exibe anúncios. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por R$ 50."
     }</p>
   `;
 }
@@ -1186,7 +1186,7 @@ function getCompletionPercent() {
 }
 
 function hasUnlockedCertificate() {
-  return state.completed.size === course.lessons.length && Boolean(state.quizResult?.passed);
+  return isPremiumMember() && state.completed.size === course.lessons.length && Boolean(state.quizResult?.passed);
 }
 
 async function refreshRemoteAccessStatus() {
@@ -1538,7 +1538,7 @@ function renderPublicOffer() {
     { label: "Conta gratuita", value: appConfig.freePlanLabel || "Conta gratuita" },
     { label: "Plano premium", value: appConfig.priceLabel || "R$ 50" },
     { label: "Pagamento", value: paymentProviderLabel },
-    { label: "Aulas abertas", value: `${previewLessons.length} aula(s)` },
+    { label: "Certificado", value: "Premium" },
   ];
 
   dom.offerTitle.textContent = appConfig.offerTitle;
@@ -1710,6 +1710,10 @@ function renderUnlockChecklist() {
       done: Boolean(state.quizResult?.passed),
     },
     {
+      label: "Manter plano premium ativo para emitir o certificado",
+      done: isPremiumMember(),
+    },
+    {
       label: "Manter perfil do aluno preenchido",
       done: Boolean(state.member?.name && state.member?.email),
     },
@@ -1730,15 +1734,21 @@ function renderUnlockChecklist() {
 function renderDashboard() {
   const nextLesson = getNextLesson();
   const notesCount = Object.values(state.notes).filter((value) => String(value).trim()).length;
+  const freeMember = isFreeMember();
   const memberMetrics = [
     { label: "Aulas concluídas", value: `${state.completed.size}/${course.lessons.length}` },
     { label: "Favoritos", value: String(state.favorites.size) },
     { label: "Anotações salvas", value: String(notesCount) },
-    { label: "Quiz final", value: state.quizResult ? `${state.quizResult.score}%` : "Pendente" },
+    {
+      label: freeMember ? "Certificado" : "Quiz final",
+      value: freeMember ? "Premium" : state.quizResult ? `${state.quizResult.score}%` : "Pendente",
+    },
   ];
 
   dom.nextLessonTitle.textContent = nextLesson.title;
-  dom.nextLessonSummary.textContent = `${nextLesson.summary} Tempo estimado: ${nextLesson.duration} min.`;
+  dom.nextLessonSummary.textContent = freeMember
+    ? `${nextLesson.summary} Tempo estimado: ${nextLesson.duration} min. Sua conta gratuita estuda com anúncios. O plano premium remove anúncios e libera o certificado.`
+    : `${nextLesson.summary} Tempo estimado: ${nextLesson.duration} min.`;
 
   dom.memberMetrics.innerHTML = memberMetrics
     .map(
@@ -1769,7 +1779,7 @@ function renderDashboard() {
     },
     {
       title: "Conclusão profissional",
-      text: "Liberar o certificado.",
+      text: freeMember ? "Ativar o premium para emitir o certificado." : "Liberar o certificado.",
       done: hasUnlockedCertificate(),
     },
   ];
@@ -2109,6 +2119,7 @@ function renderQuiz() {
 function renderCertificate() {
   const unlocked = hasUnlockedCertificate();
   const studentName = String(state.member?.name || "Aluno").trim();
+  const freeMember = isFreeMember();
   dom.printCertificate.disabled = !unlocked;
   dom.certificateCard.classList.toggle("is-locked", !unlocked);
   dom.certificateCard.classList.toggle("has-long-student-name", studentName.length > 28);
@@ -2139,9 +2150,11 @@ function renderCertificate() {
     dom.certificateWorkload.textContent = `Carga horária certificada: ${certifiedHours} horas`;
     dom.certificateDate.textContent = "Data: aguardando conclusão";
     dom.certificateId.textContent = "Registro: aguardando liberação";
-    dom.certificateStatusTitle.textContent = "Ainda bloqueado";
+    dom.certificateStatusTitle.textContent = freeMember ? "Disponível no premium" : "Ainda bloqueado";
     dom.certificateStatusCopy.textContent =
-      "Conclua todas as aulas e alcance 70% ou mais no quiz final para liberar o certificado profissional de curso livre.";
+      freeMember
+        ? "Sua conta gratuita não inclui certificado de conclusão. Ative o plano premium para remover os anúncios e liberar a emissão do certificado."
+        : "Conclua todas as aulas, alcance 70% ou mais no quiz final e mantenha o plano premium ativo para liberar o certificado profissional de curso livre.";
   }
 
   dom.glossaryPreview.innerHTML = course.glossary

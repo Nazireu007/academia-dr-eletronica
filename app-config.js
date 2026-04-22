@@ -7,7 +7,7 @@ window.APP_CONFIG = {
   commerceMode: "hybrid",
   offerTitle: "Comece grátis e avance para o premium quando quiser",
   offerCopy:
-    "Crie sua conta gratuita para estudar na plataforma e, quando quiser uma experiência sem anúncios, ative o plano premium por R$ 50.",
+    "Crie sua conta gratuita para estudar com anúncios. Quando quiser zero anúncios e certificado de conclusão, ative o plano premium por R$ 50.",
   priceLabel: "R$ 50",
   billingLabel: "pagamento único",
   merchantBrand: "Nitro Scan Pro",
