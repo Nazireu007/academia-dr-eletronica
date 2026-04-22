@@ -2108,8 +2108,11 @@ function renderQuiz() {
 
 function renderCertificate() {
   const unlocked = hasUnlockedCertificate();
+  const studentName = String(state.member?.name || "Aluno").trim();
   dom.printCertificate.disabled = !unlocked;
   dom.certificateCard.classList.toggle("is-locked", !unlocked);
+  dom.certificateCard.classList.toggle("has-long-student-name", studentName.length > 28);
+  dom.certificateCard.classList.toggle("has-very-long-student-name", studentName.length > 42);
   dom.printCertificate.textContent = unlocked ? "Preencher e imprimir" : "Certificado bloqueado";
   const certifiedHours = Math.max(1, Math.ceil(course.totalDuration / 60));
 
@@ -2119,7 +2122,7 @@ function renderCertificate() {
     const compactDate = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(
       date.getDate()
     ).padStart(2, "0")}`;
-    const identitySeed = slugify(state.member?.name || "aluno")
+    const identitySeed = slugify(studentName || "aluno")
       .replaceAll("-", "")
       .toUpperCase()
       .slice(0, 6)

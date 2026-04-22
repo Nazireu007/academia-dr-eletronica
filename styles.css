@@ -1461,6 +1461,8 @@ body.access-locked .site-footer {
   margin: 0;
   line-height: 1.8;
   color: #d6e7f7;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .certificate-copy-emphasis {
@@ -1469,6 +1471,7 @@ body.access-locked .site-footer {
   border: 1px solid rgba(126, 236, 255, 0.16);
   border-radius: 1rem;
   background: rgba(255, 255, 255, 0.03);
+  overflow-wrap: anywhere;
 }
 
 .certificate-workload {
@@ -1500,6 +1503,18 @@ body.access-locked .site-footer {
   margin: 1rem 0;
   font-size: clamp(2rem, 5vw, 3.4rem);
   color: #fff3db;
+  line-height: 1.08;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.certificate-card.has-long-student-name .certificate-student {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+.certificate-card.has-very-long-student-name .certificate-student {
+  font-size: clamp(1.45rem, 3.2vw, 2.3rem);
 }
 
 .certificate-meta {
@@ -1509,6 +1524,11 @@ body.access-locked .site-footer {
   flex-wrap: wrap;
   margin-top: 1.4rem;
   color: #e9f4ff;
+}
+
+.certificate-meta span {
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .certificate-signature-row {
