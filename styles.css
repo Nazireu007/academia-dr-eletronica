@@ -1316,10 +1316,37 @@ body.access-locked .site-footer {
   width: min(100%, 720px);
 }
 
+.pix-assurance-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.pix-assurance-strip span,
+.pix-qr-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(123, 226, 200, 0.18);
+  background: rgba(123, 226, 200, 0.08);
+  color: #dffcf3;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .pix-modal-grid {
   display: grid;
   gap: 1rem;
   margin-top: 1.25rem;
+}
+
+.pix-hero-card {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.25fr) 180px;
+  align-items: stretch;
 }
 
 .pix-key-box {
@@ -1348,6 +1375,45 @@ body.access-locked .site-footer {
   gap: 0.8rem;
 }
 
+.pix-qr-visual {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 149, 80, 0.18);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 149, 80, 0.08), rgba(255, 255, 255, 0.02));
+}
+
+.pix-qr-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 12px);
+  gap: 4px;
+  padding: 0.9rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: inset 0 0 0 1px rgba(4, 8, 14, 0.08);
+}
+
+.pix-qr-grid span {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: #08111a;
+}
+
+.pix-qr-grid span:nth-child(2n),
+.pix-qr-grid span:nth-child(5n) {
+  opacity: 0.14;
+}
+
+.pix-qr-visual small {
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.45;
+}
+
 .faq-list {
   display: grid;
   gap: 0.8rem;
@@ -1373,6 +1439,10 @@ body.access-locked .site-footer {
 }
 
 @media (max-width: 720px) {
+  .pix-hero-card {
+    grid-template-columns: 1fr;
+  }
+
   .pix-key-box strong {
     font-size: 0.92rem;
   }
