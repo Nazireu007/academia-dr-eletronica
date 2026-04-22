@@ -303,11 +303,11 @@ const defaultAppConfig = {
   supabaseUrl: "",
   supabaseAnonKey: "",
   commerceMode: "hybrid",
-  offerTitle: "Garanta seu acesso premium completo",
+  offerTitle: "Comece grátis e avance para o premium quando quiser",
   offerCopy:
-    "Ative o plano premium por R$ 50 e estude com acesso individual, sem anúncios, com progresso salvo, quiz final, certificado e suporte direto.",
+    "Crie sua conta gratuita para estudar na plataforma e, quando quiser uma experiência sem anúncios, ative o plano premium por R$ 50.",
   priceLabel: "R$ 50",
-  billingLabel: "assinatura premium",
+  billingLabel: "pagamento único",
   merchantBrand: "Nitro Scan Pro",
   paymentProviderLabel: "PicPay • cartões e Pix",
   checkoutUrl: "",
@@ -316,8 +316,8 @@ const defaultAppConfig = {
   whatsappNumber: "",
   whatsappMessage: "Ola! Quero ativar o plano premium do Curso Completo de Eletronica por R$ 50.",
   pixKey: "",
-  freePlanLabel: "Acesso livre com anúncios",
-  premiumPlanLabel: "Premium sem anúncios",
+  freePlanLabel: "Conta gratuita",
+  premiumPlanLabel: "Plano premium",
   adsEnabled: true,
   adSenseClient: "",
   freeModuleNumbers: ["01"],
@@ -341,6 +341,8 @@ const authState = {
   syncInFlight: false,
   adminMembers: [],
 };
+
+let accessTargetPanel = "dashboard";
 
 function decodeBase64(value) {
   const binary = window.atob(value);
@@ -1024,7 +1026,7 @@ function buildWelcomeMessage(member) {
     `Olá, ${firstName}! Seu acesso à Academia DR já está liberado.`,
     `Entre por aqui: ${loginUrl}`,
     `Use o e-mail ${member?.email || ""} para entrar na área do curso.`,
-    "Depois do login, clique em Entrar na área e continue seus estudos normalmente.",
+    "Depois do login, clique em Abrir minha área e continue seus estudos normalmente.",
     "Se precisar de ajuda, fale comigo no WhatsApp.",
   ].join(" ");
 }
@@ -1076,7 +1078,9 @@ function getAdSupportMarkup(title, compact = false) {
 }
 
 function hasMemberAreaAccess() {
-  return isSupabaseMode() ? Boolean(authState.session && authState.accessGranted) : hasActiveAccess();
+  return isSupabaseMode()
+    ? Boolean(authState.session && (authState.accessGranted || authState.isAdmin))
+    : hasActiveAccess();
 }
 
 function isAdminPanelAvailable() {
@@ -1171,6 +1175,7 @@ function setAccessFeedback(message = "", tone = "") {
 function syncAccessModeUi() {
   const supabaseMode = isSupabaseMode();
   const signedIn = Boolean(authState.session);
+  const alreadyInside = supabaseMode && signedIn && hasMemberAreaAccess();
   const blockedMember = supabaseMode && signedIn && authState.accessStatus === "blocked" && !authState.isAdmin;
 
   dom.localAccessFields.hidden = supabaseMode;
@@ -1184,7 +1189,7 @@ function syncAccessModeUi() {
   if (!supabaseMode) {
     dom.accessCopy.textContent =
       "Esta plataforma exige um codigo de acesso antes de liberar aulas, progresso, quiz e certificado.";
-    dom.authSubmitButton.textContent = "Entrar na area protegida";
+    dom.authSubmitButton.textContent = "Entrar na área protegida";
     dom.authSubmitButton.disabled = false;
     return;
   }
@@ -1211,14 +1216,17 @@ function syncAccessModeUi() {
     return;
   }
 
-  dom.accessCopy.textContent =
-    "Entre com seu e-mail e senha. O acesso livre exibe inserções patrocinadas e o premium oferece experiência sem anúncios.";
-  dom.authModeCopy.textContent =
-    "Crie sua conta para conhecer a plataforma ou entre para continuar seus estudos.";
-  dom.authSubmitButton.textContent = signedIn ? "Entrar com outra conta" : "Entrar com e-mail";
+  dom.accessCopy.textContent = alreadyInside
+    ? "Sua conta já está conectada. Clique abaixo para abrir a plataforma."
+    : "Entre com seu e-mail e senha. A conta gratuita libera os estudos, e o plano premium remove os anúncios.";
+  dom.authModeCopy.textContent = alreadyInside
+    ? "Se quiser usar outro e-mail, clique em Sair da conta primeiro."
+    : "Crie sua conta gratuita para começar ou entre para continuar seus estudos.";
+  dom.authSubmitButton.textContent = alreadyInside ? "Abrir minha área" : "Entrar com e-mail";
 }
 
-function openAccessModal(message = accessConfig.accessMessage) {
+function openAccessModal(message = accessConfig.accessMessage, targetPanel = "dashboard") {
+  accessTargetPanel = targetPanel;
   syncAccessModeUi();
   dom.accessCopy.textContent = message;
   dom.accessModal.classList.add("is-open");
@@ -1296,20 +1304,20 @@ function closeAuthModal() {
 function setActivePanel(panelName) {
   if (panelName === "admin" && !isAdminPanelAvailable()) {
     setAccessFeedback("Esta area administrativa so fica visivel para contas administradoras.", "is-error");
-    openAccessModal("Entre com uma conta administradora para gerenciar os alunos do curso.");
+    openAccessModal("Entre com uma conta administradora para gerenciar os alunos do curso.", "admin");
     panelName = "public";
   }
 
   if (panelName === "course" && !hasMemberAreaAccess()) {
     const lesson = getLessonById(state.selectedLessonId);
     if (!isLessonPublic(lesson)) {
-      openAccessModal("Entre na area premium para abrir o curso completo.");
+      openAccessModal("Entre com sua conta para abrir o curso completo.", "course");
       panelName = "public";
     }
   }
 
   if (isPanelRestricted(panelName) && panelName !== "course" && !hasMemberAreaAccess()) {
-    openAccessModal("Entre na area premium para acessar este painel.");
+    openAccessModal("Entre com sua conta para acessar este painel.", panelName);
     panelName = "public";
   }
 
@@ -1330,9 +1338,9 @@ function setActivePanel(panelName) {
 }
 
 function getAdminAccessLabel(status) {
-  if (status === "active") return appConfig.premiumPlanLabel || "Premium sem anúncios";
+  if (status === "active") return appConfig.premiumPlanLabel || "Plano premium";
   if (status === "blocked") return "Acesso bloqueado";
-  return appConfig.freePlanLabel || "Acesso livre com anúncios";
+  return appConfig.freePlanLabel || "Conta gratuita";
 }
 
 function getAdminRoleLabel(role) {
@@ -1367,22 +1375,24 @@ function renderProfile() {
     dom.memberName.textContent = member.name;
     dom.memberPlan.textContent =
       planKind === "premium"
-        ? appConfig.premiumPlanLabel || "Premium sem anúncios"
-        : appConfig.freePlanLabel || "Acesso livre com anúncios";
+        ? appConfig.premiumPlanLabel || "Plano premium"
+        : appConfig.freePlanLabel || "Conta gratuita";
     dom.memberAvatar.textContent = initials(member.name);
     dom.heroSubtitle.textContent = `Área do aluno ${member.name}`;
     dom.heroTitle.textContent = course.title || "Curso Completo de Eletrônica";
     dom.heroText.textContent =
       planKind === "premium"
         ? "Uma experiência premium, sem anúncios, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado."
-        : "Seu acesso livre com anúncios já está liberado, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
+        : "Sua conta gratuita já está liberada, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
     dom.memberGreeting.textContent = `Olá, ${member.name}. Seu laboratório digital está pronto.`;
     dom.memberGoalCopy.textContent =
       planKind === "premium"
         ? `Objetivo atual: ${member.goal}. Você está no plano premium, sem anúncios, avançando no ritmo "${member.rhythm}".`
-        : `Objetivo atual: ${member.goal}. Você está no plano gratuito com anúncios, avançando no ritmo "${member.rhythm}".`;
+        : `Objetivo atual: ${member.goal}. Você está na conta gratuita, avançando no ritmo "${member.rhythm}".`;
     dom.memberRhythm.textContent = `Ritmo: ${member.rhythm}`;
     dom.memberGoal.textContent = `Objetivo: ${member.goal}`;
+    dom.resumeCourse.textContent = "Continuar de onde parei";
+    dom.goToQuiz.textContent = "Abrir quiz final";
     dom.certificateStudent.textContent = member.name;
     return;
   }
@@ -1393,12 +1403,14 @@ function renderProfile() {
   dom.heroSubtitle.textContent = "Conheça a plataforma";
   dom.heroTitle.textContent = course.title || "Curso Completo de Eletrônica";
   dom.heroText.textContent =
-    "Conheça a plataforma, explore aulas de demonstração e entre na área premium quando quiser liberar o curso completo.";
+    "Conheça a plataforma, explore aulas de demonstração, crie sua conta gratuita e avance para o premium quando quiser.";
   dom.memberGreeting.textContent = "Veja por dentro da Academia DR.";
   dom.memberGoalCopy.textContent =
     "Você está navegando na área pública. Crie sua conta para salvar progresso, fazer o quiz final e emitir o certificado.";
   dom.memberRhythm.textContent = "Acesso: apresentação";
-  dom.memberGoal.textContent = "Plano: assinatura premium";
+  dom.memberGoal.textContent = "Plano: gratuito ou premium";
+  dom.resumeCourse.textContent = "Abrir aulas de apresentação";
+  dom.goToQuiz.textContent = "Criar conta grátis";
   dom.certificateStudent.textContent = "Aluno";
 }
 
@@ -1421,8 +1433,9 @@ function renderPublicOffer() {
   const isProtectedSite = window.location.protocol === "https:";
   const merchantBrand = String(appConfig.merchantBrand || "Nitro Scan Pro").trim();
   const paymentProviderLabel = appConfig.paymentProviderLabel || "PicPay • cartões e Pix";
+  const signedIn = Boolean(authState.session);
   const offerMetrics = [
-    { label: "Acesso livre", value: appConfig.freePlanLabel || "Acesso livre com anúncios" },
+    { label: "Conta gratuita", value: appConfig.freePlanLabel || "Conta gratuita" },
     { label: "Plano premium", value: appConfig.priceLabel || "R$ 50" },
     { label: "Pagamento", value: paymentProviderLabel },
     { label: "Aulas abertas", value: `${previewLessons.length} aula(s)` },
@@ -1431,7 +1444,7 @@ function renderPublicOffer() {
   dom.offerTitle.textContent = appConfig.offerTitle;
   dom.offerCopy.textContent = appConfig.offerCopy;
   dom.primaryCheckoutLink.textContent = `Quero o premium por ${appConfig.priceLabel || "R$ 50"}`;
-  dom.enterMemberArea.textContent = "Entrar na área";
+  dom.enterMemberArea.textContent = signedIn ? "Abrir minha área" : "Criar conta grátis";
   dom.primaryCheckoutLink.href = checkoutUrl;
   dom.primaryCheckoutLink.classList.toggle("is-disabled-link", checkoutUrl === "#");
   dom.whatsappSalesLink.href = whatsappUrl;
@@ -1481,7 +1494,7 @@ function renderPublicOffer() {
             (lesson) => `
               <button class="library-item" data-preview-lesson="${lesson.id}" type="button">
                 <strong>${escapeHtml(lesson.title)}</strong>
-                <span>Módulo ${lesson.moduleNumber} • ${lesson.duration} min • aula aberta</span>
+                <span>Módulo ${lesson.moduleNumber} • ${lesson.duration} min • acesso de apresentação</span>
               </button>
             `
           )
@@ -1503,7 +1516,7 @@ function renderPublicOffer() {
     },
     {
       title: "Falar no WhatsApp",
-      meta: appConfig.whatsappNumber ? "Confirme pagamento ou tire dúvidas" : "Contato em configuracao",
+      meta: appConfig.whatsappNumber ? "Confirme pagamento ou tire dúvidas" : "Contato em configuração",
       href: whatsappUrl,
     },
     {
@@ -1758,7 +1771,7 @@ function renderCourse() {
   const accessibleLessons = getAccessibleLessons();
 
   if (!lessonUnlocked) {
-    openAccessModal("Esta aula faz parte da area premium. Entre para liberar o curso completo.");
+    openAccessModal("Esta aula faz parte do curso completo. Entre com sua conta para continuar.", "course");
     const fallbackLesson = getPreviewLessons()[0];
     if (fallbackLesson) {
       state.selectedLessonId = fallbackLesson.id;
@@ -1769,16 +1782,16 @@ function renderCourse() {
 
     dom.lessonBreadcrumb.textContent = "Curso / Area premium";
     dom.lessonOverline.textContent = "Conteudo bloqueado";
-    dom.lessonTitle.textContent = "Abra sua conta premium para estudar esta aula.";
+    dom.lessonTitle.textContent = "Entre com sua conta para estudar esta aula.";
     dom.lessonSummary.textContent =
-      "Ative o acesso completo para liberar o player, progresso, favoritos, quiz e certificado.";
+      "Acesse a plataforma para liberar o player, progresso, favoritos, quiz e certificado.";
     dom.lessonPosition.textContent = "--";
     dom.lessonDuration.textContent = "--";
     dom.lessonStatus.textContent = "Bloqueada";
     dom.lessonModuleName.textContent = "Premium";
     dom.lessonContent.innerHTML =
-      '<p class="side-copy">Nenhuma aula gratuita foi configurada neste momento. Use o checkout ou entre com uma conta liberada.</p>';
-    dom.lessonOutline.innerHTML = "<li>Entre na area premium para continuar.</li>";
+      '<p class="side-copy">Nenhuma aula de apresentação foi configurada neste momento. Entre com sua conta ou ative o premium para continuar.</p>';
+    dom.lessonOutline.innerHTML = "<li>Entre com sua conta para continuar.</li>";
     dom.moduleProgressCopy.textContent = "Conteudo premium bloqueado.";
     dom.moduleProgressFill.style.width = "0%";
     dom.lessonNote.value = "";
@@ -1827,7 +1840,7 @@ function renderCourse() {
   if (!hasPremiumAccess) {
     const hint = document.createElement("p");
     hint.className = "side-copy";
-    hint.textContent = "Esta aula esta aberta como preview. Favoritos, progresso e anotacoes completas ficam na area premium.";
+    hint.textContent = "Esta aula está aberta na apresentação. Favoritos, progresso e anotações completas ficam disponíveis depois do login.";
     dom.lessonContent.prepend(hint);
   }
 }
@@ -2130,7 +2143,7 @@ function renderAdminPanel() {
                   }>Ativar premium</button>
                   <button class="button button-secondary button-small" data-access-action="pending" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "pending" ? "disabled" : ""
-                  }>Acesso livre</button>
+                  }>Plano gratuito</button>
                   <button class="button button-secondary button-small" data-access-action="blocked" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "blocked" ? "disabled" : ""
                   }>Bloquear</button>
@@ -2305,7 +2318,7 @@ async function signUpWithSupabase() {
   }
 
   setAccessFeedback("Criando a conta do aluno...", "");
-  const { error } = await client.auth.signUp({
+  const { error, data } = await client.auth.signUp({
     email,
     password,
     options: {
@@ -2318,6 +2331,12 @@ async function signUpWithSupabase() {
 
   if (error) {
     setAccessFeedback(error.message, "is-error");
+    return;
+  }
+
+  if (data?.session) {
+    setAccessFeedback("Conta criada com sucesso. Abrindo sua área...", "is-success");
+    await applySupabaseSession(data.session);
     return;
   }
 
@@ -2394,10 +2413,10 @@ async function applySupabaseSession(session) {
 
   if (!authState.accessGranted && !authState.isAdmin) {
     openAccessModal(
-      "Conta autenticada. O acesso ao curso ainda esta aguardando liberacao."
+      "Conta autenticada. Sua conta foi criada, mas ainda está sem permissão para entrar."
     );
     setAccessFeedback(
-      "Assim que a liberacao for concluida, clique em Atualizar acesso.",
+      "Assim que a liberação for concluída, clique em Atualizar acesso.",
       ""
     );
     return;
@@ -2412,7 +2431,19 @@ async function applySupabaseSession(session) {
     await refreshAdminMembers();
   }
 
+  const nextPanel = authState.isAdmin
+    ? accessTargetPanel === "admin"
+      ? "admin"
+      : accessTargetPanel === "public"
+        ? "dashboard"
+        : accessTargetPanel || "dashboard"
+    : accessTargetPanel && accessTargetPanel !== "public"
+      ? accessTargetPanel
+      : "dashboard";
+
   closeAccessModal();
+  state.activePanel = nextPanel;
+  saveState();
   renderAll();
 
   if (!state.member?.name || !state.member?.email) {
@@ -2462,6 +2493,12 @@ async function handleAccessSubmit(event) {
   event.preventDefault();
 
   if (isSupabaseMode()) {
+    if (authState.session && hasMemberAreaAccess()) {
+      closeAccessModal();
+      setActivePanel(authState.isAdmin && accessTargetPanel === "admin" ? "admin" : accessTargetPanel || "dashboard");
+      return;
+    }
+
     await signInWithSupabase();
     return;
   }
@@ -2564,11 +2601,29 @@ dom.enterMemberArea.addEventListener("click", () => {
     return;
   }
 
-  openAccessModal("Entre na area premium para liberar seu painel, progresso e certificado.");
+  openAccessModal("Crie sua conta gratuita ou entre para liberar seu painel, progresso e certificado.", "dashboard");
 });
 
-dom.resumeCourse.addEventListener("click", () => openNextLesson(true));
-dom.goToQuiz.addEventListener("click", () => setActivePanel("quiz"));
+dom.resumeCourse.addEventListener("click", () => {
+  if (hasMemberAreaAccess()) {
+    openNextLesson(true);
+    return;
+  }
+
+  const previewLesson = getPreviewLessons()[0];
+  if (!previewLesson) return;
+  state.selectedLessonId = previewLesson.id;
+  saveState();
+  setActivePanel("course");
+});
+dom.goToQuiz.addEventListener("click", () => {
+  if (hasMemberAreaAccess()) {
+    setActivePanel("quiz");
+    return;
+  }
+
+  openAccessModal("Crie sua conta gratuita ou entre para liberar o quiz, o certificado e seu painel.", "dashboard");
+});
 dom.openNextLesson.addEventListener("click", () => openNextLesson(true));
 dom.openCoursePanel.addEventListener("click", () => setActivePanel("course"));
 
