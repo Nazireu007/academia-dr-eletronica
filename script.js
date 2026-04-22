@@ -829,7 +829,14 @@ async function pullRemoteState() {
 }
 
 async function pushRemoteState() {
-  if (!isSupabaseMode() || !authState.user || !authState.accessGranted || authState.syncInFlight) return;
+  if (
+    !isSupabaseMode() ||
+    !authState.user ||
+    (!authState.accessGranted && !authState.isAdmin) ||
+    authState.syncInFlight
+  ) {
+    return;
+  }
   const client = await getAuthClient();
   if (!client) return;
 
@@ -915,9 +922,9 @@ async function refreshAdminMembers() {
   });
 
   const freeCount = authState.adminMembers.filter((member) => member.accessStatus === "pending").length;
-  const premiumCount = authState.adminMembers.filter((member) => member.accessStatus === "active").length;
-  dom.adminStatusCopy.textContent = `Lista atualizada. ${freeCount} conta(s) gratuita(s) e ${premiumCount} premium.`;
-  renderAdminPanel();
+      const premiumCount = authState.adminMembers.filter((member) => member.accessStatus === "active").length;
+      dom.adminStatusCopy.textContent = `Lista atualizada. ${freeCount} conta(s) gratuita(s) e ${premiumCount} premium.`;
+      renderAdminPanel();
 }
 
 async function updateMemberAccess(userId, accessStatus) {
@@ -1516,12 +1523,12 @@ function renderProfile() {
     dom.heroText.textContent =
       planKind === "premium"
         ? "Uma experiência premium, sem anúncios, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado."
-        : "Sua conta gratuita já está liberada, com jornada guiada, player de aulas, revisão pessoal, avaliação final e certificado.";
+        : "Sua conta gratuita já está liberada, com jornada guiada, player de aulas, revisão pessoal e avaliação final. Ative o premium para emitir o certificado.";
     dom.memberGreeting.textContent = `Olá, ${member.name}. Seu laboratório digital está pronto.`;
     dom.memberGoalCopy.textContent =
       planKind === "premium"
         ? `Objetivo atual: ${member.goal}. Você está no plano premium, sem anúncios, avançando no ritmo "${member.rhythm}".`
-        : `Objetivo atual: ${member.goal}. Você está na conta gratuita, avançando no ritmo "${member.rhythm}".`;
+        : `Objetivo atual: ${member.goal}. Você está na conta gratuita, estudando com anúncios e avançando no ritmo "${member.rhythm}".`;
     dom.memberAccount.textContent = accountEmail
       ? `Conta atual: ${accountEmail}`
       : "Conta atual: perfil autenticado";
@@ -2268,7 +2275,7 @@ function renderAdminPanel() {
     },
     {
       label: "Admins",
-      value: String(manageableMembers.filter((member) => member.role === "admin").length),
+      value: String(allMembers.filter((member) => member.role === "admin").length),
     },
   ];
 
@@ -2708,7 +2715,7 @@ async function applySupabaseSession(session) {
     return;
   }
 
-  if (authState.accessGranted) {
+  if (authState.accessGranted || authState.isAdmin) {
     await pullRemoteState();
     saveState();
   }

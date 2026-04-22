@@ -1704,14 +1704,11 @@ body.access-locked .site-footer {
   .stats-grid,
   .achievement-grid,
   .lesson-meta-grid,
-  .metric-list,
-  .header-hud {
+  .metric-list {
     grid-template-columns: 1fr;
   }
 
-  .site-header-shell,
   .header-center,
-  .header-right,
   .site-footer,
   .panel-head,
   .member-pill,
@@ -1723,14 +1720,35 @@ body.access-locked .site-footer {
     align-items: stretch;
   }
 
+  .site-header-shell {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .header-center,
+  .header-right {
+    width: 100%;
+  }
+
   .top-nav {
-    justify-content: stretch;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
   }
 
   .top-nav-link,
   .sidebar-link {
     width: 100%;
-    text-align: left;
+    text-align: center;
+  }
+
+  .top-nav-link {
+    padding: 0.62rem 0.7rem;
+  }
+
+  .header-hud {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .admin-member-item {
@@ -1787,6 +1805,14 @@ body.access-locked .site-footer {
 
   .certificate-inner {
     padding: 1.5rem 1rem;
+  }
+
+  .top-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .header-hud {
+    grid-template-columns: 1fr;
   }
 }
 
