@@ -39,6 +39,9 @@ jobs:
           cp access-config.js _site/access-config.js
           cp course-data.js _site/course-data.js
           cp MONETIZACAO.md _site/MONETIZACAO.md
+          cp CHECKLIST-PUBLICACAO.md _site/CHECKLIST-PUBLICACAO.md
+          cp privacidade.html _site/privacidade.html
+          cp termos.html _site/termos.html
           cp 404.html _site/404.html
           cp .nojekyll _site/.nojekyll
           cp conteudo/curso-eletronica.md _site/conteudo/curso-eletronica.md

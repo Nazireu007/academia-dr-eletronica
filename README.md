@@ -1,4 +1,4 @@
-# Academia DR | Curso Completo de Eletrônica
+# Nitro Scan Pro | Curso Completo de Eletrônica
 
 Esta pasta agora contém uma plataforma web local em formato de área de membros.
 
@@ -14,6 +14,9 @@ Esta pasta agora contém uma plataforma web local em formato de área de membros
 - `gerar-acesso.html`: ferramenta local para gerar um novo hash de acesso.
 - `supabase-schema.sql`: estrutura do backend para contas individuais, liberação por aluno e estado remoto.
 - `MONETIZACAO.md`: guia rápido do modelo comercial do curso.
+- `privacidade.html`: política de privacidade pública da plataforma.
+- `termos.html`: termos públicos de uso da plataforma.
+- `CHECKLIST-PUBLICACAO.md`: checklist final para revisar antes de divulgar e monetizar.
 
 ## Recursos da plataforma
 
