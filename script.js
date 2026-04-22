@@ -1190,14 +1190,15 @@ function syncAccessModeUi() {
   const signedIn = Boolean(authState.session);
   const alreadyInside = supabaseMode && signedIn && hasMemberAreaAccess();
   const blockedMember = supabaseMode && signedIn && authState.accessStatus === "blocked" && !authState.isAdmin;
+  const waitingAccess = supabaseMode && signedIn && !alreadyInside && !blockedMember;
 
   dom.localAccessFields.hidden = supabaseMode;
-  dom.cloudAuthFields.hidden = !supabaseMode || blockedMember;
+  dom.cloudAuthFields.hidden = !supabaseMode || signedIn;
   dom.authSignupButton.hidden = !supabaseMode || signedIn;
   dom.authResetButton.hidden = !supabaseMode || signedIn;
-  dom.authRefreshAccessButton.hidden = !blockedMember;
+  dom.authRefreshAccessButton.hidden = !supabaseMode || !signedIn || alreadyInside;
   dom.authSignoutButton.hidden = !supabaseMode || !signedIn;
-  dom.authSubmitButton.hidden = blockedMember;
+  dom.authSubmitButton.hidden = blockedMember || waitingAccess;
 
   if (!supabaseMode) {
     dom.accessCopy.textContent =
@@ -1229,12 +1230,20 @@ function syncAccessModeUi() {
     return;
   }
 
+  if (waitingAccess) {
+    dom.accessCopy.textContent =
+      "Sua conta já foi criada. Falta apenas a liberação do acesso nesta plataforma.";
+    dom.authModeCopy.textContent =
+      "Quando o acesso for liberado, clique em Atualizar acesso. Se entrou com a conta errada, use Sair da conta.";
+    return;
+  }
+
   dom.accessCopy.textContent = alreadyInside
     ? "Sua conta já está conectada. Clique abaixo para abrir a plataforma."
-    : "Entre com seu e-mail e senha. A conta gratuita libera os estudos, e o plano premium remove os anúncios.";
+    : "Entre com seu e-mail e senha ou crie sua conta gratuita para começar a usar a plataforma.";
   dom.authModeCopy.textContent = alreadyInside
     ? "Se quiser usar outro e-mail, clique em Sair da conta primeiro."
-    : "Crie sua conta gratuita para começar ou entre para continuar seus estudos.";
+    : "Se o seu e-mail já existe, use Entrar com e-mail. Se for a primeira vez, clique em Criar conta grátis.";
   dom.authSubmitButton.textContent = alreadyInside ? "Abrir minha área" : "Entrar com e-mail";
 }
 
@@ -1251,7 +1260,13 @@ function openAccessModal(message = accessConfig.accessMessage, targetPanel = "da
   setAccessFeedback("", "");
 
   if (isSupabaseMode()) {
-    (dom.authEmailInput || dom.authPasswordInput)?.focus();
+    if (!dom.cloudAuthFields.hidden) {
+      (dom.authEmailInput || dom.authPasswordInput)?.focus();
+    } else if (!dom.authRefreshAccessButton.hidden) {
+      dom.authRefreshAccessButton.focus();
+    } else if (!dom.authSubmitButton.hidden) {
+      dom.authSubmitButton.focus();
+    }
   } else {
     dom.accessCodeInput.focus();
   }
@@ -1457,7 +1472,7 @@ function renderPublicOffer() {
   dom.offerTitle.textContent = appConfig.offerTitle;
   dom.offerCopy.textContent = appConfig.offerCopy;
   dom.primaryCheckoutLink.textContent = `Quero o premium por ${appConfig.priceLabel || "R$ 50"}`;
-  dom.enterMemberArea.textContent = signedIn ? "Abrir minha área" : "Criar conta grátis";
+  dom.enterMemberArea.textContent = signedIn ? "Abrir minha área" : "Entrar ou criar conta grátis";
   dom.primaryCheckoutLink.href = checkoutUrl;
   dom.primaryCheckoutLink.classList.toggle("is-disabled-link", checkoutUrl === "#");
   dom.whatsappSalesLink.href = whatsappUrl;
@@ -2328,6 +2343,21 @@ async function signInWithSupabase() {
   });
 
   if (error) {
+    const normalizedMessage = normalize(error.message);
+
+    if (
+      normalizedMessage.includes("invalid login credentials") ||
+      normalizedMessage.includes("invalid credentials") ||
+      normalizedMessage.includes("email or password") ||
+      normalizedMessage.includes("email not confirmed")
+    ) {
+      setAccessFeedback(
+        "E-mail ou senha não conferem. Se a conta já existe, entre com a senha correta ou redefina a senha.",
+        "is-error"
+      );
+      return;
+    }
+
     setAccessFeedback(error.message, "is-error");
     return;
   }
@@ -2369,6 +2399,31 @@ async function signUpWithSupabase() {
   });
 
   if (error) {
+    const normalizedMessage = normalize(error.message);
+
+    if (
+      normalizedMessage.includes("already registered") ||
+      normalizedMessage.includes("already been registered") ||
+      normalizedMessage.includes("user already registered")
+    ) {
+      setAccessFeedback("Esse e-mail já está cadastrado. Tentando entrar na sua conta...", "");
+      const loginAttempt = await client.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (loginAttempt.error) {
+        setAccessFeedback(
+          "Esse e-mail já existe. Use a senha correta e clique em Entrar com e-mail.",
+          "is-error"
+        );
+        return;
+      }
+
+      await applySupabaseSession(loginAttempt.data.session);
+      return;
+    }
+
     setAccessFeedback(error.message, "is-error");
     return;
   }
@@ -2376,6 +2431,17 @@ async function signUpWithSupabase() {
   if (data?.session) {
     setAccessFeedback("Conta criada com sucesso. Abrindo sua área...", "is-success");
     await applySupabaseSession(data.session);
+    return;
+  }
+
+  const loginAttempt = await client.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (!loginAttempt.error && loginAttempt.data.session) {
+    setAccessFeedback("Conta criada com sucesso. Abrindo sua área...", "is-success");
+    await applySupabaseSession(loginAttempt.data.session);
     return;
   }
 
@@ -2640,7 +2706,7 @@ dom.enterMemberArea.addEventListener("click", () => {
     return;
   }
 
-  openAccessModal("Crie sua conta gratuita ou entre para liberar seu painel, progresso e certificado.", "dashboard");
+  openAccessModal("Entre com sua conta ou crie sua conta gratuita para liberar painel, progresso e certificado.", "dashboard");
 });
 
 dom.resumeCourse.addEventListener("click", () => {
@@ -2661,7 +2727,7 @@ dom.goToQuiz.addEventListener("click", () => {
     return;
   }
 
-  openAccessModal("Crie sua conta gratuita ou entre para liberar o quiz, o certificado e seu painel.", "dashboard");
+  openAccessModal("Entre com sua conta ou crie sua conta gratuita para liberar quiz, certificado e painel.", "dashboard");
 });
 dom.openNextLesson.addEventListener("click", () => openNextLesson(true));
 dom.openCoursePanel.addEventListener("click", () => setActivePanel("course"));
