@@ -1369,6 +1369,13 @@ body.access-locked .site-footer {
   color: #d6e7f7;
 }
 
+.certificate-workload {
+  margin: 1rem 0 0;
+  color: #ffe2c7;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
 .certificate-highlight-row {
   display: flex;
   justify-content: center;
@@ -1610,10 +1617,28 @@ body.access-locked .site-footer {
   }
 
   .certificate-copy,
+  .certificate-workload,
   .certificate-meta,
   .certificate-student,
   .certificate-badge,
   .certificate-inner h3 {
     color: #111 !important;
+  }
+
+  .certificate-inner {
+    border: 2px solid #caa874;
+    background: linear-gradient(180deg, #fffdf8, #fff7ea) !important;
+  }
+
+  .certificate-highlight {
+    border-color: #caa874;
+    background: #fff4da;
+    color: #5e3d16;
+  }
+
+  .certificate-seal {
+    border-color: #b88f55;
+    background: radial-gradient(circle at center, #f6d29b, #f0b96f);
+    color: #5a3512;
   }
 }

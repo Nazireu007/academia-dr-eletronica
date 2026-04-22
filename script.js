@@ -213,6 +213,7 @@ const dom = {
   printCertificate: document.querySelector("#print-certificate"),
   certificateCard: document.querySelector("#certificate-card"),
   certificateStudent: document.querySelector("#certificate-student"),
+  certificateWorkload: document.querySelector("#certificate-workload"),
   certificateDate: document.querySelector("#certificate-date"),
   certificateId: document.querySelector("#certificate-id"),
   certificateStatusTitle: document.querySelector("#certificate-status-title"),
@@ -1990,22 +1991,31 @@ function renderCertificate() {
   dom.printCertificate.disabled = !unlocked;
   dom.certificateCard.classList.toggle("is-locked", !unlocked);
   dom.printCertificate.textContent = unlocked ? "Preencher e imprimir" : "Certificado bloqueado";
+  const certifiedHours = Math.max(1, Math.ceil(course.totalDuration / 60));
 
   if (unlocked) {
     const date = new Date(state.quizResult.completedAt);
     const formatted = date.toLocaleDateString("pt-BR");
-    const certificateCode = `DR-${slugify(state.member?.name || "aluno").toUpperCase()}-${formatted
-      .replaceAll("/", "")
-      .slice(0, 8)}`;
+    const compactDate = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}${String(
+      date.getDate()
+    ).padStart(2, "0")}`;
+    const identitySeed = slugify(state.member?.name || "aluno")
+      .replaceAll("-", "")
+      .toUpperCase()
+      .slice(0, 6)
+      .padEnd(6, "X");
+    const certificateCode = `DR-${compactDate}-${identitySeed}`;
 
+    dom.certificateWorkload.textContent = `Carga horária certificada: ${certifiedHours} horas`;
     dom.certificateDate.textContent = `Data: ${formatted}`;
-    dom.certificateId.textContent = `Certificado: ${certificateCode}`;
+    dom.certificateId.textContent = `Registro: ${certificateCode}`;
     dom.certificateStatusTitle.textContent = "Certificado liberado";
     dom.certificateStatusCopy.textContent =
       "Seu certificado já está preenchido com nome, data e código. Agora basta clicar em Preencher e imprimir.";
   } else {
+    dom.certificateWorkload.textContent = `Carga horária certificada: ${certifiedHours} horas`;
     dom.certificateDate.textContent = "Data: aguardando conclusão";
-    dom.certificateId.textContent = "Certificado: indisponível";
+    dom.certificateId.textContent = "Registro: aguardando liberação";
     dom.certificateStatusTitle.textContent = "Ainda bloqueado";
     dom.certificateStatusCopy.textContent =
       "Conclua todas as aulas e alcance 70% ou mais no quiz final para liberar o certificado.";
