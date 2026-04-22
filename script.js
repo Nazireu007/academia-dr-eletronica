@@ -1576,7 +1576,7 @@ function renderPublicOffer() {
   const whatsappUrl = getWhatsAppUrl();
   const isProtectedSite = window.location.protocol === "https:";
   const merchantBrand = String(appConfig.merchantBrand || "Nitro Scan Pro").trim();
-  const paymentProviderLabel = appConfig.paymentProviderLabel || "Checkout PicPay";
+  const paymentProviderLabel = appConfig.paymentProviderLabel || "Cartão ou PicPay";
   const signedIn = Boolean(authState.session);
   const offerMetrics = [
     { label: "Conta gratuita", value: appConfig.freePlanLabel || "Conta gratuita" },
@@ -1587,7 +1587,7 @@ function renderPublicOffer() {
 
   dom.offerTitle.textContent = appConfig.offerTitle;
   dom.offerCopy.textContent = appConfig.offerCopy;
-  dom.primaryCheckoutLink.textContent = `Quero o premium por ${appConfig.priceLabel || "R$ 50"}`;
+  dom.primaryCheckoutLink.textContent = "Pagar com cartão ou PicPay";
   dom.enterMemberArea.textContent = signedIn ? "Abrir minha área" : "Entrar ou criar conta grátis";
   dom.primaryCheckoutLink.href = checkoutUrl;
   dom.primaryCheckoutLink.classList.toggle("is-disabled-link", checkoutUrl === "#");
@@ -1596,7 +1596,7 @@ function renderPublicOffer() {
 
   const trustItems = [
     { title: "Cobrança profissional", copy: `${merchantBrand} em checkout externo` },
-    { title: "Pagamento protegido", copy: "Escolha a forma de pagamento mais confortável para você" },
+    { title: "Pagamento protegido", copy: "Cartão ou PicPay em ambiente separado do curso" },
     {
       title: "Ambiente protegido",
       copy: isProtectedSite ? "Site em HTTPS com redirecionamento para checkout externo" : "Checkout externo e protegido",
@@ -1653,8 +1653,8 @@ function renderPublicOffer() {
       variant: "primary-payment",
     },
     {
-      title: "Copiar chave Pix",
-      meta: appConfig.pixKey ? "Pague no seu banco e envie o comprovante" : "Chave Pix indisponivel",
+      title: "Pagar por Pix",
+      meta: appConfig.pixKey ? "Copie a chave, pague no banco e envie o comprovante" : "Chave Pix indisponivel",
       href: appConfig.pixKey ? "__copy_pix__" : "#",
       variant: "secondary-payment",
     },
