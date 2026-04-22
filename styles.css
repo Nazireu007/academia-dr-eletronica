@@ -1585,6 +1585,37 @@ body.access-locked .site-footer {
   font-weight: 800;
 }
 
+.certificate-upsell {
+  margin-top: 1rem;
+}
+
+.certificate-upsell-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(255, 149, 80, 0.24);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 149, 80, 0.1), transparent),
+    rgba(255, 255, 255, 0.03);
+}
+
+.certificate-upsell-card strong {
+  color: #fff1df;
+}
+
+.certificate-upsell-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.certificate-upsell-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
 .glossary-preview {
   display: grid;
   gap: 0.8rem;

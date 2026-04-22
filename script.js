@@ -218,6 +218,7 @@ const dom = {
   certificateId: document.querySelector("#certificate-id"),
   certificateStatusTitle: document.querySelector("#certificate-status-title"),
   certificateStatusCopy: document.querySelector("#certificate-status-copy"),
+  certificateUpsell: document.querySelector("#certificate-upsell"),
   glossaryPreview: document.querySelector("#glossary-preview"),
   hudProgressPercent: document.querySelector("#hud-progress-percent"),
   hudQuizStatus: document.querySelector("#hud-quiz-status"),
@@ -2120,6 +2121,9 @@ function renderCertificate() {
   const unlocked = hasUnlockedCertificate();
   const studentName = String(state.member?.name || "Aluno").trim();
   const freeMember = isFreeMember();
+  const checkoutUrl = getCheckoutUrl();
+  const whatsappUrl = getWhatsAppUrl();
+  const completedJourney = state.completed.size === course.lessons.length && Boolean(state.quizResult?.passed);
   dom.printCertificate.disabled = !unlocked;
   dom.certificateCard.classList.toggle("is-locked", !unlocked);
   dom.certificateCard.classList.toggle("has-long-student-name", studentName.length > 28);
@@ -2155,6 +2159,31 @@ function renderCertificate() {
       freeMember
         ? "Sua conta gratuita não inclui certificado de conclusão. Ative o plano premium para remover os anúncios e liberar a emissão do certificado."
         : "Conclua todas as aulas, alcance 70% ou mais no quiz final e mantenha o plano premium ativo para liberar o certificado profissional de curso livre.";
+  }
+
+  if (dom.certificateUpsell) {
+    if (freeMember) {
+      dom.certificateUpsell.innerHTML = `
+        <div class="certificate-upsell-card">
+          <strong>${completedJourney ? "Seu progresso já está pronto" : "Certificado disponível no premium"}</strong>
+          <p>${
+            completedJourney
+              ? "Você já cumpriu as etapas técnicas do curso. Agora falta só ativar o plano premium para emitir o certificado sem anúncios."
+              : "A conta gratuita permite estudar com anúncios. Para emitir o certificado ao concluir a trilha, ative o plano premium."
+          }</p>
+          <div class="certificate-upsell-actions">
+            <a class="button button-primary button-small ${checkoutUrl === "#" ? "is-disabled-link" : ""}" href="${checkoutUrl}" ${
+              checkoutUrl === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
+            }>Ativar premium agora</a>
+            <a class="button button-secondary button-small ${whatsappUrl === "#" ? "is-disabled-link" : ""}" href="${whatsappUrl}" ${
+              whatsappUrl === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
+            }>Tirar dúvida no WhatsApp</a>
+          </div>
+        </div>
+      `;
+    } else {
+      dom.certificateUpsell.innerHTML = "";
+    }
   }
 
   dom.glossaryPreview.innerHTML = course.glossary
