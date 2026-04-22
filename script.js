@@ -881,7 +881,9 @@ async function refreshAdminMembers() {
     };
   });
 
-  dom.adminStatusCopy.textContent = `Lista atualizada com ${authState.adminMembers.length} cadastro(s).`;
+  const freeCount = authState.adminMembers.filter((member) => member.accessStatus === "pending").length;
+  const premiumCount = authState.adminMembers.filter((member) => member.accessStatus === "active").length;
+  dom.adminStatusCopy.textContent = `Lista atualizada. ${freeCount} conta(s) gratuita(s) e ${premiumCount} premium.`;
   renderAdminPanel();
 }
 
@@ -889,7 +891,12 @@ async function updateMemberAccess(userId, accessStatus) {
   const client = await getAuthClient();
   if (!client || !authState.isAdmin) return;
 
-  dom.adminStatusCopy.textContent = "Atualizando permissao de acesso...";
+  dom.adminStatusCopy.textContent =
+    accessStatus === "active"
+      ? "Ativando plano premium..."
+      : accessStatus === "pending"
+        ? "Movendo conta para o plano gratuito..."
+        : "Bloqueando acesso da conta...";
 
   const { error } = await client.from("course_access").upsert(
     {
@@ -909,7 +916,12 @@ async function updateMemberAccess(userId, accessStatus) {
     return;
   }
 
-  dom.adminStatusCopy.textContent = "Permissao de acesso atualizada com sucesso.";
+  dom.adminStatusCopy.textContent =
+    accessStatus === "active"
+      ? "Plano premium ativado com sucesso."
+      : accessStatus === "pending"
+        ? "Conta colocada no plano gratuito."
+        : "Conta bloqueada com sucesso.";
   await refreshAdminMembers();
 }
 
@@ -2070,7 +2082,7 @@ function renderAdminPanel() {
   const metrics = [
     { label: "Cadastros", value: String(manageableMembers.length) },
     {
-      label: "Grátis",
+      label: "Gratuitos",
       value: String(manageableMembers.filter((member) => member.accessStatus === "pending").length),
     },
     {
@@ -2111,10 +2123,10 @@ function renderAdminPanel() {
               getAdminAccessLabel(selfMember.accessStatus)
             )}</span>
           </div>
-          <span>Essa e a sua conta principal de administracao.</span>
+          <span>Essa é a sua conta principal de administração.</span>
         </article>
       `
-    : `<div class="empty-state">Sua conta administradora sera exibida aqui.</div>`;
+    : `<div class="empty-state">Sua conta administradora será exibida aqui.</div>`;
 
   dom.adminMemberList.innerHTML =
     members.length > 0
@@ -2143,7 +2155,7 @@ function renderAdminPanel() {
                   }>Ativar premium</button>
                   <button class="button button-secondary button-small" data-access-action="pending" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "pending" ? "disabled" : ""
-                  }>Plano gratuito</button>
+                  }>Deixar no gratuito</button>
                   <button class="button button-secondary button-small" data-access-action="blocked" data-member-id="${member.userId}" type="button" ${
                     member.accessStatus === "blocked" ? "disabled" : ""
                   }>Bloquear</button>
@@ -2158,7 +2170,7 @@ function renderAdminPanel() {
             `
           )
           .join("")
-      : `<div class="empty-state">Nenhum cadastro encontrado neste filtro. Quando um aluno criar a conta, ele aparecera aqui.</div>`;
+      : `<div class="empty-state">Nenhuma conta encontrada neste filtro. Quando um aluno criar a conta, ela aparecerá aqui.</div>`;
 
   dom.adminMemberList.querySelectorAll("[data-access-action]").forEach((button) => {
     button.addEventListener("click", () => {
