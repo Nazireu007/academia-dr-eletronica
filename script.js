@@ -1191,14 +1191,28 @@ function syncAccessModeUi() {
   const alreadyInside = supabaseMode && signedIn && hasMemberAreaAccess();
   const blockedMember = supabaseMode && signedIn && authState.accessStatus === "blocked" && !authState.isAdmin;
   const waitingAccess = supabaseMode && signedIn && !alreadyInside && !blockedMember;
+  const cloudFieldsVisible = supabaseMode && !signedIn;
 
   dom.localAccessFields.hidden = supabaseMode;
-  dom.cloudAuthFields.hidden = !supabaseMode || signedIn;
+  dom.cloudAuthFields.hidden = !cloudFieldsVisible;
   dom.authSignupButton.hidden = !supabaseMode || signedIn;
   dom.authResetButton.hidden = !supabaseMode || signedIn;
   dom.authRefreshAccessButton.hidden = !supabaseMode || !signedIn || alreadyInside;
   dom.authSignoutButton.hidden = !supabaseMode || !signedIn;
   dom.authSubmitButton.hidden = blockedMember || waitingAccess;
+
+  dom.accessCodeInput.disabled = supabaseMode;
+  dom.accessCodeInput.required = !supabaseMode;
+
+  if (dom.authEmailInput) {
+    dom.authEmailInput.disabled = !cloudFieldsVisible;
+    dom.authEmailInput.required = cloudFieldsVisible;
+  }
+
+  if (dom.authPasswordInput) {
+    dom.authPasswordInput.disabled = !cloudFieldsVisible;
+    dom.authPasswordInput.required = cloudFieldsVisible;
+  }
 
   if (!supabaseMode) {
     dom.accessCopy.textContent =
