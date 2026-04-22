@@ -1312,6 +1312,42 @@ body.access-locked .site-footer {
   border: 1px dashed rgba(123, 226, 200, 0.26);
 }
 
+.pix-card {
+  width: min(100%, 720px);
+}
+
+.pix-modal-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.pix-key-box {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(123, 226, 200, 0.22);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(123, 226, 200, 0.08), rgba(255, 255, 255, 0.02));
+}
+
+.pix-key-box span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.pix-key-box strong {
+  color: var(--text);
+  line-height: 1.5;
+  font-size: 1rem;
+  word-break: break-all;
+}
+
+.pix-steps {
+  display: grid;
+  gap: 0.8rem;
+}
+
 .faq-list {
   display: grid;
   gap: 0.8rem;
@@ -1334,6 +1370,12 @@ body.access-locked .site-footer {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+@media (max-width: 720px) {
+  .pix-key-box strong {
+    font-size: 0.92rem;
+  }
 }
 
 .library-item strong,

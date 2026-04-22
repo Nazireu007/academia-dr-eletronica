@@ -130,14 +130,20 @@ const dom = {
   authSignoutButton: document.querySelector("#auth-signout-button"),
   authSubmitButton: document.querySelector("#auth-submit-button"),
   authModal: document.querySelector("#auth-modal"),
+  pixModal: document.querySelector("#pix-modal"),
   memberForm: document.querySelector("#member-form"),
   memberNameInput: document.querySelector("#member-name-input"),
   memberEmailInput: document.querySelector("#member-email-input"),
   memberGoalInput: document.querySelector("#member-goal-input"),
   memberRhythmInput: document.querySelector("#member-rhythm-input"),
   closeProfileModal: document.querySelector("#close-profile-modal"),
+  closePixModal: document.querySelector("#close-pix-modal"),
   profileModalTitle: document.querySelector("#profile-modal-title"),
   profileModalCopy: document.querySelector("#profile-modal-copy"),
+  pixKeyDisplay: document.querySelector("#pix-key-display"),
+  pixFeedback: document.querySelector("#pix-feedback"),
+  pixCopyButton: document.querySelector("#pix-copy-button"),
+  pixWhatsappLink: document.querySelector("#pix-whatsapp-link"),
   editProfile: document.querySelector("#edit-profile"),
   logoutButton: document.querySelector("#logout-button"),
   adminTopLink: document.querySelector("#admin-top-link"),
@@ -1387,7 +1393,7 @@ function closeAccessModal() {
   dom.accessModal.classList.remove("is-open");
   dom.accessModal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("access-locked");
-  if (!dom.authModal.classList.contains("is-open")) {
+  if (!dom.authModal.classList.contains("is-open") && !dom.pixModal.classList.contains("is-open")) {
     document.body.classList.remove("modal-open");
   }
 }
@@ -1435,7 +1441,25 @@ function openAuthModal(prefill = false) {
 function closeAuthModal() {
   dom.authModal.classList.remove("is-open");
   dom.authModal.setAttribute("aria-hidden", "true");
-  if (!dom.accessModal.classList.contains("is-open")) {
+  if (!dom.accessModal.classList.contains("is-open") && !dom.pixModal.classList.contains("is-open")) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function openPixModal() {
+  dom.pixKeyDisplay.textContent = String(appConfig.pixKey || "-").trim() || "-";
+  dom.pixFeedback.textContent = "Copie a chave, conclua no seu banco e envie o comprovante para liberar o premium.";
+  dom.pixWhatsappLink.href = getWhatsAppUrl();
+  dom.pixWhatsappLink.classList.toggle("is-disabled-link", dom.pixWhatsappLink.href === "#");
+  dom.pixModal.classList.add("is-open");
+  dom.pixModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function closePixModal() {
+  dom.pixModal.classList.remove("is-open");
+  dom.pixModal.setAttribute("aria-hidden", "true");
+  if (!dom.accessModal.classList.contains("is-open") && !dom.authModal.classList.contains("is-open")) {
     document.body.classList.remove("modal-open");
   }
 }
@@ -1655,7 +1679,7 @@ function renderPublicOffer() {
     {
       title: "Pagar por Pix",
       meta: appConfig.pixKey ? "Copie a chave, pague no banco e envie o comprovante" : "Chave Pix indisponivel",
-      href: appConfig.pixKey ? "__copy_pix__" : "#",
+      href: appConfig.pixKey ? "__open_pix_modal__" : "#",
       variant: "secondary-payment",
     },
     {
@@ -1669,12 +1693,12 @@ function renderPublicOffer() {
     .map(
       (item) => `
         <a class="resource-link-card ${item.variant ? `is-${item.variant}` : ""} ${item.href === "#" ? "is-disabled-link" : ""}" href="${
-          item.href === "__copy_pix__" ? "#" : item.href
+          item.href === "__open_pix_modal__" ? "#" : item.href
         }" ${
           item.href === "#"
             ? 'aria-disabled="true"'
-            : item.href === "__copy_pix__"
-              ? 'data-copy-pix="true"'
+            : item.href === "__open_pix_modal__"
+              ? 'data-open-pix-modal="true"'
               : 'target="_blank" rel="noreferrer"'
         }>
           <strong>${escapeHtml(item.title)}</strong>
@@ -1684,26 +1708,10 @@ function renderPublicOffer() {
     )
     .join("");
 
-  dom.offerLinks.querySelectorAll("[data-copy-pix]").forEach((link) => {
-    link.addEventListener("click", async (event) => {
+  dom.offerLinks.querySelectorAll("[data-open-pix-modal]").forEach((link) => {
+    link.addEventListener("click", (event) => {
       event.preventDefault();
-      const copied = await copyPixKey();
-      const meta = link.querySelector("span");
-      if (!meta) return;
-      const original = meta.textContent;
-      meta.textContent = copied
-        ? "Chave Pix copiada. Abra seu banco e envie o comprovante."
-        : "Nao foi possivel copiar a chave Pix agora.";
-      dom.paymentTrustNote.textContent = copied
-        ? "Chave Pix copiada. Agora abra seu banco, conclua o pagamento e envie o comprovante no WhatsApp."
-        : "Nao foi possivel copiar a chave Pix agora. Tente novamente em instantes.";
-      window.setTimeout(() => {
-        meta.textContent = original;
-        dom.paymentTrustNote.textContent =
-          checkoutUrl !== "#"
-            ? `Ao clicar em comprar, você será direcionado ao checkout protegido da ${merchantBrand} para concluir o pagamento.`
-            : "O checkout premium será exibido aqui assim que o meio de pagamento estiver disponível.";
-      }, 2200);
+      openPixModal();
     });
   });
 
@@ -2876,6 +2884,23 @@ dom.editProfile.addEventListener("click", () => {
 
 dom.closeProfileModal.addEventListener("click", () => {
   closeAuthModal();
+});
+
+dom.closePixModal?.addEventListener("click", () => {
+  closePixModal();
+});
+
+dom.pixCopyButton?.addEventListener("click", async () => {
+  const copied = await copyPixKey();
+  dom.pixFeedback.textContent = copied
+    ? "Chave Pix copiada. Agora abra seu banco, conclua o pagamento e envie o comprovante no WhatsApp."
+    : "Nao foi possivel copiar a chave Pix agora. Tente novamente em instantes.";
+});
+
+dom.pixModal?.addEventListener("click", (event) => {
+  if (event.target === dom.pixModal) {
+    closePixModal();
+  }
 });
 
 dom.logoutButton.addEventListener("click", () => {
