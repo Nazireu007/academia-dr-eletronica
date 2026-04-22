@@ -228,6 +228,7 @@ const dom = {
   adminStatusCopy: document.querySelector("#admin-status-copy"),
   adminMetrics: document.querySelector("#admin-metrics"),
   adminSelfCard: document.querySelector("#admin-self-card"),
+  adminPendingList: document.querySelector("#admin-pending-list"),
   adminMemberList: document.querySelector("#admin-member-list"),
 };
 
@@ -281,7 +282,7 @@ function removeStored(key) {
 }
 
 const defaultAccessConfig = {
-  courseTitle: "Academia DR",
+  courseTitle: "Nitro Scan Pro",
   accessMessage:
     "Digite o codigo de acesso entregue ao aluno. Troque o hash padrao antes de vender o curso.",
   sessionHours: 12,
@@ -1035,7 +1036,7 @@ function buildWelcomeMessage(member) {
   const firstName = String(member?.name || "Aluno").trim().split(/\s+/)[0] || "Aluno";
   const loginUrl = appConfig.siteUrl || window.location.href;
   return [
-    `Olá, ${firstName}! Seu acesso à Academia DR já está liberado.`,
+    `Olá, ${firstName}! Seu acesso à Nitro Scan Pro já está liberado.`,
     `Entre por aqui: ${loginUrl}`,
     `Use o e-mail ${member?.email || ""} para entrar na área do curso.`,
     "Depois do login, clique em Abrir minha área e continue seus estudos normalmente.",
@@ -1416,7 +1417,7 @@ function renderProfile() {
   dom.heroTitle.textContent = course.title || "Curso Completo de Eletrônica";
   dom.heroText.textContent =
     "Conheça a plataforma, explore aulas de demonstração, crie sua conta gratuita e avance para o premium quando quiser.";
-  dom.memberGreeting.textContent = "Veja por dentro da Academia DR.";
+  dom.memberGreeting.textContent = "Veja por dentro da Nitro Scan Pro.";
   dom.memberGoalCopy.textContent =
     "Você está navegando na área pública. Crie sua conta para salvar progresso, fazer o quiz final e emitir o certificado.";
   dom.memberRhythm.textContent = "Acesso: apresentação";
@@ -1463,7 +1464,7 @@ function renderPublicOffer() {
   dom.whatsappSalesLink.classList.toggle("is-disabled-link", whatsappUrl === "#");
 
   const trustItems = [
-    { title: "Pagamento processado", copy: `${merchantBrand} no PicPay` },
+    { title: "Cobrança profissional", copy: `${merchantBrand} no PicPay` },
     { title: "Pix e cartões", copy: "Escolha a forma de pagamento mais confortável para você" },
     {
       title: "Ambiente protegido",
@@ -1515,7 +1516,7 @@ function renderPublicOffer() {
 
   const offerLinks = [
     {
-      title: "Pagar com segurança",
+      title: "Ativar premium com segurança",
       meta: `${merchantBrand} no PicPay • cartões e Pix`,
       href: checkoutUrl,
       variant: "primary-payment",
@@ -2066,6 +2067,7 @@ function renderAdminPanel() {
   const allMembers = authState.adminMembers || [];
   const selfMember = allMembers.find((member) => member.userId === authState.user?.id) || null;
   const manageableMembers = allMembers.filter((member) => member.userId !== authState.user?.id);
+  const pendingMembers = manageableMembers.filter((member) => member.accessStatus === "pending").slice(0, 6);
   const members = manageableMembers.filter((member) => {
     const matchesFilter =
       state.adminFilter === "all"
@@ -2128,6 +2130,25 @@ function renderAdminPanel() {
       `
     : `<div class="empty-state">Sua conta administradora será exibida aqui.</div>`;
 
+  dom.adminPendingList.innerHTML =
+    pendingMembers.length > 0
+      ? pendingMembers
+          .map(
+            (member) => `
+              <article class="admin-pending-item">
+                <div class="admin-member-copy">
+                  <strong>${escapeHtml(member.name)}</strong>
+                  <span>${escapeHtml(member.email || "Sem e-mail")}</span>
+                </div>
+                <button class="button button-secondary button-small" data-access-action="active" data-member-id="${member.userId}" type="button">
+                  Ativar premium
+                </button>
+              </article>
+            `
+          )
+          .join("")
+      : `<div class="empty-state">Nenhuma conta gratuita aguardando liberação agora.</div>`;
+
   dom.adminMemberList.innerHTML =
     members.length > 0
       ? members
@@ -2173,6 +2194,12 @@ function renderAdminPanel() {
       : `<div class="empty-state">Nenhuma conta encontrada neste filtro. Quando um aluno criar a conta, ela aparecerá aqui.</div>`;
 
   dom.adminMemberList.querySelectorAll("[data-access-action]").forEach((button) => {
+    button.addEventListener("click", () => {
+      void updateMemberAccess(button.dataset.memberId, button.dataset.accessAction);
+    });
+  });
+
+  dom.adminPendingList.querySelectorAll("[data-access-action]").forEach((button) => {
     button.addEventListener("click", () => {
       void updateMemberAccess(button.dataset.memberId, button.dataset.accessAction);
     });

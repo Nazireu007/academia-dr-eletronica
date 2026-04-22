@@ -428,6 +428,10 @@ body::before {
   cursor: pointer;
 }
 
+body.guest-mode .guest-restricted {
+  display: none !important;
+}
+
 .is-disabled-link {
   pointer-events: none;
   opacity: 0.58;
@@ -476,6 +480,27 @@ body::before {
     rgba(255, 255, 255, 0.03);
 }
 
+.admin-pending-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(124, 186, 255, 0.22);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(124, 186, 255, 0.1), transparent),
+    rgba(255, 255, 255, 0.03);
+}
+
+.admin-pending-item strong {
+  display: block;
+}
+
+.admin-pending-item span {
+  color: var(--muted);
+}
+
 .ad-support-card {
   border-style: dashed;
   border-color: rgba(255, 191, 102, 0.24);
@@ -510,41 +535,54 @@ body::before {
 .admin-role-badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.38rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 0.34rem 0.7rem;
-  font-size: 0.8rem;
-  letter-spacing: 0.06em;
+  padding: 0.42rem 0.8rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.admin-status-badge::before,
+.admin-role-badge::before {
+  content: "";
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.9;
 }
 
 .admin-status-badge.is-active {
-  border-color: rgba(123, 226, 200, 0.28);
-  background: rgba(123, 226, 200, 0.12);
-  color: #b8f5e5;
+  border-color: rgba(123, 226, 200, 0.32);
+  background: linear-gradient(180deg, rgba(123, 226, 200, 0.16), rgba(255, 255, 255, 0.03));
+  color: #c9fff0;
 }
 
 .admin-status-badge.is-pending {
-  border-color: rgba(255, 191, 102, 0.28);
-  background: rgba(255, 191, 102, 0.12);
-  color: #ffd38d;
+  border-color: rgba(124, 186, 255, 0.28);
+  background: linear-gradient(180deg, rgba(124, 186, 255, 0.14), rgba(255, 255, 255, 0.03));
+  color: #cde2ff;
 }
 
 .admin-status-badge.is-blocked {
-  border-color: rgba(255, 113, 113, 0.28);
-  background: rgba(255, 113, 113, 0.12);
-  color: #ffb0b0;
+  border-color: rgba(255, 113, 113, 0.35);
+  background: linear-gradient(180deg, rgba(255, 113, 113, 0.16), rgba(255, 255, 255, 0.03));
+  color: #ffc3c3;
 }
 
 .admin-role-badge.is-admin {
-  border-color: rgba(255, 149, 80, 0.28);
-  background: rgba(255, 149, 80, 0.12);
-  color: #ffbe96;
+  border-color: rgba(255, 149, 80, 0.32);
+  background: linear-gradient(180deg, rgba(255, 149, 80, 0.14), rgba(255, 255, 255, 0.03));
+  color: #ffd0b1;
 }
 
 .admin-role-badge.is-student {
-  color: var(--muted);
+  color: #a9b8cd;
 }
 
 .admin-member-actions {
