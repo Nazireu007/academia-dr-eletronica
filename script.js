@@ -1050,7 +1050,7 @@ function getWhatsAppUrl() {
 
 async function copyPixKey() {
   const key = String(appConfig.pixKey || "").trim();
-  if (!key) return;
+  if (!key) return false;
 
   try {
     await navigator.clipboard.writeText(key);
@@ -1065,6 +1065,8 @@ async function copyPixKey() {
     document.execCommand("copy");
     helper.remove();
   }
+
+  return true;
 }
 
 async function copyTextToClipboard(text) {
@@ -1607,8 +1609,8 @@ function renderPublicOffer() {
       variant: "primary-payment",
     },
     {
-      title: "Pagar por Pix",
-      meta: appConfig.pixKey ? `Copiar chave Pix da ${merchantBrand}` : "Chave Pix indisponivel",
+      title: "Copiar chave Pix",
+      meta: appConfig.pixKey ? "Pague no seu banco e envie o comprovante" : "Chave Pix indisponivel",
       href: appConfig.pixKey ? "__copy_pix__" : "#",
       variant: "secondary-payment",
     },
@@ -1616,11 +1618,6 @@ function renderPublicOffer() {
       title: "Falar no WhatsApp",
       meta: appConfig.whatsappNumber ? "Confirme pagamento ou tire dúvidas" : "Contato em configuração",
       href: whatsappUrl,
-    },
-    {
-      title: "Ver programa completo",
-      meta: "Resumo do conteúdo e da proposta do curso",
-      href: "conteudo/curso-eletronica.md",
     },
   ];
 
@@ -1646,13 +1643,22 @@ function renderPublicOffer() {
   dom.offerLinks.querySelectorAll("[data-copy-pix]").forEach((link) => {
     link.addEventListener("click", async (event) => {
       event.preventDefault();
-      await copyPixKey();
+      const copied = await copyPixKey();
       const meta = link.querySelector("span");
       if (!meta) return;
       const original = meta.textContent;
-      meta.textContent = "Chave Pix copiada";
+      meta.textContent = copied
+        ? "Chave Pix copiada. Abra seu banco e envie o comprovante."
+        : "Nao foi possivel copiar a chave Pix agora.";
+      dom.paymentTrustNote.textContent = copied
+        ? "Chave Pix copiada. Agora abra seu banco, conclua o pagamento e envie o comprovante no WhatsApp."
+        : "Nao foi possivel copiar a chave Pix agora. Tente novamente em instantes.";
       window.setTimeout(() => {
         meta.textContent = original;
+        dom.paymentTrustNote.textContent =
+          checkoutUrl !== "#"
+            ? `Ao clicar em comprar, você será direcionado ao checkout protegido da ${merchantBrand} para concluir o pagamento.`
+            : "O checkout premium será exibido aqui assim que o meio de pagamento estiver disponível.";
       }, 2200);
     });
   });
