@@ -27,7 +27,8 @@ window.APP_CONFIG = {
     '<script async="async" data-cfasync="false" src="https://pl29235288.profitablecpmratenetwork.com/c612bbdfabc3a945f8e05ebdb9eaf3e7/invoke.js"></script><div id="container-c612bbdfabc3a945f8e05ebdb9eaf3e7"></div>',
   adsterraDashboardMarkup:
     '<script>atOptions = {\'key\' : \'b3ffe15cd80e0f0fb5de5871d8072ec5\',\'format\' : \'iframe\',\'height\' : 250,\'width\' : 300,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/b3ffe15cd80e0f0fb5de5871d8072ec5/invoke.js"></script>',
-  adsterraLessonMarkup: "",
+  adsterraLessonMarkup:
+    '<script>atOptions = {\'key\' : \'5e49d9488c659c4af18b512586eaa4df\',\'format\' : \'iframe\',\'height\' : 90,\'width\' : 728,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/5e49d9488c659c4af18b512586eaa4df/invoke.js"></script>',
   adsterraSocialBarMarkup: "",
   freeModuleNumbers: ["01"],
   previewLessonIds: [],
