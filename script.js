@@ -2595,20 +2595,40 @@ function renderAdminPanel() {
 }
 
 function renderMonetization() {
-  const showAds = appConfig.adsEnabled && isFreeMember();
+  const showGuestAd = appConfig.adsEnabled && getMemberPlanKind() === "guest";
+  const showMemberAds = appConfig.adsEnabled && isFreeMember();
   ensureAdsScript();
   maybeRenderAdsterraSocialBar();
 
-  const adCards = [
-    [dom.publicAdCard, "Acesso gratuito com anúncios", String(appConfig.adsterraPublicMarkup || "").trim()],
-    [dom.dashboardAdCard, "Seu plano gratuito é mantido por anúncios", String(appConfig.adsterraDashboardMarkup || "").trim()],
-    [dom.lessonAdCard, "Anúncio do plano gratuito", String(appConfig.adsterraLessonMarkup || "").trim()],
-  ];
-
-  adCards.forEach(([element, title, customMarkup], index) => {
+  [
+    [
+      dom.publicAdCard,
+      showGuestAd,
+      "Patrocínio da apresentação",
+      "Este espaço patrocinado ajuda a manter as aulas de apresentação abertas antes da criação da conta.",
+      String(appConfig.adsterraPublicMarkup || "").trim(),
+      "public",
+    ],
+    [
+      dom.dashboardAdCard,
+      showMemberAds,
+      "Seu plano gratuito é mantido por anúncios",
+      "Esta conta gratuita exibe anúncios. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por R$ 50.",
+      String(appConfig.adsterraDashboardMarkup || "").trim(),
+      "dashboard",
+    ],
+    [
+      dom.lessonAdCard,
+      showMemberAds,
+      "Anúncio do plano gratuito",
+      "Esta conta gratuita exibe anúncios. Para estudar sem anúncios e liberar o certificado, ative o premium por R$ 50.",
+      String(appConfig.adsterraLessonMarkup || "").trim(),
+      "lesson",
+    ],
+  ].forEach(([element, shouldShow, title, description, customMarkup, slotKey]) => {
     if (!element) return;
-    element.hidden = !showAds;
-    if (!showAds) {
+    element.hidden = !shouldShow;
+    if (!shouldShow) {
       element.innerHTML = "";
       return;
     }
@@ -2623,8 +2643,10 @@ function renderMonetization() {
         : "Espaço preparado para anúncios. Assim que você conectar sua conta de anúncios, este plano gratuito começa a monetizar.";
 
     element.innerHTML = `
-      ${getAdSupportMarkup(title, index > 0)}
-      <div class="ad-slot-host" data-ad-slot-host="${index}">
+      <p class="panel-label">Espaco patrocinado</p>
+      <h3>${escapeHtml(title)}</h3>
+      <p class="side-copy">${escapeHtml(description)}</p>
+      <div class="ad-slot-host" data-ad-slot-host="${escapeHtml(slotKey)}">
         <div class="ad-placeholder">${escapeHtml(adPlaceholderText)}</div>
       </div>
     `;
