@@ -23,7 +23,8 @@ window.APP_CONFIG = {
   adsEnabled: true,
   adNetwork: "adsterra",
   adSenseClient: "",
-  adsterraPublicMarkup: "",
+  adsterraPublicMarkup:
+    '<script async="async" data-cfasync="false" src="https://pl29235288.profitablecpmratenetwork.com/c612bbdfabc3a945f8e05ebdb9eaf3e7/invoke.js"></script><div id="container-c612bbdfabc3a945f8e05ebdb9eaf3e7"></div>',
   adsterraDashboardMarkup: "",
   adsterraLessonMarkup: "",
   adsterraSocialBarMarkup: "",
