@@ -973,10 +973,7 @@ async function refreshAdminMembers() {
     };
   });
 
-  const freeCount = authState.adminMembers.filter((member) => member.accessStatus === "pending").length;
-      const premiumCount = authState.adminMembers.filter((member) => member.accessStatus === "active").length;
-      dom.adminStatusCopy.textContent = `Lista atualizada. ${freeCount} conta(s) gratuita(s) e ${premiumCount} premium.`;
-      renderAdminPanel();
+  renderAdminPanel();
 }
 
 async function updateMemberAccess(userId, accessStatus) {
@@ -2393,6 +2390,27 @@ function renderAdminPanel() {
     )
     .join("");
 
+  const manageableFreeCount = manageableMembers.filter((member) => member.accessStatus === "pending").length;
+  const manageablePremiumCount = manageableMembers.filter((member) => member.accessStatus === "active").length;
+  const manageableBlockedCount = manageableMembers.filter((member) => member.accessStatus === "blocked").length;
+
+  if (query) {
+    dom.adminStatusCopy.textContent =
+      members.length > 0
+        ? `Busca por "${state.adminQuery.trim()}": ${members.length} resultado(s) encontrado(s).`
+        : `Busca por "${state.adminQuery.trim()}": nenhum cadastro encontrado.`;
+  } else if (state.adminFilter !== "all") {
+    const filterLabelMap = {
+      pending: "gratuito",
+      active: "premium",
+      blocked: "bloqueado",
+      admins: "admin",
+    };
+    dom.adminStatusCopy.textContent = `Filtro ${filterLabelMap[state.adminFilter] || state.adminFilter}: ${members.length} cadastro(s).`;
+  } else {
+    dom.adminStatusCopy.textContent = `Lista atualizada. ${manageableFreeCount} conta(s) gratuita(s), ${manageablePremiumCount} premium e ${manageableBlockedCount} bloqueada(s).`;
+  }
+
   dom.adminSelfCard.innerHTML = selfMember
     ? `
         <article class="admin-self-item">
@@ -2475,7 +2493,11 @@ function renderAdminPanel() {
             `
           )
           .join("")
-      : `<div class="empty-state">Nenhuma conta encontrada neste filtro. Quando um aluno criar a conta, ela aparecerá aqui.</div>`;
+      : `<div class="empty-state">${
+          query
+            ? `Nenhum cadastro corresponde à busca por "${escapeHtml(state.adminQuery.trim())}".`
+            : "Nenhuma conta encontrada neste filtro. Quando um aluno criar a conta, ela aparecerá aqui."
+        }</div>`;
 
   dom.adminMemberList.querySelectorAll("[data-access-action]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -3125,6 +3147,12 @@ dom.refreshAdminMembers?.addEventListener("click", () => {
 dom.adminMemberSearch?.addEventListener("input", (event) => {
   state.adminQuery = event.target.value;
   renderAdminPanel();
+  if (state.adminQuery.trim()) {
+    dom.adminMemberList?.scrollIntoView({
+      block: "start",
+      behavior: "smooth",
+    });
+  }
 });
 
 dom.adminFilterButtons.forEach((button) => {
