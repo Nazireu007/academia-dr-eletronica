@@ -1353,6 +1353,96 @@ body.access-locked .site-footer {
   border: 1px dashed rgba(123, 226, 200, 0.26);
 }
 
+.premium-promo-banner {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0.25rem;
+  padding: 0.95rem 1rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(123, 226, 200, 0.28);
+  background:
+    linear-gradient(135deg, rgba(37, 193, 255, 0.18), rgba(255, 149, 80, 0.14)),
+    rgba(9, 17, 28, 0.94);
+  box-shadow:
+    0 0 0 1px rgba(37, 193, 255, 0.08),
+    0 0 18px rgba(37, 193, 255, 0.22),
+    0 0 28px rgba(255, 149, 80, 0.14);
+  overflow: hidden;
+  animation: premiumPromoPulse 1.8s ease-in-out infinite;
+}
+
+.premium-promo-banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.18) 50%, transparent 78%);
+  transform: translateX(-120%);
+  animation: premiumPromoSweep 3.8s linear infinite;
+  pointer-events: none;
+}
+
+.premium-promo-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.32rem 0.65rem;
+  background: rgba(8, 20, 34, 0.78);
+  border: 1px solid rgba(123, 226, 200, 0.28);
+  color: #9df0ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.premium-promo-banner strong {
+  position: relative;
+  z-index: 1;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  color: #fff7ef;
+  text-shadow: 0 0 10px rgba(37, 193, 255, 0.24);
+}
+
+.premium-promo-banner strong span {
+  color: #8ef3ff;
+}
+
+.premium-promo-banner > span:last-child {
+  position: relative;
+  z-index: 1;
+  color: #d4e8f4;
+}
+
+@keyframes premiumPromoPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(37, 193, 255, 0.08),
+      0 0 18px rgba(37, 193, 255, 0.18),
+      0 0 28px rgba(255, 149, 80, 0.1);
+    border-color: rgba(123, 226, 200, 0.24);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(37, 193, 255, 0.12),
+      0 0 24px rgba(37, 193, 255, 0.3),
+      0 0 42px rgba(255, 149, 80, 0.18);
+    border-color: rgba(123, 226, 200, 0.38);
+  }
+}
+
+@keyframes premiumPromoSweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
 .pix-card {
   width: min(100%, 720px);
 }

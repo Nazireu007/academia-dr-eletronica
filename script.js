@@ -153,6 +153,7 @@ const dom = {
   panels: [...document.querySelectorAll(".member-panel")],
   offerTitle: document.querySelector("#offer-title"),
   offerCopy: document.querySelector("#offer-copy"),
+  premiumPromoPrice: document.querySelector("#premium-promo-price"),
   primaryCheckoutLink: document.querySelector("#primary-checkout-link"),
   enterMemberArea: document.querySelector("#enter-member-area"),
   whatsappSalesLink: document.querySelector("#whatsapp-sales-link"),
@@ -1761,6 +1762,9 @@ function renderPublicOffer() {
 
   dom.offerTitle.textContent = appConfig.offerTitle;
   dom.offerCopy.textContent = appConfig.offerCopy;
+  if (dom.premiumPromoPrice) {
+    dom.premiumPromoPrice.textContent = getPremiumPriceLabel();
+  }
   dom.primaryCheckoutLink.textContent = "Pagar com cartão ou PicPay";
   dom.enterMemberArea.textContent = signedIn ? "Abrir minha área" : "Entrar ou criar conta grátis";
   dom.primaryCheckoutLink.href = checkoutUrl;
