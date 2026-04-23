@@ -320,8 +320,8 @@ const defaultAppConfig = {
   commerceMode: "hybrid",
   offerTitle: "Comece grátis e avance para o premium quando quiser",
   offerCopy:
-    "Crie sua conta gratuita para estudar com anúncios. Quando quiser zero anúncios e certificado de conclusão, ative o plano premium por R$ 50.",
-  priceLabel: "R$ 50",
+    "Crie sua conta gratuita para estudar com anúncios. Quando quiser zero anúncios e certificado de conclusão, ative o plano premium por R$ 19,99.",
+  priceLabel: "R$ 19,99",
   billingLabel: "pagamento único",
   merchantBrand: "Nitro Scan Pro",
   paymentProviderLabel: "Checkout PicPay",
@@ -329,7 +329,7 @@ const defaultAppConfig = {
   hotmartCheckoutUrl: "",
   hotmartMembersUrl: "",
   whatsappNumber: "",
-  whatsappMessage: "Ola! Quero ativar o plano premium do Curso Completo de Eletronica por R$ 50.",
+  whatsappMessage: "Ola! Quero ativar o plano premium do Curso Completo de Eletronica por R$ 19,99.",
   pixKey: "",
   freePlanLabel: "Conta gratuita",
   premiumPlanLabel: "Plano premium",
@@ -348,6 +348,10 @@ const appConfig = {
   ...defaultAppConfig,
   ...(window.APP_CONFIG || {}),
 };
+
+function getPremiumPriceLabel() {
+  return appConfig.priceLabel || "R$ 19,99";
+}
 
 const authState = {
   client: null,
@@ -1279,8 +1283,8 @@ function getAdSupportMarkup(title, compact = false) {
     <h3>${escapeHtml(title)}</h3>
     <p class="side-copy">${
       compact
-        ? "Esta conta gratuita exibe anúncios. Para estudar sem anúncios e liberar o certificado, ative o premium por R$ 50."
-        : "Esta conta gratuita exibe anúncios. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por R$ 50."
+        ? `Esta conta gratuita exibe anúncios. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`
+        : `Esta conta gratuita exibe anúncios. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`
     }</p>
   `;
 }
@@ -1750,7 +1754,7 @@ function renderPublicOffer() {
   const signedIn = Boolean(authState.session);
   const offerMetrics = [
     { label: "Conta gratuita", value: appConfig.freePlanLabel || "Conta gratuita" },
-    { label: "Plano premium", value: appConfig.priceLabel || "R$ 50" },
+    { label: "Plano premium", value: getPremiumPriceLabel() },
     { label: "Pagamento", value: paymentProviderLabel },
     { label: "Certificado", value: "Premium" },
   ];
@@ -2613,7 +2617,7 @@ function renderMonetization() {
       dom.dashboardAdCard,
       showMemberAds,
       "Seu plano gratuito é mantido por anúncios",
-      "Esta conta gratuita exibe anúncios. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por R$ 50.",
+      `Esta conta gratuita exibe anúncios. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`,
       String(appConfig.adsterraDashboardMarkup || "").trim(),
       "dashboard",
     ],
@@ -2621,7 +2625,7 @@ function renderMonetization() {
       dom.lessonAdCard,
       showMemberAds,
       "Anúncio do plano gratuito",
-      "Esta conta gratuita exibe anúncios. Para estudar sem anúncios e liberar o certificado, ative o premium por R$ 50.",
+      `Esta conta gratuita exibe anúncios. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       String(appConfig.adsterraLessonMarkup || "").trim(),
       "lesson",
     ],
