@@ -1434,14 +1434,14 @@ function openAccessModal(message = accessConfig.accessMessage, targetPanel = "da
 
   if (isSupabaseMode()) {
     if (!dom.cloudAuthFields.hidden) {
-      (dom.authEmailInput || dom.authPasswordInput)?.focus();
+      focusModalEntry(dom.accessModal, dom.authEmailInput || dom.authPasswordInput);
     } else if (!dom.authRefreshAccessButton.hidden) {
-      dom.authRefreshAccessButton.focus();
+      focusModalEntry(dom.accessModal, dom.authRefreshAccessButton);
     } else if (!dom.authSubmitButton.hidden) {
-      dom.authSubmitButton.focus();
+      focusModalEntry(dom.accessModal, dom.authSubmitButton);
     }
   } else {
-    dom.accessCodeInput.focus();
+    focusModalEntry(dom.accessModal, dom.accessCodeInput);
   }
 }
 
@@ -1469,6 +1469,35 @@ function clearAccessSession() {
   saveState();
 }
 
+function focusModalEntry(modal, target) {
+  if (!modal) return;
+
+  const modalCard = modal.querySelector(".auth-card");
+  modal.scrollTop = 0;
+  if (modalCard) modalCard.scrollTop = 0;
+
+  if (!target) return;
+
+  window.requestAnimationFrame(() => {
+    modal.scrollTop = 0;
+    if (modalCard) modalCard.scrollTop = 0;
+
+    try {
+      target.focus({ preventScroll: true });
+    } catch (_error) {
+      target.focus();
+    }
+
+    const focusContainer = target.closest("label, .auth-actions, .faq-item") || target;
+    if (typeof focusContainer.scrollIntoView === "function") {
+      focusContainer.scrollIntoView({
+        block: "nearest",
+        inline: "nearest",
+      });
+    }
+  });
+}
+
 function syncProfileModalCopy() {
   const isEditing = Boolean(state.member);
   dom.profileModalTitle.textContent = isEditing
@@ -1492,6 +1521,8 @@ function openAuthModal(prefill = false) {
     dom.memberGoalInput.value = state.member.goal || "dominar fundamentos";
     dom.memberRhythmInput.value = state.member.rhythm || "30 min por dia";
   }
+
+  focusModalEntry(dom.authModal, dom.memberNameInput);
 }
 
 function closeAuthModal() {
@@ -1510,6 +1541,7 @@ function openPixModal() {
   dom.pixModal.classList.add("is-open");
   dom.pixModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
+  focusModalEntry(dom.pixModal, dom.pixCopyButton || dom.closePixModal);
 }
 
 function closePixModal() {
