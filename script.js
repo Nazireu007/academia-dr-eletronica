@@ -161,6 +161,8 @@ const dom = {
   salesMetrics: document.querySelector("#sales-metrics"),
   previewLessonList: document.querySelector("#preview-lesson-list"),
   offerLinks: document.querySelector("#offer-links"),
+  publicMobileButtons: [...document.querySelectorAll("[data-mobile-public-view]")],
+  publicMobileCards: [...document.querySelectorAll("[data-mobile-public-section]")],
   memberName: document.querySelector("#member-name"),
   memberPlan: document.querySelector("#member-plan"),
   memberAvatar: document.querySelector("#member-avatar"),
@@ -193,6 +195,9 @@ const dom = {
   timelineList: document.querySelector("#timeline-list"),
   lessonSearch: document.querySelector("#lesson-search"),
   moduleNav: document.querySelector("#module-nav"),
+  courseMobileButtons: [...document.querySelectorAll("[data-mobile-course-view]")],
+  courseSidebar: document.querySelector(".course-sidebar"),
+  courseStage: document.querySelector(".course-stage"),
   favoriteLesson: document.querySelector("#favorite-lesson"),
   markComplete: document.querySelector("#mark-complete"),
   lessonBreadcrumb: document.querySelector("#lesson-breadcrumb"),
@@ -725,6 +730,11 @@ const state = {
   adminFilter: "all",
 };
 
+const uiState = {
+  mobilePublicView: "plans",
+  mobileCourseView: "lesson",
+};
+
 function saveState() {
   saveJSON(storageKeys.member, state.member);
   saveJSON(storageKeys.completed, [...state.completed]);
@@ -743,6 +753,42 @@ function saveState() {
   if (isSupabaseMode() && authState.accessGranted) {
     scheduleRemoteSync();
   }
+}
+
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 720px)").matches;
+}
+
+function applyMobileViews() {
+  const mobile = isMobileLayout();
+
+  dom.publicMobileButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.mobilePublicView === uiState.mobilePublicView);
+  });
+
+  dom.courseMobileButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.mobileCourseView === uiState.mobileCourseView);
+  });
+
+  dom.publicMobileCards.forEach((card) => {
+    card.classList.toggle(
+      "is-mobile-hidden",
+      mobile && card.dataset.mobilePublicSection !== uiState.mobilePublicView
+    );
+  });
+
+  dom.courseSidebar?.classList.toggle("is-mobile-hidden", mobile && uiState.mobileCourseView !== "modules");
+  dom.courseStage?.classList.toggle("is-mobile-hidden", mobile && uiState.mobileCourseView !== "lesson");
+}
+
+function setMobilePublicView(view) {
+  uiState.mobilePublicView = view;
+  applyMobileViews();
+}
+
+function setMobileCourseView(view) {
+  uiState.mobileCourseView = view;
+  applyMobileViews();
 }
 
 function resetMemberWorkspace() {
@@ -1508,6 +1554,8 @@ function setActivePanel(panelName) {
   if (panelName === "admin" && isAdminPanelAvailable()) {
     void refreshAdminMembers();
   }
+
+  applyMobileViews();
 }
 
 function getAdminAccessLabel(status) {
@@ -1933,6 +1981,7 @@ function renderSidebarModules() {
     button.addEventListener("click", () => {
       state.selectedLessonId = button.dataset.lessonId;
       saveState();
+      setMobileCourseView("lesson");
       renderCourse();
     });
   });
@@ -2476,11 +2525,13 @@ function renderAll() {
   renderCertificate();
   renderAdminPanel();
   setActivePanel(state.activePanel);
+  applyMobileViews();
 }
 
 function openLessonFromLibrary(lessonId) {
   state.selectedLessonId = lessonId;
   state.activePanel = "course";
+  setMobileCourseView("lesson");
   saveState();
   renderAll();
 }
@@ -2511,6 +2562,7 @@ function handleQuizSubmit() {
 function openNextLesson(panel = true) {
   state.selectedLessonId = getNextLesson().id;
   if (panel) state.activePanel = "course";
+  setMobileCourseView("lesson");
   saveState();
   renderAll();
 }
@@ -2941,6 +2993,7 @@ dom.resumeCourse.addEventListener("click", () => {
   const previewLesson = getPreviewLessons()[0];
   if (!previewLesson) return;
   state.selectedLessonId = previewLesson.id;
+  setMobileCourseView("lesson");
   saveState();
   setActivePanel("course");
 });
@@ -2953,7 +3006,22 @@ dom.goToQuiz.addEventListener("click", () => {
   openAccessModal("Entre com sua conta ou crie sua conta gratuita para liberar quiz, certificado e painel.", "dashboard");
 });
 dom.openNextLesson.addEventListener("click", () => openNextLesson(true));
-dom.openCoursePanel.addEventListener("click", () => setActivePanel("course"));
+dom.openCoursePanel.addEventListener("click", () => {
+  setMobileCourseView("lesson");
+  setActivePanel("course");
+});
+
+dom.publicMobileButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setMobilePublicView(button.dataset.mobilePublicView || "plans");
+  });
+});
+
+dom.courseMobileButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setMobileCourseView(button.dataset.mobileCourseView || "lesson");
+  });
+});
 
 dom.lessonSearch.addEventListener("input", (event) => {
   state.query = event.target.value;
@@ -2999,6 +3067,8 @@ dom.nextLesson.addEventListener("click", () => {
   saveState();
   renderCourse();
 });
+
+window.addEventListener("resize", applyMobileViews);
 
 dom.lessonNote.addEventListener("input", () => {
   state.notes[state.selectedLessonId] = dom.lessonNote.value;

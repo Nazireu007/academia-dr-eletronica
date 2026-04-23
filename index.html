@@ -18,7 +18,7 @@
     />
     <meta property="og:url" content="https://nazireu007.github.io/academia-dr-eletronica/" />
     <link rel="canonical" href="https://nazireu007.github.io/academia-dr-eletronica/" />
-    <link rel="stylesheet" href="styles.css?v=20260422-41" />
+    <link rel="stylesheet" href="styles.css?v=20260422-42" />
   </head>
   <body>
     <div class="page-glow page-glow-left"></div>
@@ -364,8 +364,14 @@
               </div>
             </div>
 
+            <div class="mobile-section-switcher" id="public-mobile-switcher" aria-label="Navegação da apresentação">
+              <button class="mobile-section-button is-active" data-mobile-public-view="plans" type="button">Planos</button>
+              <button class="mobile-section-button" data-mobile-public-view="lessons" type="button">Aulas</button>
+              <button class="mobile-section-button" data-mobile-public-view="payment" type="button">Pagamento</button>
+            </div>
+
             <div class="dashboard-grid">
-              <article class="dashboard-card dashboard-card-hero">
+              <article class="dashboard-card dashboard-card-hero" data-mobile-public-section="plans">
                 <p class="panel-label">Plano recomendado</p>
                 <h3 id="offer-title">Curso completo com acesso individual</h3>
                 <p id="offer-copy">
@@ -388,22 +394,22 @@
 
               <article class="dashboard-card ad-support-card" id="public-ad-card" hidden></article>
 
-              <article class="dashboard-card">
+              <article class="dashboard-card" data-mobile-public-section="plans">
                 <p class="panel-label">Planos de acesso</p>
                 <div class="metric-list" id="sales-metrics"></div>
               </article>
 
-              <article class="dashboard-card">
+              <article class="dashboard-card" data-mobile-public-section="lessons">
                 <p class="panel-label">Aulas de apresentação</p>
                 <div class="library-stack" id="preview-lesson-list"></div>
               </article>
 
-              <article class="dashboard-card">
+              <article class="dashboard-card" data-mobile-public-section="payment">
                 <p class="panel-label">Ativação premium</p>
                 <div class="resource-links" id="offer-links"></div>
               </article>
 
-              <article class="dashboard-card">
+              <article class="dashboard-card" data-mobile-public-section="payment">
                 <p class="panel-label">Dúvidas sobre pagamento</p>
                 <div class="faq-list">
                   <article class="faq-item">
@@ -474,6 +480,11 @@
                 <button class="button button-secondary button-small" id="favorite-lesson" type="button">Favoritar aula</button>
                 <button class="button button-secondary button-small" id="mark-complete" type="button">Marcar como concluída</button>
               </div>
+            </div>
+
+            <div class="mobile-section-switcher" id="course-mobile-switcher" aria-label="Navegação do player">
+              <button class="mobile-section-button is-active" data-mobile-course-view="lesson" type="button">Aula</button>
+              <button class="mobile-section-button" data-mobile-course-view="modules" type="button">Módulos</button>
             </div>
 
             <div class="course-layout">
@@ -757,9 +768,9 @@
       </div>
     </footer>
 
-    <script src="course-data.js?v=20260422-41"></script>
-    <script src="app-config.js?v=20260422-41"></script>
-    <script src="access-config.js?v=20260422-41"></script>
-    <script src="script.js?v=20260422-41"></script>
+    <script src="course-data.js?v=20260422-42"></script>
+    <script src="app-config.js?v=20260422-42"></script>
+    <script src="access-config.js?v=20260422-42"></script>
+    <script src="script.js?v=20260422-42"></script>
   </body>
 </html>

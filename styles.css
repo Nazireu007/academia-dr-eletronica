@@ -866,6 +866,30 @@ body.access-locked .site-footer {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.mobile-section-switcher {
+  display: none;
+}
+
+.mobile-section-button {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.72rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mobile-section-button.is-active {
+  border-color: rgba(255, 149, 80, 0.28);
+  background: rgba(255, 149, 80, 0.14);
+  color: var(--text);
+}
+
 .sidebar-nav,
 .module-nav,
 .lesson-links,
@@ -2033,6 +2057,10 @@ body.access-locked .site-footer {
     background: rgba(5, 10, 17, 0.96);
   }
 
+  .member-sidebar {
+    display: none;
+  }
+
   .shell {
     width: min(100% - 1rem, 1360px);
   }
@@ -2086,6 +2114,24 @@ body.access-locked .site-footer {
     padding: 1rem;
   }
 
+  .mobile-section-switcher {
+    display: flex;
+    gap: 0.55rem;
+    overflow-x: auto;
+    padding: 0 0 0.25rem;
+    margin-bottom: 0.9rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-section-switcher::-webkit-scrollbar {
+    display: none;
+  }
+
+  .is-mobile-hidden {
+    display: none !important;
+  }
+
   .certificate-inner {
     padding: 1.5rem 1rem;
   }
@@ -2131,6 +2177,10 @@ body.access-locked .site-footer {
 
   .member-hero {
     gap: 0.9rem;
+  }
+
+  .workspace {
+    grid-template-columns: 1fr;
   }
 
   .hero-copy h1 {
@@ -2190,6 +2240,10 @@ body.access-locked .site-footer {
   .metric-list,
   .achievement-grid {
     grid-template-columns: 1fr;
+  }
+
+  .course-layout {
+    gap: 0.85rem;
   }
 
   .timeline-item,
