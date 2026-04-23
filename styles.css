@@ -1985,8 +1985,52 @@ body.access-locked .site-footer {
 }
 
 @media (max-width: 720px) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  body {
+    background: linear-gradient(180deg, #050d14 0%, #09131c 42%, #071018 100%);
+  }
+
+  body::before,
   .page-glow {
-    opacity: 0.16;
+    display: none;
+  }
+
+  .auth-modal,
+  .site-header {
+    backdrop-filter: none;
+  }
+
+  .auth-card,
+  .panel-card,
+  .stat-card,
+  .sidebar-card,
+  .dashboard-card,
+  .module-group,
+  .lesson-card,
+  .side-card,
+  .resource-card,
+  .quiz-card,
+  .certificate-card,
+  .hud-chip,
+  .progress-card,
+  .summary-chip,
+  .metric-item,
+  .achievement-card,
+  .timeline-item,
+  .quiz-question,
+  .lesson-meta-card,
+  .library-item,
+  .resource-link-card {
+    backdrop-filter: none;
+    box-shadow: none;
+  }
+
+  .site-header {
+    position: static;
+    background: rgba(5, 10, 17, 0.96);
   }
 
   .shell {
@@ -2051,7 +2095,7 @@ body.access-locked .site-footer {
     flex-wrap: nowrap;
     overflow-x: auto;
     gap: 0.45rem;
-    padding-bottom: 0.25rem;
+    padding-bottom: 0.35rem;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
   }
@@ -2082,7 +2126,7 @@ body.access-locked .site-footer {
 
   .member-app {
     gap: 1rem;
-    padding: 1rem 0 2rem;
+    padding: 0.85rem 0 2rem;
   }
 
   .member-hero {
@@ -2117,6 +2161,10 @@ body.access-locked .site-footer {
   .admin-member-actions .button,
   .auth-actions .button {
     width: 100%;
+  }
+
+  .button:hover:not(:disabled) {
+    transform: none;
   }
 
   .stats-grid {
@@ -2173,6 +2221,14 @@ body.access-locked .site-footer {
   .library-item,
   .resource-link-card {
     min-width: 0;
+  }
+
+  .dashboard-card,
+  .lesson-card,
+  .certificate-card,
+  .quiz-card,
+  .resource-card {
+    border-radius: 1.15rem;
   }
 
   .site-footer-links {
