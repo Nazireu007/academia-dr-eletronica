@@ -1064,32 +1064,14 @@ async function removeMemberEnrollment(userId) {
 
   dom.adminStatusCopy.textContent = "Removendo inscrito do curso...";
 
-  let { error } = await client.rpc("admin_remove_member", {
+  const { error } = await client.rpc("admin_remove_member", {
     target_user_id: userId,
     target_course_slug: appConfig.courseSlug,
   });
 
   if (error) {
-    const cleanupStates = await client
-      .from("member_states")
-      .delete()
-      .eq("user_id", userId)
-      .eq("course_slug", appConfig.courseSlug);
-
-    const cleanupAccess = await client
-      .from("course_access")
-      .delete()
-      .eq("user_id", userId)
-      .eq("course_slug", appConfig.courseSlug);
-
-    const cleanupProfile = await client.from("member_profiles").delete().eq("user_id", userId);
-
-    error = cleanupProfile.error || cleanupAccess.error || cleanupStates.error || null;
-  }
-
-  if (error) {
     dom.adminStatusCopy.textContent =
-      "Nao foi possivel remover este inscrito ainda. Atualize o SQL do Supabase e tente novamente.";
+      "Nao foi possivel concluir a remocao total deste inscrito. O cadastro foi preservado para evitar e-mail preso. Atualize o SQL do Supabase e tente novamente.";
     return;
   }
 
