@@ -461,6 +461,11 @@ function applyRemoteStatePayload(payload) {
 
 function parseCourse(markdown) {
   const lines = markdown.split(/\r?\n/);
+  const sanitizeCourseTitle = (value) =>
+    String(value || "")
+      .replace(/\s+para\s+blog\b/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
   const course = {
     title: "",
     subtitle: "",
@@ -478,7 +483,7 @@ function parseCourse(markdown) {
     const trimmed = line.trim();
 
     if (trimmed.startsWith("# ")) {
-      course.title = trimmed.replace(/^#\s+/, "");
+      course.title = sanitizeCourseTitle(trimmed.replace(/^#\s+/, ""));
       return;
     }
 
