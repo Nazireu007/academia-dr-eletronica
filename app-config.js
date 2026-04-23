@@ -21,7 +21,12 @@ window.APP_CONFIG = {
   freePlanLabel: "Conta gratuita",
   premiumPlanLabel: "Plano premium",
   adsEnabled: true,
+  adNetwork: "adsterra",
   adSenseClient: "",
+  adsterraPublicMarkup: "",
+  adsterraDashboardMarkup: "",
+  adsterraLessonMarkup: "",
+  adsterraSocialBarMarkup: "",
   freeModuleNumbers: ["01"],
   previewLessonIds: [],
 };

@@ -544,6 +544,19 @@ body.guest-mode .guest-restricted {
   line-height: 1.6;
 }
 
+.ad-slot-host {
+  margin-top: 0.9rem;
+  width: 100%;
+  overflow: hidden;
+}
+
+.ad-slot-host iframe,
+.ad-slot-host img,
+.ad-slot-host ins,
+.ad-slot-host div {
+  max-width: 100%;
+}
+
 .admin-member-copy {
   display: grid;
   gap: 0.2rem;

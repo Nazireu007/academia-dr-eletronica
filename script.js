@@ -334,7 +334,12 @@ const defaultAppConfig = {
   freePlanLabel: "Conta gratuita",
   premiumPlanLabel: "Plano premium",
   adsEnabled: true,
+  adNetwork: "adsterra",
   adSenseClient: "",
+  adsterraPublicMarkup: "",
+  adsterraDashboardMarkup: "",
+  adsterraLessonMarkup: "",
+  adsterraSocialBarMarkup: "",
   freeModuleNumbers: ["01"],
   previewLessonIds: [],
 };
@@ -1212,17 +1217,60 @@ function isFreeMember() {
 }
 
 function ensureAdsScript() {
-  if (!appConfig.adsEnabled || !appConfig.adSenseClient) return;
-  if (document.querySelector(`script[data-ad-client="${appConfig.adSenseClient}"]`)) return;
+  if (!appConfig.adsEnabled) return;
 
-  const script = document.createElement("script");
-  script.async = true;
-  script.crossOrigin = "anonymous";
-  script.dataset.adClient = appConfig.adSenseClient;
-  script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(
-    appConfig.adSenseClient
-  )}`;
-  document.head.append(script);
+  if (appConfig.adNetwork === "adsense") {
+    if (!appConfig.adSenseClient) return;
+    if (document.querySelector(`script[data-ad-client="${appConfig.adSenseClient}"]`)) return;
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.dataset.adClient = appConfig.adSenseClient;
+    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(
+      appConfig.adSenseClient
+    )}`;
+    document.head.append(script);
+  }
+}
+
+function executeEmbeddedScripts(container) {
+  container.querySelectorAll("script").forEach((oldScript) => {
+    const newScript = document.createElement("script");
+    [...oldScript.attributes].forEach((attribute) => {
+      newScript.setAttribute(attribute.name, attribute.value);
+    });
+    newScript.textContent = oldScript.textContent;
+    oldScript.replaceWith(newScript);
+  });
+}
+
+function renderAdMarkup(target, markup) {
+  if (!target) return;
+  target.innerHTML = markup;
+  executeEmbeddedScripts(target);
+}
+
+function maybeRenderAdsterraSocialBar() {
+  const socialBarMarkup = String(appConfig.adsterraSocialBarMarkup || "").trim();
+  const socialBarHostId = "adsterra-social-bar-host";
+  const existingHost = document.getElementById(socialBarHostId);
+
+  if (!appConfig.adsEnabled || appConfig.adNetwork !== "adsterra" || !isFreeMember() || !socialBarMarkup) {
+    existingHost?.remove();
+    return;
+  }
+
+  if (existingHost?.dataset.markup === socialBarMarkup) return;
+
+  existingHost?.remove();
+
+  const host = document.createElement("div");
+  host.id = socialBarHostId;
+  host.hidden = true;
+  host.dataset.markup = socialBarMarkup;
+  document.body.append(host);
+  renderAdMarkup(host, socialBarMarkup);
 }
 
 function getAdSupportMarkup(title, compact = false) {
@@ -2549,12 +2597,15 @@ function renderAdminPanel() {
 function renderMonetization() {
   const showAds = appConfig.adsEnabled && isFreeMember();
   ensureAdsScript();
+  maybeRenderAdsterraSocialBar();
 
-  [
-    [dom.publicAdCard, "Acesso gratuito com anúncios"],
-    [dom.dashboardAdCard, "Seu plano gratuito é mantido por anúncios"],
-    [dom.lessonAdCard, "Anúncio do plano gratuito"],
-  ].forEach(([element, title], index) => {
+  const adCards = [
+    [dom.publicAdCard, "Acesso gratuito com anúncios", String(appConfig.adsterraPublicMarkup || "").trim()],
+    [dom.dashboardAdCard, "Seu plano gratuito é mantido por anúncios", String(appConfig.adsterraDashboardMarkup || "").trim()],
+    [dom.lessonAdCard, "Anúncio do plano gratuito", String(appConfig.adsterraLessonMarkup || "").trim()],
+  ];
+
+  adCards.forEach(([element, title, customMarkup], index) => {
     if (!element) return;
     element.hidden = !showAds;
     if (!showAds) {
@@ -2562,14 +2613,28 @@ function renderMonetization() {
       return;
     }
 
+    const isAdsterra = appConfig.adNetwork === "adsterra";
+    const adPlaceholderText = isAdsterra
+      ? customMarkup
+        ? ""
+        : "Espaço pronto para Adsterra. Cole aqui o código do banner desta posição quando sua conta for aprovada."
+      : appConfig.adSenseClient
+        ? "Os anúncios automáticos serão exibidos aqui quando a conta de anúncios estiver ativa."
+        : "Espaço preparado para anúncios. Assim que você conectar sua conta de anúncios, este plano gratuito começa a monetizar.";
+
     element.innerHTML = `
       ${getAdSupportMarkup(title, index > 0)}
-      <div class="ad-placeholder">${escapeHtml(
-        appConfig.adSenseClient
-          ? "Os anúncios automáticos serão exibidos aqui quando a conta de anúncios estiver ativa."
-          : "Espaço preparado para anúncios. Assim que você conectar sua conta de anúncios, este plano gratuito começa a monetizar."
-      )}</div>
+      <div class="ad-slot-host" data-ad-slot-host="${index}">
+        <div class="ad-placeholder">${escapeHtml(adPlaceholderText)}</div>
+      </div>
     `;
+
+    if (isAdsterra && customMarkup) {
+      const host = element.querySelector("[data-ad-slot-host]");
+      if (host) {
+        renderAdMarkup(host, customMarkup);
+      }
+    }
   });
 }
 
