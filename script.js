@@ -350,6 +350,7 @@ const authState = {
   user: null,
   accessGranted: false,
   accessStatus: "guest",
+  profileExists: false,
   isAdmin: false,
   profileRole: "student",
   syncTimer: null,
@@ -846,6 +847,8 @@ async function loadRemoteProfile() {
     .eq("user_id", authState.user.id)
     .maybeSingle();
 
+  authState.profileExists = Boolean(data);
+
   state.member = {
     name:
       data?.full_name ||
@@ -861,6 +864,7 @@ async function loadRemoteProfile() {
   authState.profileRole = data?.role || "student";
   authState.isAdmin = authState.profileRole === "admin";
   syncAdminUi();
+  return authState.profileExists;
 }
 
 async function pullRemoteState() {
@@ -884,6 +888,7 @@ async function pushRemoteState() {
   if (
     !isSupabaseMode() ||
     !authState.user ||
+    !authState.profileExists ||
     (!authState.accessGranted && !authState.isAdmin) ||
     authState.syncInFlight
   ) {
@@ -895,7 +900,6 @@ async function pushRemoteState() {
   authState.syncInFlight = true;
 
   try {
-    await ensureRemoteProfile();
     await client.from("member_states").upsert(
       {
         user_id: authState.user.id,
@@ -1291,6 +1295,7 @@ async function refreshRemoteAccessStatus() {
   if (!isSupabaseMode() || !authState.user) {
     authState.accessGranted = false;
     authState.accessStatus = "guest";
+    authState.profileExists = false;
     return false;
   }
 
@@ -1298,6 +1303,12 @@ async function refreshRemoteAccessStatus() {
   if (!client) {
     authState.accessGranted = false;
     authState.accessStatus = "guest";
+    return false;
+  }
+
+  if (!authState.profileExists) {
+    authState.accessGranted = false;
+    authState.accessStatus = "removed";
     return false;
   }
 
@@ -1346,6 +1357,7 @@ function syncAccessModeUi() {
   const signedIn = Boolean(authState.session);
   const alreadyInside = supabaseMode && signedIn && hasMemberAreaAccess();
   const blockedMember = supabaseMode && signedIn && authState.accessStatus === "blocked" && !authState.isAdmin;
+  const removedMember = supabaseMode && signedIn && authState.accessStatus === "removed" && !authState.isAdmin;
   const waitingAccess = supabaseMode && signedIn && !alreadyInside && !blockedMember;
   const cloudFieldsVisible = supabaseMode && !signedIn;
 
@@ -1353,9 +1365,9 @@ function syncAccessModeUi() {
   dom.cloudAuthFields.hidden = !cloudFieldsVisible;
   dom.authSignupButton.hidden = !supabaseMode || signedIn;
   dom.authResetButton.hidden = !supabaseMode || signedIn;
-  dom.authRefreshAccessButton.hidden = !supabaseMode || !signedIn || alreadyInside;
+  dom.authRefreshAccessButton.hidden = !supabaseMode || !signedIn || alreadyInside || removedMember;
   dom.authSignoutButton.hidden = !supabaseMode || !signedIn;
-  dom.authSubmitButton.hidden = blockedMember || waitingAccess;
+  dom.authSubmitButton.hidden = blockedMember || waitingAccess || removedMember;
 
   dom.accessCodeInput.disabled = supabaseMode;
   dom.accessCodeInput.required = !supabaseMode;
@@ -1396,6 +1408,18 @@ function syncAccessModeUi() {
     setAccessFeedback(
       "Se voce acredita que isso e um engano, fale com o suporte e depois clique em Atualizar acesso.",
       ""
+    );
+    return;
+  }
+
+  if (removedMember) {
+    dom.accessCopy.textContent =
+      "Esta conta foi removida desta plataforma e não possui mais cadastro ativo no curso.";
+    dom.authModeCopy.textContent =
+      "Se precisar voltar, fale com a administração. Para sair desta conta, use Sair da conta.";
+    setAccessFeedback(
+      "Cadastro removido. Essa conta não pode entrar no curso até ser reativada pela administração.",
+      "is-error"
     );
     return;
   }
@@ -2784,6 +2808,7 @@ async function signOutFromSupabase() {
   authState.user = null;
   authState.accessGranted = false;
   authState.accessStatus = "guest";
+  authState.profileExists = false;
   authState.isAdmin = false;
   authState.profileRole = "student";
   authState.adminMembers = [];
@@ -2806,6 +2831,7 @@ async function applySupabaseSession(session) {
   if (!authState.session) {
     authState.accessGranted = false;
     authState.accessStatus = "guest";
+    authState.profileExists = false;
     authState.isAdmin = false;
     authState.profileRole = "student";
     state.activePanel = "public";
@@ -2823,10 +2849,21 @@ async function applySupabaseSession(session) {
 
   saveJSON(storageKeys.supabaseUser, nextUserId);
 
-  await ensureRemoteProfile();
   await loadRemoteProfile();
   await refreshRemoteAccessStatus();
   syncAccessModeUi();
+
+  if (authState.accessStatus === "removed") {
+    openAccessModal("Conta autenticada, mas sem cadastro ativo nesta plataforma.");
+    setAccessFeedback(
+      "Essa conta foi removida do curso e não pode mais entrar até ser reativada pela administração.",
+      "is-error"
+    );
+    state.activePanel = "public";
+    saveState();
+    renderAll();
+    return;
+  }
 
   if (!authState.accessGranted && !authState.isAdmin) {
     openAccessModal(

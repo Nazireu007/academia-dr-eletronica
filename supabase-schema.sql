@@ -239,6 +239,9 @@ begin
 
   delete from public.member_profiles
   where user_id = target_user_id;
+
+  delete from auth.users
+  where id = target_user_id;
 end;
 $$;
 
