@@ -1316,21 +1316,49 @@ function renderAdMarkup(target, markup) {
   executeEmbeddedScripts(target);
 }
 
+let adRenderQueue = Promise.resolve();
+let socialBarScheduled = false;
+
+function enqueueAdInjection(host, markup, delayMs = 0) {
+  adRenderQueue = adRenderQueue
+    .catch(() => undefined)
+    .then(
+      () =>
+        new Promise((resolve) => {
+          window.setTimeout(() => {
+            renderAdMarkup(host, markup);
+            resolve();
+          }, delayMs);
+        })
+    );
+
+  return adRenderQueue;
+}
+
+function getAdRenderDelay(slotKey) {
+  if (slotKey === "public_top" || slotKey === "dashboard_top") return 900;
+  if (slotKey === "lesson_top") return 1200;
+  if (slotKey === "public" || slotKey === "dashboard" || slotKey === "lesson_side") return 1800;
+  if (slotKey === "public_footer" || slotKey === "dashboard_footer" || slotKey === "lesson_footer") return 2600;
+  return 1400;
+}
+
 function queueAdRender(host, markup) {
   if (!host || !markup || host.dataset.adLoaded === "true") return;
+  const slotKey = host.dataset.adSlotHost || "";
 
   const injectMarkup = () => {
     if (host.dataset.adLoaded === "true") return;
     host.dataset.adLoaded = "true";
     host.classList.add("is-ad-loading");
-    renderAdMarkup(host, markup);
+    enqueueAdInjection(host, markup, getAdRenderDelay(slotKey));
     window.setTimeout(() => {
       host.classList.remove("is-ad-loading");
-    }, 4500);
+    }, 3200);
   };
 
   const startRender = () => {
-    window.setTimeout(injectMarkup, 1200);
+    window.setTimeout(injectMarkup, 450);
   };
 
   if (!("IntersectionObserver" in window)) {
@@ -1386,23 +1414,40 @@ function maybeRenderAdsterraSocialBar() {
   const socialBarMarkup = String(appConfig.adsterraSocialBarMarkup || "").trim();
   const socialBarHostId = "adsterra-social-bar-host";
   const existingHost = document.getElementById(socialBarHostId);
-  const shouldShowSocialBar = appConfig.adsEnabled && appConfig.adNetwork === "adsterra" && socialBarMarkup && !isPremiumMember() && getMemberPlanKind() !== "blocked";
+  const shouldShowSocialBar =
+    appConfig.adsEnabled &&
+    appConfig.adNetwork === "adsterra" &&
+    socialBarMarkup &&
+    !isPremiumMember() &&
+    getMemberPlanKind() !== "blocked" &&
+    !isMobileLayout();
 
   if (!shouldShowSocialBar) {
     existingHost?.remove();
+    socialBarScheduled = false;
     return;
   }
 
-  if (existingHost?.dataset.markup === socialBarMarkup) return;
+  if (existingHost?.dataset.markup === socialBarMarkup || socialBarScheduled) return;
 
-  existingHost?.remove();
+  socialBarScheduled = true;
+  window.setTimeout(() => {
+    if (isMobileLayout() || isPremiumMember() || getMemberPlanKind() === "blocked") {
+      socialBarScheduled = false;
+      return;
+    }
 
-  const host = document.createElement("div");
-  host.id = socialBarHostId;
-  host.hidden = true;
-  host.dataset.markup = socialBarMarkup;
-  document.body.append(host);
-  renderAdMarkup(host, socialBarMarkup);
+    existingHost?.remove();
+
+    const host = document.createElement("div");
+    host.id = socialBarHostId;
+    host.hidden = true;
+    host.dataset.markup = socialBarMarkup;
+    document.body.append(host);
+    enqueueAdInjection(host, socialBarMarkup, 0).finally(() => {
+      socialBarScheduled = false;
+    });
+  }, 7000);
 }
 
 function getAdSupportMarkup(title, compact = false) {
@@ -2753,7 +2798,7 @@ function renderMonetization() {
     ],
     [
       dom.publicFooterAdCard,
-      showGuestAd,
+      showGuestAd && !mobile,
       "Espaço patrocinado da apresentação",
       "Bloco complementar de monetização para visitantes antes da criação da conta.",
       "public_footer",
@@ -2774,14 +2819,14 @@ function renderMonetization() {
     ],
     [
       dom.dashboardFooterAdCard,
-      showMemberAds,
+      showMemberAds && !mobile,
       "Anúncio complementar do plano gratuito",
       `Faixa extra de monetização do painel gratuito. O plano premium remove toda a publicidade por ${getPremiumPriceLabel()}.`,
       "dashboard_footer",
     ],
     [
       dom.lessonTopAdCard,
-      showMemberAds,
+      showMemberAds && !mobile,
       "Faixa patrocinada da aula gratuita",
       `Antes da aula, o plano gratuito pode exibir esta faixa. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "lesson_top",
