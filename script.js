@@ -338,6 +338,7 @@ const defaultAppConfig = {
   adNetwork: "adsterra",
   adSenseClient: "",
   adsterraPublicMarkup: "",
+  adsterraPublicMobileMarkup: "",
   adsterraDashboardMarkup: "",
   adsterraLessonMarkup: "",
   adsterraSocialBarMarkup: "",
@@ -1350,6 +1351,9 @@ function getAdMarkupForSlot(slotKey) {
   if (appConfig.adNetwork !== "adsterra") return "";
 
   if (slotKey === "public") {
+    if (isMobileLayout()) {
+      return String(appConfig.adsterraPublicMobileMarkup || appConfig.adsterraPublicMarkup || "").trim();
+    }
     return String(appConfig.adsterraPublicMarkup || "").trim();
   }
 
