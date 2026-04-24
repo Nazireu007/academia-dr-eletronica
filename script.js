@@ -1388,7 +1388,7 @@ function getAdMarkupForSlot(slotKey) {
     if (isMobileLayout()) {
       return String(appConfig.adsterraPublicMobileMarkup || appConfig.adsterraPublicMarkup || "").trim();
     }
-    return String(appConfig.adsterraLessonMarkup || appConfig.adsterraPublicMarkup || "").trim();
+    return String(appConfig.adsterraPublicMarkup || appConfig.adsterraDashboardMarkup || "").trim();
   }
 
   if (slotKey === "public" || slotKey === "dashboard" || slotKey === "lesson_side") {
@@ -2798,7 +2798,7 @@ function renderMonetization() {
     ],
     [
       dom.publicFooterAdCard,
-      showGuestAd && !mobile,
+      false,
       "Espaço patrocinado da apresentação",
       "Bloco complementar de monetização para visitantes antes da criação da conta.",
       "public_footer",
@@ -2819,28 +2819,28 @@ function renderMonetization() {
     ],
     [
       dom.dashboardFooterAdCard,
-      showMemberAds && !mobile,
+      false,
       "Anúncio complementar do plano gratuito",
       `Faixa extra de monetização do painel gratuito. O plano premium remove toda a publicidade por ${getPremiumPriceLabel()}.`,
       "dashboard_footer",
     ],
     [
       dom.lessonTopAdCard,
-      showMemberAds && !mobile,
+      false,
       "Faixa patrocinada da aula gratuita",
       `Antes da aula, o plano gratuito pode exibir esta faixa. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "lesson_top",
     ],
     [
       dom.lessonAdCard,
-      showMemberAds && !mobile,
+      false,
       "Anúncio lateral do plano gratuito",
       `Bloco lateral de aula no desktop. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "lesson_side",
     ],
     [
       dom.lessonFooterAdCard,
-      showMemberAds,
+      false,
       "Patrocínio complementar da aula",
       `Bloco adicional ao fim da aula gratuita para reforçar a monetização antes do upgrade premium.`,
       "lesson_footer",
