@@ -190,7 +190,11 @@ const dom = {
   openNextLesson: document.querySelector("#open-next-lesson"),
   openCoursePanel: document.querySelector("#open-course-panel"),
   publicAdCard: document.querySelector("#public-ad-card"),
+  publicTopAdCard: document.querySelector("#public-top-ad-card"),
+  publicFooterAdCard: document.querySelector("#public-footer-ad-card"),
+  dashboardTopAdCard: document.querySelector("#dashboard-top-ad-card"),
   dashboardAdCard: document.querySelector("#dashboard-ad-card"),
+  dashboardFooterAdCard: document.querySelector("#dashboard-footer-ad-card"),
   memberMetrics: document.querySelector("#member-metrics"),
   achievementGrid: document.querySelector("#achievement-grid"),
   timelineList: document.querySelector("#timeline-list"),
@@ -216,6 +220,8 @@ const dom = {
   moduleProgressCopy: document.querySelector("#module-progress-copy"),
   moduleProgressFill: document.querySelector("#module-progress-fill"),
   lessonAdCard: document.querySelector("#lesson-ad-card"),
+  lessonTopAdCard: document.querySelector("#lesson-top-ad-card"),
+  lessonFooterAdCard: document.querySelector("#lesson-footer-ad-card"),
   lessonNote: document.querySelector("#lesson-note"),
   favoriteList: document.querySelector("#favorite-list"),
   noteList: document.querySelector("#note-list"),
@@ -1350,15 +1356,19 @@ function queueAdRender(host, markup) {
 function getAdMarkupForSlot(slotKey) {
   if (appConfig.adNetwork !== "adsterra") return "";
 
-  if (slotKey === "public") {
+  if (slotKey === "public_top" || slotKey === "dashboard_top" || slotKey === "lesson_top") {
     if (isMobileLayout()) {
       return String(appConfig.adsterraPublicMobileMarkup || appConfig.adsterraPublicMarkup || "").trim();
     }
-    return String(appConfig.adsterraPublicMarkup || "").trim();
+    return String(appConfig.adsterraLessonMarkup || appConfig.adsterraPublicMarkup || "").trim();
   }
 
-  if (slotKey === "dashboard") {
+  if (slotKey === "public" || slotKey === "dashboard" || slotKey === "lesson_side") {
     return String(appConfig.adsterraDashboardMarkup || "").trim();
+  }
+
+  if (slotKey === "public_footer" || slotKey === "dashboard_footer" || slotKey === "lesson_footer") {
+    return String(appConfig.adsterraPublicMarkup || appConfig.adsterraDashboardMarkup || "").trim();
   }
 
   if (slotKey === "lesson") {
@@ -2728,25 +2738,67 @@ function renderMonetization() {
 
   [
     [
-      dom.publicAdCard,
+      dom.publicTopAdCard,
       showGuestAd,
+      "Faixa patrocinada da apresentação",
+      "Visitantes visualizam esta faixa patrocinada enquanto conhecem a plataforma antes do cadastro.",
+      "public_top",
+    ],
+    [
+      dom.publicAdCard,
+      showGuestAd && !mobile,
       "Patrocínio da apresentação",
-      "Este espaço patrocinado ajuda a manter as aulas de apresentação abertas antes da criação da conta.",
+      "Bloco lateral visível para visitantes no desktop, ajudando a sustentar a apresentação gratuita.",
       "public",
     ],
     [
-      dom.dashboardAdCard,
+      dom.publicFooterAdCard,
+      showGuestAd,
+      "Espaço patrocinado da apresentação",
+      "Bloco complementar de monetização para visitantes antes da criação da conta.",
+      "public_footer",
+    ],
+    [
+      dom.dashboardTopAdCard,
       showMemberAds,
+      "Faixa patrocinada do plano gratuito",
+      `Topo do plano gratuito com monetização ativa. Para estudar sem anúncios e emitir o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
+      "dashboard_top",
+    ],
+    [
+      dom.dashboardAdCard,
+      showMemberAds && !mobile,
       "Seu plano gratuito é mantido por anúncios",
-      `Esta conta gratuita exibe anúncios. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`,
+      `Bloco lateral do plano gratuito no desktop. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`,
       "dashboard",
     ],
     [
-      dom.lessonAdCard,
+      dom.dashboardFooterAdCard,
       showMemberAds,
-      "Anúncio do plano gratuito",
-      `Esta conta gratuita exibe anúncios. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
-      "lesson",
+      "Anúncio complementar do plano gratuito",
+      `Faixa extra de monetização do painel gratuito. O plano premium remove toda a publicidade por ${getPremiumPriceLabel()}.`,
+      "dashboard_footer",
+    ],
+    [
+      dom.lessonTopAdCard,
+      showMemberAds,
+      "Faixa patrocinada da aula gratuita",
+      `Antes da aula, o plano gratuito pode exibir esta faixa. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
+      "lesson_top",
+    ],
+    [
+      dom.lessonAdCard,
+      showMemberAds && !mobile,
+      "Anúncio lateral do plano gratuito",
+      `Bloco lateral de aula no desktop. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
+      "lesson_side",
+    ],
+    [
+      dom.lessonFooterAdCard,
+      showMemberAds,
+      "Patrocínio complementar da aula",
+      `Bloco adicional ao fim da aula gratuita para reforçar a monetização antes do upgrade premium.`,
+      "lesson_footer",
     ],
   ].forEach(([element, shouldShow, title, description, slotKey]) => {
     if (!element) return;

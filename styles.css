@@ -534,6 +534,15 @@ body.guest-mode .guest-restricted {
   border-color: rgba(255, 191, 102, 0.24);
 }
 
+.dashboard-card-span-full {
+  grid-column: 1 / -1;
+}
+
+.ad-band-card .ad-slot-host {
+  display: flex;
+  justify-content: center;
+}
+
 .ad-placeholder {
   margin-top: 0.9rem;
   padding: 0.95rem 1rem;
@@ -548,6 +557,11 @@ body.guest-mode .guest-restricted {
   margin-top: 0.9rem;
   width: 100%;
   overflow: hidden;
+}
+
+.desktop-only-slot .ad-slot-host {
+  display: flex;
+  justify-content: center;
 }
 
 .ad-slot-host.is-ad-loading {
@@ -2318,6 +2332,10 @@ body.access-locked .site-footer {
   }
 
   .is-mobile-hidden {
+    display: none !important;
+  }
+
+  .desktop-only-slot {
     display: none !important;
   }
 
