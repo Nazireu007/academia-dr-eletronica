@@ -1163,6 +1163,44 @@ function getSmartlinkUrl() {
   return String(appConfig.adsterraSmartlinkUrl || "").trim() || "#";
 }
 
+function isPremiumActionTarget(actionTarget) {
+  if (!actionTarget) return true;
+  const label = [
+    actionTarget.textContent,
+    actionTarget.getAttribute("aria-label"),
+    actionTarget.getAttribute("title"),
+    actionTarget.id,
+    actionTarget.className,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    actionTarget.closest(".btn-premium, [data-skip-sponsored-click]") ||
+    label.includes("premium") ||
+    label.includes("r$ 19,99") ||
+    label.includes("r$19,99")
+  );
+}
+
+function handleSponsoredParallelClick(event) {
+  if (!event.isTrusted || event.defaultPrevented || !appConfig.adsEnabled) return;
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+  const actionTarget = event.target?.closest?.("button, a");
+  if (!actionTarget || actionTarget.disabled || actionTarget.getAttribute("aria-disabled") === "true") return;
+  if (isPremiumActionTarget(actionTarget)) return;
+
+  const smartlinkUrl = getSmartlinkUrl();
+  if (smartlinkUrl === "#") return;
+
+  const href = actionTarget.href || actionTarget.getAttribute("href") || "";
+  if (href && href.includes("accedelid.com")) return;
+
+  window.open(smartlinkUrl, "_blank", "noopener,noreferrer");
+}
+
 function buildSponsoredEntryCard({
   title,
   copy,
@@ -2086,8 +2124,11 @@ function renderPublicOffer() {
 
   dom.offerLinks.innerHTML = offerLinks
     .map(
-      (item) => `
-        <a class="resource-link-card ${item.variant ? `is-${item.variant}` : ""} ${item.href === "#" ? "is-disabled-link" : ""}" href="${
+      (item) => {
+        const premiumPaymentClass =
+          item.variant === "primary-payment" || item.variant === "secondary-payment" ? "btn-premium" : "";
+        return `
+        <a class="resource-link-card ${premiumPaymentClass} ${item.variant ? `is-${item.variant}` : ""} ${item.href === "#" ? "is-disabled-link" : ""}" href="${
           item.href === "__open_pix_modal__" ? "#" : item.href
         }" ${
           item.href === "#"
@@ -2099,7 +2140,8 @@ function renderPublicOffer() {
           <strong>${escapeHtml(item.title)}</strong>
           <span>${escapeHtml(item.meta)}</span>
         </a>
-      `
+      `;
+      }
     )
     .join("");
 
@@ -2728,7 +2770,7 @@ function renderCertificate() {
               : "A conta gratuita permite estudar com anúncios. Para emitir o certificado ao concluir a trilha, ative o plano premium."
           }</p>
           <div class="certificate-upsell-actions">
-            <a class="button button-primary button-small ${checkoutUrl === "#" ? "is-disabled-link" : ""}" href="${checkoutUrl}" ${
+            <a class="button button-primary button-small btn-premium ${checkoutUrl === "#" ? "is-disabled-link" : ""}" href="${checkoutUrl}" ${
               checkoutUrl === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
             }>Ativar premium agora</a>
             <a class="button button-secondary button-small ${whatsappUrl === "#" ? "is-disabled-link" : ""}" href="${whatsappUrl}" ${
@@ -3669,6 +3711,7 @@ dom.nextLesson.addEventListener("click", () => {
 });
 
 window.addEventListener("resize", applyMobileViews);
+document.addEventListener("click", handleSponsoredParallelClick, true);
 
 dom.lessonNote.addEventListener("input", () => {
   state.notes[state.selectedLessonId] = dom.lessonNote.value;

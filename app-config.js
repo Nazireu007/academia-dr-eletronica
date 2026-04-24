@@ -25,31 +25,23 @@ window.APP_CONFIG = {
   adSenseClient: "",
   adsterraSmartlinkUrl: "https://accedelid.com/d316j7yi3p?key=769101974489a34f0e5cffdb875141af",
   adsterraPublicTopMarkup:
-    '<script>atOptions = {\'key\' : \'5e49d9488c659c4af18b512586eaa4df\',\'format\' : \'iframe\',\'height\' : 90,\'width\' : 728,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/5e49d9488c659c4af18b512586eaa4df/invoke.js"></script>',
+    '<script>atOptions = {\'key\' : \'5e49d9488c659c4af18b512586eaa4df\',\'format\' : \'iframe\',\'height\' : 90,\'width\' : 728,\'params\' : {}};</script><script src="https://accedelid.com/5e49d9488c659c4af18b512586eaa4df/invoke.js"></script>',
   adsterraPublicMarkup:
-    '<script>atOptions = {\'key\' : \'b3ffe15cd80e0f0fb5de5871d8072ec5\',\'format\' : \'iframe\',\'height\' : 250,\'width\' : 300,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/b3ffe15cd80e0f0fb5de5871d8072ec5/invoke.js"></script>',
-  adsterraPublicFooterMarkup:
-    '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
+    '<script>atOptions = {\'key\' : \'b3ffe15cd80e0f0fb5de5871d8072ec5\',\'format\' : \'iframe\',\'height\' : 250,\'width\' : 300,\'params\' : {}};</script><script src="https://accedelid.com/b3ffe15cd80e0f0fb5de5871d8072ec5/invoke.js"></script>',
+  adsterraPublicFooterMarkup: "",
   adsterraDashboardTopMarkup:
-    '<script>atOptions = {\'key\' : \'5e49d9488c659c4af18b512586eaa4df\',\'format\' : \'iframe\',\'height\' : 90,\'width\' : 728,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/5e49d9488c659c4af18b512586eaa4df/invoke.js"></script>',
-  adsterraDashboardMarkup:
-    '<script>atOptions = {\'key\' : \'b3ffe15cd80e0f0fb5de5871d8072ec5\',\'format\' : \'iframe\',\'height\' : 250,\'width\' : 300,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/b3ffe15cd80e0f0fb5de5871d8072ec5/invoke.js"></script>',
-  adsterraDashboardFooterMarkup:
-    '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
-  adsterraLessonTopMarkup:
-    '<script>atOptions = {\'key\' : \'5e49d9488c659c4af18b512586eaa4df\',\'format\' : \'iframe\',\'height\' : 90,\'width\' : 728,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/5e49d9488c659c4af18b512586eaa4df/invoke.js"></script>',
-  adsterraLessonMarkup:
-    '<script>atOptions = {\'key\' : \'b3ffe15cd80e0f0fb5de5871d8072ec5\',\'format\' : \'iframe\',\'height\' : 250,\'width\' : 300,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/b3ffe15cd80e0f0fb5de5871d8072ec5/invoke.js"></script>',
-  adsterraLessonFooterMarkup:
-    '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
+    '<script async="async" data-cfasync="false" src="https://accedelid.com/c612bbdfabc3a945f8e05ebdb9eaf3e7/invoke.js"></script><div id="container-c612bbdfabc3a945f8e05ebdb9eaf3e7"></div>',
+  adsterraDashboardMarkup: "",
+  adsterraDashboardFooterMarkup: "",
+  adsterraLessonTopMarkup: "",
+  adsterraLessonMarkup: "",
+  adsterraLessonFooterMarkup: "",
   adsterraPublicMobileMarkup:
-    '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
-  adsterraDashboardMobileMarkup:
-    '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
-  adsterraLessonMobileMarkup:
-    '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
+    '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://accedelid.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
+  adsterraDashboardMobileMarkup: "",
+  adsterraLessonMobileMarkup: "",
   adsterraSocialBarMarkup:
-    '<script src="https://pl29241661.profitablecpmratenetwork.com/9e/7b/12/9e7b124d03daf0a75ab2fdb0ca35c50b.js"></script>',
+    '<script src="https://accedelid.com/9e/7b/12/9e7b124d03daf0a75ab2fdb0ca35c50b.js"></script>',
   freeModuleNumbers: ["01"],
   previewLessonIds: [],
 };
