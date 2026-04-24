@@ -559,6 +559,15 @@ body.guest-mode .guest-restricted {
   overflow: hidden;
 }
 
+.ad-render-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .desktop-only-slot .ad-slot-host {
   display: flex;
   justify-content: center;
@@ -581,6 +590,15 @@ body.guest-mode .guest-restricted {
 .ad-slot-host ins,
 .ad-slot-host div {
   max-width: 100%;
+}
+
+.ad-render-slot iframe {
+  display: block;
+  margin-inline: auto;
+}
+
+.ad-render-slot + .ad-fallback-card {
+  margin-top: 0.75rem;
 }
 
 .ad-fallback-card {
@@ -618,6 +636,11 @@ body.guest-mode .guest-restricted {
   margin: 0;
   color: var(--muted);
   line-height: 1.65;
+}
+
+.ad-fallback-card .button {
+  width: fit-content;
+  margin-top: 0.25rem;
 }
 
 .admin-member-copy {
@@ -1427,14 +1450,33 @@ body.access-locked .site-footer {
 }
 
 .sponsored-entry-card {
+  position: relative;
+  overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(64, 126, 255, 0.1), rgba(255, 255, 255, 0.02)),
+    radial-gradient(circle at 18% 0%, rgba(123, 226, 200, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(64, 126, 255, 0.12), rgba(255, 149, 80, 0.07)),
     var(--panel);
   border-style: dashed;
-  border-color: rgba(100, 182, 255, 0.24);
+  border-color: rgba(123, 226, 200, 0.25);
+}
+
+.sponsored-entry-card::after {
+  content: "PATROCINADO";
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid rgba(123, 226, 200, 0.18);
+  background: rgba(5, 14, 22, 0.72);
+  color: rgba(210, 255, 245, 0.78);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
 }
 
 .sponsored-entry-card h3 {
+  max-width: calc(100% - 7rem);
   margin-bottom: 0.25rem;
 }
 
@@ -2538,6 +2580,49 @@ body.access-locked .site-footer {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.45rem;
+  }
+
+  .ad-support-card {
+    padding: 1rem;
+  }
+
+  .ad-placeholder {
+    padding: 0.75rem 0.8rem;
+    font-size: 0.88rem;
+  }
+
+  .ad-slot-host {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ad-slot-host::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ad-render-slot {
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .ad-fallback-card {
+    padding: 0.85rem;
+  }
+
+  .ad-fallback-card .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sponsored-entry-card::after {
+    position: static;
+    width: fit-content;
+    order: -1;
+    margin-bottom: 0.35rem;
+  }
+
+  .sponsored-entry-card h3 {
+    max-width: none;
   }
 }
 

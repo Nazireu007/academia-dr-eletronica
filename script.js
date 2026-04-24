@@ -1316,12 +1316,17 @@ function getAdFallbackMarkup(slotKey) {
   const copy = isPublicSlot
     ? "Se o anúncio não aparecer, continue explorando a apresentação. Criando sua conta, você acompanha a plataforma e pode avançar para o premium quando quiser."
     : `Seu navegador ou bloqueador pode ter impedido o carregamento deste anúncio. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`;
+  const smartlinkUrl = String(appConfig.adsterraSmartlinkUrl || "").trim();
+  const smartlinkAction = smartlinkUrl
+    ? `<a class="button button-small button-ghost" href="${escapeHtml(smartlinkUrl)}" target="_blank" rel="noopener sponsored">Abrir indicação patrocinada</a>`
+    : "";
 
   return `
     <div class="ad-fallback-card" data-ad-fallback="true" hidden>
       <span class="ad-fallback-badge">Suporte do plano gratuito</span>
       <strong>${escapeHtml(heading)}</strong>
       <p>${escapeHtml(copy)}</p>
+      ${smartlinkAction}
     </div>
   `;
 }
@@ -1329,6 +1334,7 @@ function getAdFallbackMarkup(slotKey) {
 function setupAdFallback(target, slotKey) {
   if (!target) return;
 
+  target.querySelector("[data-ad-fallback]")?.remove();
   target.insertAdjacentHTML("beforeend", getAdFallbackMarkup(slotKey));
   const fallback = target.querySelector("[data-ad-fallback]");
   if (!fallback) return;
@@ -1353,8 +1359,14 @@ function setupAdFallback(target, slotKey) {
 
 function renderAdMarkup(target, markup) {
   if (!target) return;
-  target.innerHTML = markup;
-  executeEmbeddedScripts(target);
+
+  target.querySelector("[data-ad-render-slot]")?.remove();
+  const renderSlot = document.createElement("div");
+  renderSlot.className = "ad-render-slot";
+  renderSlot.dataset.adRenderSlot = "true";
+  renderSlot.innerHTML = markup;
+  target.prepend(renderSlot);
+  executeEmbeddedScripts(renderSlot);
 }
 
 let adRenderQueue = Promise.resolve();
@@ -1470,8 +1482,7 @@ function maybeRenderAdsterraSocialBar() {
     appConfig.adNetwork === "adsterra" &&
     socialBarMarkup &&
     !isPremiumMember() &&
-    getMemberPlanKind() !== "blocked" &&
-    !isMobileLayout();
+    getMemberPlanKind() !== "blocked";
 
   if (!shouldShowSocialBar) {
     existingHost?.remove();
@@ -1483,7 +1494,7 @@ function maybeRenderAdsterraSocialBar() {
 
   socialBarScheduled = true;
   window.setTimeout(() => {
-    if (isMobileLayout() || isPremiumMember() || getMemberPlanKind() === "blocked") {
+    if (isPremiumMember() || getMemberPlanKind() === "blocked") {
       socialBarScheduled = false;
       return;
     }
@@ -2956,6 +2967,9 @@ function renderAdminPanel() {
 
 function renderMonetization() {
   const mobile = isMobileLayout();
+  const publicPanelActive = state.activePanel === "public";
+  const dashboardPanelActive = state.activePanel === "dashboard";
+  const coursePanelActive = state.activePanel === "course";
   const showGuestAd = appConfig.adsEnabled && getMemberPlanKind() === "guest";
   const showMemberAds = appConfig.adsEnabled && isFreeMember();
   ensureAdsScript();
@@ -2964,14 +2978,14 @@ function renderMonetization() {
   [
     [
       dom.publicTopAdCard,
-      showGuestAd && mobile,
+      publicPanelActive && showGuestAd,
       "Faixa patrocinada da apresentação",
       "Visitantes visualizam esta faixa patrocinada enquanto conhecem a plataforma antes do cadastro.",
       "public_top",
     ],
     [
       dom.publicAdCard,
-      showGuestAd,
+      publicPanelActive && showGuestAd,
       "Patrocínio da apresentação",
       mobile
         ? "Bloco patrocinado principal para visitantes no celular, ajudando a sustentar a apresentação gratuita."
@@ -2980,21 +2994,21 @@ function renderMonetization() {
     ],
     [
       dom.publicFooterAdCard,
-      false,
+      publicPanelActive && showGuestAd,
       "Espaço patrocinado da apresentação",
       "Bloco complementar de monetização para visitantes antes da criação da conta.",
       "public_footer",
     ],
     [
       dom.dashboardTopAdCard,
-      false,
+      dashboardPanelActive && showMemberAds,
       "Faixa patrocinada do plano gratuito",
       `Topo do plano gratuito com monetização ativa. Para estudar sem anúncios e emitir o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "dashboard_top",
     ],
     [
       dom.dashboardAdCard,
-      showMemberAds,
+      dashboardPanelActive && showMemberAds,
       "Seu plano gratuito é mantido por anúncios",
       mobile
         ? `Bloco principal do plano gratuito no celular. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`
@@ -3003,28 +3017,28 @@ function renderMonetization() {
     ],
     [
       dom.dashboardFooterAdCard,
-      false,
+      dashboardPanelActive && showMemberAds,
       "Anúncio complementar do plano gratuito",
       `Faixa extra de monetização do painel gratuito. O plano premium remove toda a publicidade por ${getPremiumPriceLabel()}.`,
       "dashboard_footer",
     ],
     [
       dom.lessonTopAdCard,
-      false,
+      coursePanelActive && showMemberAds,
       "Faixa patrocinada da aula gratuita",
       `Antes da aula, o plano gratuito pode exibir esta faixa. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "lesson_top",
     ],
     [
       dom.lessonAdCard,
-      false,
+      coursePanelActive && showMemberAds,
       "Anúncio lateral do plano gratuito",
       `Bloco lateral de aula no desktop. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "lesson_side",
     ],
     [
       dom.lessonFooterAdCard,
-      false,
+      coursePanelActive && showMemberAds,
       "Patrocínio complementar da aula",
       `Bloco adicional ao fim da aula gratuita para reforçar a monetização antes do upgrade premium.`,
       "lesson_footer",
