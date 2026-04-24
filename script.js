@@ -1309,6 +1309,28 @@ function renderAdMarkup(target, markup) {
   executeEmbeddedScripts(target);
 }
 
+function getAdMarkupForSlot(slotKey) {
+  if (appConfig.adNetwork !== "adsterra") return "";
+
+  if (slotKey === "public") {
+    return String(appConfig.adsterraPublicMarkup || "").trim();
+  }
+
+  if (slotKey === "dashboard") {
+    return String(appConfig.adsterraDashboardMarkup || "").trim();
+  }
+
+  if (slotKey === "lesson") {
+    if (isMobileLayout()) {
+      return String(appConfig.adsterraDashboardMarkup || "").trim();
+    }
+
+    return String(appConfig.adsterraLessonMarkup || "").trim();
+  }
+
+  return "";
+}
+
 function maybeRenderAdsterraSocialBar() {
   const socialBarMarkup = String(appConfig.adsterraSocialBarMarkup || "").trim();
   const socialBarHostId = "adsterra-social-bar-host";
@@ -2656,6 +2678,7 @@ function renderAdminPanel() {
 }
 
 function renderMonetization() {
+  const mobile = isMobileLayout();
   const showGuestAd = appConfig.adsEnabled && getMemberPlanKind() === "guest";
   const showMemberAds = appConfig.adsEnabled && isFreeMember();
   ensureAdsScript();
@@ -2667,7 +2690,6 @@ function renderMonetization() {
       showGuestAd,
       "Patrocínio da apresentação",
       "Este espaço patrocinado ajuda a manter as aulas de apresentação abertas antes da criação da conta.",
-      String(appConfig.adsterraPublicMarkup || "").trim(),
       "public",
     ],
     [
@@ -2675,7 +2697,6 @@ function renderMonetization() {
       showMemberAds,
       "Seu plano gratuito é mantido por anúncios",
       `Esta conta gratuita exibe anúncios. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`,
-      String(appConfig.adsterraDashboardMarkup || "").trim(),
       "dashboard",
     ],
     [
@@ -2683,18 +2704,19 @@ function renderMonetization() {
       showMemberAds,
       "Anúncio do plano gratuito",
       `Esta conta gratuita exibe anúncios. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
-      String(appConfig.adsterraLessonMarkup || "").trim(),
       "lesson",
     ],
-  ].forEach(([element, shouldShow, title, description, customMarkup, slotKey]) => {
+  ].forEach(([element, shouldShow, title, description, slotKey]) => {
     if (!element) return;
     element.hidden = !shouldShow;
     if (!shouldShow) {
       element.innerHTML = "";
+      delete element.dataset.adRenderSignature;
       return;
     }
 
     const isAdsterra = appConfig.adNetwork === "adsterra";
+    const customMarkup = getAdMarkupForSlot(slotKey);
     const adPlaceholderText = isAdsterra
       ? customMarkup
         ? ""
@@ -2702,6 +2724,18 @@ function renderMonetization() {
       : appConfig.adSenseClient
         ? "Os anúncios automáticos serão exibidos aqui quando a conta de anúncios estiver ativa."
         : "Espaço preparado para anúncios. Assim que você conectar sua conta de anúncios, este plano gratuito começa a monetizar.";
+    const renderSignature = JSON.stringify({
+      slotKey,
+      title,
+      description,
+      customMarkup,
+      mobile,
+      adNetwork: appConfig.adNetwork,
+    });
+
+    if (element.dataset.adRenderSignature === renderSignature) {
+      return;
+    }
 
     element.innerHTML = `
       <p class="panel-label">Espaco patrocinado</p>
@@ -2711,6 +2745,7 @@ function renderMonetization() {
         <div class="ad-placeholder">${escapeHtml(adPlaceholderText)}</div>
       </div>
     `;
+    element.dataset.adRenderSignature = renderSignature;
 
     if (isAdsterra && customMarkup) {
       const host = element.querySelector("[data-ad-slot-host]");
