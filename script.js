@@ -192,9 +192,11 @@ const dom = {
   publicAdCard: document.querySelector("#public-ad-card"),
   publicTopAdCard: document.querySelector("#public-top-ad-card"),
   publicFooterAdCard: document.querySelector("#public-footer-ad-card"),
+  publicSponsoredFooterCard: document.querySelector("#public-sponsored-footer-card"),
   dashboardTopAdCard: document.querySelector("#dashboard-top-ad-card"),
   dashboardAdCard: document.querySelector("#dashboard-ad-card"),
   dashboardFooterAdCard: document.querySelector("#dashboard-footer-ad-card"),
+  dashboardSponsoredCard: document.querySelector("#dashboard-sponsored-card"),
   memberMetrics: document.querySelector("#member-metrics"),
   achievementGrid: document.querySelector("#achievement-grid"),
   timelineList: document.querySelector("#timeline-list"),
@@ -222,14 +224,17 @@ const dom = {
   lessonAdCard: document.querySelector("#lesson-ad-card"),
   lessonTopAdCard: document.querySelector("#lesson-top-ad-card"),
   lessonFooterAdCard: document.querySelector("#lesson-footer-ad-card"),
+  courseSponsoredCard: document.querySelector("#course-sponsored-card"),
   lessonNote: document.querySelector("#lesson-note"),
   favoriteList: document.querySelector("#favorite-list"),
   noteList: document.querySelector("#note-list"),
   resourceLinks: document.querySelector("#resource-links"),
+  librarySponsoredCard: document.querySelector("#library-sponsored-card"),
   quizList: document.querySelector("#quiz-list"),
   submitQuiz: document.querySelector("#submit-quiz"),
   quizScoreLabel: document.querySelector("#quiz-score-label"),
   quizResultCopy: document.querySelector("#quiz-result-copy"),
+  quizSponsoredCard: document.querySelector("#quiz-sponsored-card"),
   printCertificate: document.querySelector("#print-certificate"),
   certificateCard: document.querySelector("#certificate-card"),
   certificateStudent: document.querySelector("#certificate-student"),
@@ -240,6 +245,7 @@ const dom = {
   certificateStatusCopy: document.querySelector("#certificate-status-copy"),
   certificateUpsell: document.querySelector("#certificate-upsell"),
   glossaryPreview: document.querySelector("#glossary-preview"),
+  certificateSponsoredCard: document.querySelector("#certificate-sponsored-card"),
   hudProgressPercent: document.querySelector("#hud-progress-percent"),
   hudQuizStatus: document.querySelector("#hud-quiz-status"),
   hudCertificateStatus: document.querySelector("#hud-certificate-status"),
@@ -1155,6 +1161,28 @@ function getWhatsAppUrl() {
 
 function getSmartlinkUrl() {
   return String(appConfig.adsterraSmartlinkUrl || "").trim() || "#";
+}
+
+function buildSponsoredEntryCard({
+  title,
+  copy,
+  href,
+  buttonLabel = "Abrir oferta patrocinada",
+  footer = "",
+}) {
+  return `
+    <p class="panel-label">Oferta patrocinada</p>
+    <h3>${escapeHtml(title)}</h3>
+    <p class="side-copy">${escapeHtml(copy)}</p>
+    <div class="resource-links">
+      <a class="resource-link-card is-sponsored-link ${href === "#" ? "is-disabled-link" : ""}" href="${href}" ${
+        href === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
+      }>
+        <strong>${escapeHtml(buttonLabel)}</strong>
+        <span>${escapeHtml(footer || "Abrir recomendação promocional de parceiro")}</span>
+      </a>
+    </div>
+  `;
 }
 
 function getPixWhatsAppUrl() {
@@ -2079,6 +2107,22 @@ function renderPublicOffer() {
       renderCourse();
     });
   });
+
+  if (dom.publicSponsoredFooterCard) {
+    if (smartlinkUrl !== "#") {
+      dom.publicSponsoredFooterCard.hidden = false;
+      dom.publicSponsoredFooterCard.innerHTML = buildSponsoredEntryCard({
+        title: "Recomendação especial para visitantes",
+        copy: "Enquanto você conhece a plataforma, também pode abrir esta oferta patrocinada de parceiro.",
+        href: smartlinkUrl,
+        buttonLabel: "Abrir oferta patrocinada",
+        footer: "Link promocional externo",
+      });
+    } else {
+      dom.publicSponsoredFooterCard.hidden = true;
+      dom.publicSponsoredFooterCard.innerHTML = "";
+    }
+  }
 }
 
 function renderHeroStats() {
@@ -2143,6 +2187,7 @@ function renderDashboard() {
   const nextLesson = getNextLesson();
   const notesCount = Object.values(state.notes).filter((value) => String(value).trim()).length;
   const freeMember = isFreeMember();
+  const smartlinkUrl = getSmartlinkUrl();
   const memberMetrics = [
     { label: "Aulas concluídas", value: `${state.completed.size}/${course.lessons.length}` },
     { label: "Favoritos", value: String(state.favorites.size) },
@@ -2218,6 +2263,22 @@ function renderDashboard() {
       `;
     })
     .join("");
+
+  if (dom.dashboardSponsoredCard) {
+    if (freeMember && smartlinkUrl !== "#") {
+      dom.dashboardSponsoredCard.hidden = false;
+      dom.dashboardSponsoredCard.innerHTML = buildSponsoredEntryCard({
+        title: "Oferta patrocinada do painel gratuito",
+        copy: "Seu plano gratuito pode exibir recomendações promocionais enquanto você estuda sem o premium.",
+        href: smartlinkUrl,
+        buttonLabel: "Abrir oferta patrocinada",
+        footer: "Conteúdo externo de parceiro",
+      });
+    } else {
+      dom.dashboardSponsoredCard.hidden = true;
+      dom.dashboardSponsoredCard.innerHTML = "";
+    }
+  }
 }
 
 function renderSidebarModules() {
@@ -2290,6 +2351,7 @@ function renderCourse() {
 
   const lesson = getLessonById(state.selectedLessonId);
   const hasPremiumAccess = hasMemberAreaAccess();
+  const smartlinkUrl = getSmartlinkUrl();
   const lessonUnlocked = hasPremiumAccess || isLessonPublic(lesson);
   const accessibleLessons = getAccessibleLessons();
 
@@ -2323,6 +2385,10 @@ function renderCourse() {
     dom.markComplete.disabled = true;
     dom.prevLesson.disabled = true;
     dom.nextLesson.disabled = true;
+    if (dom.courseSponsoredCard) {
+      dom.courseSponsoredCard.hidden = true;
+      dom.courseSponsoredCard.innerHTML = "";
+    }
     return;
   }
 
@@ -2365,6 +2431,22 @@ function renderCourse() {
     hint.className = "side-copy";
     hint.textContent = "Esta aula está aberta na apresentação. Favoritos, progresso e anotações completas ficam disponíveis depois do login.";
     dom.lessonContent.prepend(hint);
+  }
+
+  if (dom.courseSponsoredCard) {
+    if (isFreeMember() && smartlinkUrl !== "#") {
+      dom.courseSponsoredCard.hidden = false;
+      dom.courseSponsoredCard.innerHTML = buildSponsoredEntryCard({
+        title: "Oferta patrocinada durante o estudo",
+        copy: "Enquanto você usa a conta gratuita, este espaço pode abrir recomendações promocionais de parceiro.",
+        href: smartlinkUrl,
+        buttonLabel: "Abrir oferta patrocinada",
+        footer: "Link externo patrocinado",
+      });
+    } else {
+      dom.courseSponsoredCard.hidden = true;
+      dom.courseSponsoredCard.innerHTML = "";
+    }
   }
 }
 
@@ -2468,9 +2550,28 @@ function renderLibrary() {
   dom.resourceLinks.querySelectorAll("[data-open-panel]").forEach((button) => {
     button.addEventListener("click", () => setActivePanel(button.dataset.openPanel));
   });
+
+  if (dom.librarySponsoredCard) {
+    if (freeMember && smartlinkUrl !== "#") {
+      dom.librarySponsoredCard.hidden = false;
+      dom.librarySponsoredCard.innerHTML = buildSponsoredEntryCard({
+        title: "Oferta patrocinada da biblioteca",
+        copy: "Recomendação extra visível apenas na conta gratuita, fora do plano premium.",
+        href: smartlinkUrl,
+        buttonLabel: "Abrir oferta patrocinada",
+        footer: "Recurso promocional externo",
+      });
+    } else {
+      dom.librarySponsoredCard.hidden = true;
+      dom.librarySponsoredCard.innerHTML = "";
+    }
+  }
 }
 
 function renderQuiz() {
+  const freeMember = isFreeMember();
+  const smartlinkUrl = getSmartlinkUrl();
+
   dom.quizList.innerHTML = quizQuestions
     .map((question, index) => {
       const selected = state.quizAnswers[question.id];
@@ -2539,6 +2640,22 @@ function renderQuiz() {
       ? "Excelente. Você atingiu a nota mínima e cumpriu a etapa de avaliação."
       : "Ainda não atingiu 70%. Revise o conteúdo e corrija novamente quando quiser.";
   }
+
+  if (dom.quizSponsoredCard) {
+    if (freeMember && smartlinkUrl !== "#") {
+      dom.quizSponsoredCard.hidden = false;
+      dom.quizSponsoredCard.innerHTML = buildSponsoredEntryCard({
+        title: "Oferta patrocinada da avaliação",
+        copy: "O plano gratuito pode exibir recomendações promocionais também na área de quiz.",
+        href: smartlinkUrl,
+        buttonLabel: "Abrir oferta patrocinada",
+        footer: "Anúncio externo patrocinado",
+      });
+    } else {
+      dom.quizSponsoredCard.hidden = true;
+      dom.quizSponsoredCard.innerHTML = "";
+    }
+  }
 }
 
 function renderCertificate() {
@@ -2547,6 +2664,7 @@ function renderCertificate() {
   const freeMember = isFreeMember();
   const checkoutUrl = getCheckoutUrl();
   const whatsappUrl = getWhatsAppUrl();
+  const smartlinkUrl = getSmartlinkUrl();
   const completedJourney = state.completed.size === course.lessons.length && Boolean(state.quizResult?.passed);
   dom.printCertificate.disabled = !unlocked;
   dom.certificateCard.classList.toggle("is-locked", !unlocked);
@@ -2623,6 +2741,22 @@ function renderCertificate() {
       `
     )
     .join("");
+
+  if (dom.certificateSponsoredCard) {
+    if (freeMember && smartlinkUrl !== "#") {
+      dom.certificateSponsoredCard.hidden = false;
+      dom.certificateSponsoredCard.innerHTML = buildSponsoredEntryCard({
+        title: "Oferta patrocinada antes da emissão",
+        copy: "A conta gratuita pode receber recomendações promocionais até a ativação do premium e da emissão do certificado.",
+        href: smartlinkUrl,
+        buttonLabel: "Abrir oferta patrocinada",
+        footer: "Recomendação promocional de parceiro",
+      });
+    } else {
+      dom.certificateSponsoredCard.hidden = true;
+      dom.certificateSponsoredCard.innerHTML = "";
+    }
+  }
 }
 
 function renderAdminPanel() {

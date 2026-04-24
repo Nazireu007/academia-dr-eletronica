@@ -1426,6 +1426,27 @@ body.access-locked .site-footer {
   color: #e6f1ff;
 }
 
+.sponsored-entry-card {
+  background:
+    linear-gradient(180deg, rgba(64, 126, 255, 0.1), rgba(255, 255, 255, 0.02)),
+    var(--panel);
+  border-style: dashed;
+  border-color: rgba(100, 182, 255, 0.24);
+}
+
+.sponsored-entry-card h3 {
+  margin-bottom: 0.25rem;
+}
+
+.sponsored-entry-card .side-copy,
+.sponsored-entry-card p:not(.panel-label) {
+  max-width: 64ch;
+}
+
+.sponsored-entry-card .resource-links {
+  margin-top: 0.85rem;
+}
+
 .premium-promo-banner {
   position: relative;
   display: grid;
