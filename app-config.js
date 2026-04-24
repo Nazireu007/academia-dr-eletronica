@@ -40,8 +40,7 @@ window.APP_CONFIG = {
     '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://accedelid.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
   adsterraDashboardMobileMarkup: "",
   adsterraLessonMobileMarkup: "",
-  adsterraSocialBarMarkup:
-    '<script src="https://accedelid.com/9e/7b/12/9e7b124d03daf0a75ab2fdb0ca35c50b.js"></script>',
+  adsterraSocialBarMarkup: "",
   freeModuleNumbers: ["01"],
   previewLessonIds: [],
 };
