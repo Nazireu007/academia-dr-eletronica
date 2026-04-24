@@ -1384,11 +1384,22 @@ function queueAdRender(host, markup) {
 function getAdMarkupForSlot(slotKey) {
   if (appConfig.adNetwork !== "adsterra") return "";
 
-  if (slotKey === "public_top" || slotKey === "dashboard_top" || slotKey === "lesson_top") {
+  if (slotKey === "public_top") {
     if (isMobileLayout()) {
-      return String(appConfig.adsterraPublicMobileMarkup || appConfig.adsterraPublicMarkup || "").trim();
+      return String(appConfig.adsterraPublicMarkup || appConfig.adsterraPublicMobileMarkup || "").trim();
     }
-    return String(appConfig.adsterraPublicMarkup || appConfig.adsterraDashboardMarkup || "").trim();
+    return "";
+  }
+
+  if (slotKey === "dashboard_top") {
+    if (isMobileLayout()) {
+      return String(appConfig.adsterraDashboardMarkup || appConfig.adsterraPublicMarkup || "").trim();
+    }
+    return "";
+  }
+
+  if (slotKey === "lesson_top") {
+    return "";
   }
 
   if (slotKey === "public" || slotKey === "dashboard" || slotKey === "lesson_side") {
@@ -2784,16 +2795,18 @@ function renderMonetization() {
   [
     [
       dom.publicTopAdCard,
-      showGuestAd,
+      showGuestAd && mobile,
       "Faixa patrocinada da apresentação",
       "Visitantes visualizam esta faixa patrocinada enquanto conhecem a plataforma antes do cadastro.",
       "public_top",
     ],
     [
       dom.publicAdCard,
-      showGuestAd && !mobile,
+      showGuestAd,
       "Patrocínio da apresentação",
-      "Bloco lateral visível para visitantes no desktop, ajudando a sustentar a apresentação gratuita.",
+      mobile
+        ? "Bloco patrocinado principal para visitantes no celular, ajudando a sustentar a apresentação gratuita."
+        : "Bloco lateral visível para visitantes no desktop, ajudando a sustentar a apresentação gratuita.",
       "public",
     ],
     [
@@ -2805,16 +2818,18 @@ function renderMonetization() {
     ],
     [
       dom.dashboardTopAdCard,
-      showMemberAds,
+      false,
       "Faixa patrocinada do plano gratuito",
       `Topo do plano gratuito com monetização ativa. Para estudar sem anúncios e emitir o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "dashboard_top",
     ],
     [
       dom.dashboardAdCard,
-      showMemberAds && !mobile,
+      showMemberAds,
       "Seu plano gratuito é mantido por anúncios",
-      `Bloco lateral do plano gratuito no desktop. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`,
+      mobile
+        ? `Bloco principal do plano gratuito no celular. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`
+        : `Bloco lateral do plano gratuito no desktop. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`,
       "dashboard",
     ],
     [
