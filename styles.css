@@ -550,6 +550,18 @@ body.guest-mode .guest-restricted {
   overflow: hidden;
 }
 
+.ad-slot-host.is-ad-loading {
+  min-height: 96px;
+}
+
+.ad-slot-host.is-ad-loading::before {
+  content: "Carregando patrocinador...";
+  display: block;
+  margin-bottom: 0.75rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
 .ad-slot-host iframe,
 .ad-slot-host img,
 .ad-slot-host ins,

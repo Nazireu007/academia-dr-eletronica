@@ -1309,6 +1309,43 @@ function renderAdMarkup(target, markup) {
   executeEmbeddedScripts(target);
 }
 
+function queueAdRender(host, markup) {
+  if (!host || !markup || host.dataset.adLoaded === "true") return;
+
+  const injectMarkup = () => {
+    if (host.dataset.adLoaded === "true") return;
+    host.dataset.adLoaded = "true";
+    host.classList.add("is-ad-loading");
+    renderAdMarkup(host, markup);
+    window.setTimeout(() => {
+      host.classList.remove("is-ad-loading");
+    }, 4500);
+  };
+
+  const startRender = () => {
+    window.setTimeout(injectMarkup, 1200);
+  };
+
+  if (!("IntersectionObserver" in window)) {
+    startRender();
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      startRender();
+    },
+    {
+      rootMargin: "220px 0px",
+      threshold: 0.01,
+    }
+  );
+
+  observer.observe(host);
+}
+
 function getAdMarkupForSlot(slotKey) {
   if (appConfig.adNetwork !== "adsterra") return "";
 
@@ -2750,8 +2787,8 @@ function renderMonetization() {
     if (isAdsterra && customMarkup) {
       const host = element.querySelector("[data-ad-slot-host]");
       if (host) {
-        renderAdMarkup(host, customMarkup);
         setupAdFallback(host, slotKey);
+        queueAdRender(host, customMarkup);
       }
     }
   });
