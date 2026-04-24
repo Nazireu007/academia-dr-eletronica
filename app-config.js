@@ -23,13 +23,21 @@ window.APP_CONFIG = {
   adsEnabled: true,
   adNetwork: "adsterra",
   adSenseClient: "",
+  adsterraPublicTopMarkup: "",
   adsterraPublicMarkup:
     '<script>atOptions = {\'key\' : \'b3ffe15cd80e0f0fb5de5871d8072ec5\',\'format\' : \'iframe\',\'height\' : 250,\'width\' : 300,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/b3ffe15cd80e0f0fb5de5871d8072ec5/invoke.js"></script>',
+  adsterraPublicFooterMarkup: "",
+  adsterraDashboardTopMarkup: "",
   adsterraDashboardMarkup:
     '<script>atOptions = {\'key\' : \'b3ffe15cd80e0f0fb5de5871d8072ec5\',\'format\' : \'iframe\',\'height\' : 250,\'width\' : 300,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/b3ffe15cd80e0f0fb5de5871d8072ec5/invoke.js"></script>',
+  adsterraDashboardFooterMarkup: "",
+  adsterraLessonTopMarkup: "",
   adsterraLessonMarkup: "",
+  adsterraLessonFooterMarkup: "",
   adsterraPublicMobileMarkup:
     '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
+  adsterraDashboardMobileMarkup: "",
+  adsterraLessonMobileMarkup: "",
   adsterraSocialBarMarkup: "",
   freeModuleNumbers: ["01"],
   previewLessonIds: [],

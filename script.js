@@ -343,10 +343,18 @@ const defaultAppConfig = {
   adsEnabled: true,
   adNetwork: "adsterra",
   adSenseClient: "",
+  adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
+  adsterraPublicFooterMarkup: "",
+  adsterraDashboardTopMarkup: "",
   adsterraPublicMobileMarkup: "",
   adsterraDashboardMarkup: "",
+  adsterraDashboardFooterMarkup: "",
+  adsterraDashboardMobileMarkup: "",
+  adsterraLessonTopMarkup: "",
   adsterraLessonMarkup: "",
+  adsterraLessonFooterMarkup: "",
+  adsterraLessonMobileMarkup: "",
   adsterraSocialBarMarkup: "",
   freeModuleNumbers: ["01"],
   previewLessonIds: [],
@@ -1386,36 +1394,35 @@ function getAdMarkupForSlot(slotKey) {
 
   if (slotKey === "public_top") {
     if (isMobileLayout()) {
-      return String(appConfig.adsterraPublicMarkup || appConfig.adsterraPublicMobileMarkup || "").trim();
+      return String(appConfig.adsterraPublicMobileMarkup || appConfig.adsterraPublicMarkup || "").trim();
     }
-    return "";
+    return String(appConfig.adsterraPublicTopMarkup || "").trim();
   }
 
   if (slotKey === "dashboard_top") {
     if (isMobileLayout()) {
-      return String(appConfig.adsterraDashboardMarkup || appConfig.adsterraPublicMarkup || "").trim();
+      return String(appConfig.adsterraDashboardMobileMarkup || appConfig.adsterraDashboardMarkup || "").trim();
     }
-    return "";
+    return String(appConfig.adsterraDashboardTopMarkup || "").trim();
   }
 
   if (slotKey === "lesson_top") {
-    return "";
+    if (isMobileLayout()) {
+      return String(appConfig.adsterraLessonMobileMarkup || "").trim();
+    }
+    return String(appConfig.adsterraLessonTopMarkup || "").trim();
   }
 
   if (slotKey === "public" || slotKey === "dashboard" || slotKey === "lesson_side") {
-    return String(appConfig.adsterraDashboardMarkup || "").trim();
+    if (slotKey === "public") return String(appConfig.adsterraPublicMarkup || "").trim();
+    if (slotKey === "dashboard") return String(appConfig.adsterraDashboardMarkup || "").trim();
+    return String(appConfig.adsterraLessonMarkup || "").trim();
   }
 
   if (slotKey === "public_footer" || slotKey === "dashboard_footer" || slotKey === "lesson_footer") {
-    return String(appConfig.adsterraPublicMarkup || appConfig.adsterraDashboardMarkup || "").trim();
-  }
-
-  if (slotKey === "lesson") {
-    if (isMobileLayout()) {
-      return String(appConfig.adsterraDashboardMarkup || "").trim();
-    }
-
-    return String(appConfig.adsterraLessonMarkup || "").trim();
+    if (slotKey === "public_footer") return String(appConfig.adsterraPublicFooterMarkup || "").trim();
+    if (slotKey === "dashboard_footer") return String(appConfig.adsterraDashboardFooterMarkup || "").trim();
+    return String(appConfig.adsterraLessonFooterMarkup || "").trim();
   }
 
   return "";
@@ -2862,15 +2869,16 @@ function renderMonetization() {
     ],
   ].forEach(([element, shouldShow, title, description, slotKey]) => {
     if (!element) return;
-    element.hidden = !shouldShow;
-    if (!shouldShow) {
+    const isAdsterra = appConfig.adNetwork === "adsterra";
+    const customMarkup = getAdMarkupForSlot(slotKey);
+    const shouldRenderSlot = shouldShow && (!isAdsterra || Boolean(customMarkup));
+    element.hidden = !shouldRenderSlot;
+    if (!shouldRenderSlot) {
       element.innerHTML = "";
       delete element.dataset.adRenderSignature;
       return;
     }
 
-    const isAdsterra = appConfig.adNetwork === "adsterra";
-    const customMarkup = getAdMarkupForSlot(slotKey);
     const adPlaceholderText = isAdsterra
       ? customMarkup
         ? ""
