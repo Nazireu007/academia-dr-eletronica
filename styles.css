@@ -1416,6 +1416,16 @@ body.access-locked .site-footer {
   border: 1px dashed rgba(123, 226, 200, 0.26);
 }
 
+.resource-link-card.is-sponsored-link {
+  border: 1px dashed rgba(100, 182, 255, 0.34);
+  background: linear-gradient(180deg, rgba(64, 126, 255, 0.12), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 14px 26px rgba(34, 88, 214, 0.12);
+}
+
+.resource-link-card.is-sponsored-link strong {
+  color: #e6f1ff;
+}
+
 .premium-promo-banner {
   position: relative;
   display: grid;

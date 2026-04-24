@@ -23,6 +23,7 @@ window.APP_CONFIG = {
   adsEnabled: true,
   adNetwork: "adsterra",
   adSenseClient: "",
+  adsterraSmartlinkUrl: "https://accedelid.com/d316j7yi3p?key=769101974489a34f0e5cffdb875141af",
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup:
     '<script>atOptions = {\'key\' : \'b3ffe15cd80e0f0fb5de5871d8072ec5\',\'format\' : \'iframe\',\'height\' : 250,\'width\' : 300,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/b3ffe15cd80e0f0fb5de5871d8072ec5/invoke.js"></script>',

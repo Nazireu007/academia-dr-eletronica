@@ -343,6 +343,7 @@ const defaultAppConfig = {
   adsEnabled: true,
   adNetwork: "adsterra",
   adSenseClient: "",
+  adsterraSmartlinkUrl: "",
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
   adsterraPublicFooterMarkup: "",
@@ -1152,6 +1153,10 @@ function getWhatsAppUrl() {
   return `https://wa.me/${phone}?text=${text}`;
 }
 
+function getSmartlinkUrl() {
+  return String(appConfig.adsterraSmartlinkUrl || "").trim() || "#";
+}
+
 function getPixWhatsAppUrl() {
   if (!appConfig.whatsappNumber) return "#";
   const phone = String(appConfig.whatsappNumber).replace(/\D+/g, "");
@@ -1939,6 +1944,7 @@ function renderPublicOffer() {
   const previewLessons = getPreviewLessons();
   const checkoutUrl = getCheckoutUrl();
   const whatsappUrl = getWhatsAppUrl();
+  const smartlinkUrl = getSmartlinkUrl();
   const isProtectedSite = window.location.protocol === "https:";
   const merchantBrand = String(appConfig.merchantBrand || "Nitro Scan Pro").trim();
   const paymentProviderLabel = appConfig.paymentProviderLabel || "Cartão ou PicPay";
@@ -2025,6 +2031,12 @@ function renderPublicOffer() {
       meta: appConfig.pixKey ? "Copie a chave, pague no banco e envie o comprovante" : "Chave Pix indisponivel",
       href: appConfig.pixKey ? "__open_pix_modal__" : "#",
       variant: "secondary-payment",
+    },
+    {
+      title: "Oferta patrocinada",
+      meta: smartlinkUrl !== "#" ? "Abrir recomendação promocional de parceiro" : "Link patrocinado indisponível",
+      href: smartlinkUrl,
+      variant: "sponsored-link",
     },
     {
       title: "Falar no WhatsApp",
@@ -2359,6 +2371,8 @@ function renderCourse() {
 function renderLibrary() {
   const favoriteLessons = course.lessons.filter((lesson) => state.favorites.has(lesson.id));
   const notedLessons = course.lessons.filter((lesson) => String(state.notes[lesson.id] || "").trim());
+  const smartlinkUrl = getSmartlinkUrl();
+  const freeMember = isFreeMember();
 
   dom.favoriteList.innerHTML =
     favoriteLessons.length > 0
@@ -2409,11 +2423,23 @@ function renderLibrary() {
     },
   ];
 
+  if (freeMember && smartlinkUrl !== "#") {
+    resources.push({
+      title: "Oferta patrocinada",
+      meta: "Conteúdo promocional de parceiro",
+      action: "external",
+      href: smartlinkUrl,
+      variant: "sponsored-link",
+    });
+  }
+
   dom.resourceLinks.innerHTML = resources
     .map((resource) => {
-      if (resource.action === "markdown") {
+      if (resource.action === "markdown" || resource.action === "external") {
         return `
-          <a class="resource-link-card" href="${resource.href}">
+          <a class="resource-link-card ${resource.variant ? `is-${resource.variant}` : ""}" href="${resource.href}" ${
+            resource.action === "external" ? 'target="_blank" rel="noreferrer"' : ""
+          }>
             <strong>${escapeHtml(resource.title)}</strong>
             <span>${escapeHtml(resource.meta)}</span>
           </a>
@@ -2421,7 +2447,9 @@ function renderLibrary() {
       }
 
       return `
-        <button class="resource-link-card" data-open-panel="${resource.panel}" type="button">
+        <button class="resource-link-card ${resource.variant ? `is-${resource.variant}` : ""}" data-open-panel="${
+          resource.panel
+        }" type="button">
           <strong>${escapeHtml(resource.title)}</strong>
           <span>${escapeHtml(resource.meta)}</span>
         </button>
