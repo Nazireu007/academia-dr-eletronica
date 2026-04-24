@@ -534,6 +534,20 @@ body.guest-mode .guest-restricted {
   border-color: rgba(255, 191, 102, 0.24);
 }
 
+.ad-support-card.is-ad-fallback-only {
+  min-height: 0;
+  border-style: solid;
+  border-color: rgba(123, 226, 200, 0.22);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(123, 226, 200, 0.14), transparent 34%),
+    linear-gradient(135deg, rgba(31, 76, 115, 0.2), rgba(255, 149, 80, 0.05)),
+    var(--panel);
+}
+
+.ad-support-card.is-ad-fallback-only > .side-copy {
+  max-width: 68ch;
+}
+
 .dashboard-card-span-full {
   grid-column: 1 / -1;
 }
@@ -557,6 +571,14 @@ body.guest-mode .guest-restricted {
   margin-top: 0.9rem;
   width: 100%;
   overflow: hidden;
+}
+
+.ad-slot-host.has-ad-fallback-visible {
+  display: block;
+}
+
+.ad-slot-host.has-ad-fallback-visible .ad-render-slot {
+  display: none;
 }
 
 .ad-render-slot {
@@ -602,10 +624,10 @@ body.guest-mode .guest-restricted {
 }
 
 .ad-fallback-card {
-  margin-top: 0.9rem;
+  margin-top: 0.65rem;
   display: grid;
   gap: 0.45rem;
-  padding: 1rem 1.05rem;
+  padding: 0.95rem 1rem;
   border-radius: 1rem;
   border: 1px solid rgba(123, 226, 200, 0.2);
   background:
@@ -641,6 +663,16 @@ body.guest-mode .guest-restricted {
 .ad-fallback-card .button {
   width: fit-content;
   margin-top: 0.25rem;
+}
+
+.ad-support-card.is-ad-fallback-only .ad-fallback-card {
+  max-width: 640px;
+  margin-inline: auto;
+}
+
+.ad-support-card.is-ad-fallback-only.ad-band-card .ad-fallback-card,
+.ad-support-card.is-ad-fallback-only.dashboard-card-span-full .ad-fallback-card {
+  max-width: 860px;
 }
 
 .admin-member-copy {

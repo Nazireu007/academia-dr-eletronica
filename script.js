@@ -1349,11 +1349,11 @@ function hasRenderedAdContent(target) {
 }
 
 function getAdFallbackMarkup(slotKey) {
-  const isPublicSlot = slotKey === "public";
-  const heading = isPublicSlot ? "Conteúdo gratuito com apoio de parceiros" : "Anúncio bloqueado no seu navegador";
-  const copy = isPublicSlot
-    ? "Se o anúncio não aparecer, continue explorando a apresentação. Criando sua conta, você acompanha a plataforma e pode avançar para o premium quando quiser."
-    : `Seu navegador ou bloqueador pode ter impedido o carregamento deste anúncio. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`;
+  const isTopSlot = String(slotKey || "").endsWith("_top");
+  const heading = isTopSlot ? "Parceiro em destaque" : "Recomendação patrocinada";
+  const copy = isTopSlot
+    ? "Este espaço ajuda a manter a apresentação gratuita do curso enquanto você conhece a plataforma."
+    : `Seu plano gratuito pode exibir recomendações de parceiros. O premium remove anúncios e libera o certificado por ${getPremiumPriceLabel()}.`;
   const smartlinkUrl = String(appConfig.adsterraSmartlinkUrl || "").trim();
   const smartlinkAction = smartlinkUrl
     ? `<a class="button button-small button-ghost" href="${escapeHtml(smartlinkUrl)}" target="_blank" rel="noopener sponsored">Abrir indicação patrocinada</a>`
@@ -1378,7 +1378,11 @@ function setupAdFallback(target, slotKey) {
   if (!fallback) return;
 
   const updateFallbackState = () => {
-    fallback.hidden = hasRenderedAdContent(target);
+    const hasContent = hasRenderedAdContent(target);
+    fallback.hidden = hasContent;
+    target.classList.toggle("has-ad-content", hasContent);
+    target.classList.toggle("has-ad-fallback-visible", !hasContent);
+    target.closest(".ad-support-card")?.classList.toggle("is-ad-fallback-only", !hasContent);
   };
 
   const observer = new MutationObserver(() => {
@@ -1390,9 +1394,8 @@ function setupAdFallback(target, slotKey) {
     subtree: true,
   });
 
-  window.setTimeout(() => {
-    updateFallbackState();
-  }, 3500);
+  window.setTimeout(updateFallbackState, 3500);
+  window.setTimeout(updateFallbackState, 7000);
 }
 
 function renderAdMarkup(target, markup) {
@@ -3122,7 +3125,7 @@ function renderMonetization() {
       <h3>${escapeHtml(title)}</h3>
       <p class="side-copy">${escapeHtml(description)}</p>
       <div class="ad-slot-host" data-ad-slot-host="${escapeHtml(slotKey)}">
-        <div class="ad-placeholder">${escapeHtml(adPlaceholderText)}</div>
+        ${adPlaceholderText ? `<div class="ad-placeholder">${escapeHtml(adPlaceholderText)}</div>` : ""}
       </div>
     `;
     element.dataset.adRenderSignature = renderSignature;
