@@ -1250,6 +1250,59 @@ function executeEmbeddedScripts(container) {
   });
 }
 
+function hasRenderedAdContent(target) {
+  if (!target) return false;
+  return Boolean(
+    target.querySelector("iframe, img, ins, object, embed") ||
+      [...target.querySelectorAll("div, section, article, aside, a")].some((node) => {
+        if (node.hasAttribute("data-ad-fallback")) return false;
+        const text = node.textContent?.trim();
+        return Boolean(text && text.length > 12);
+      })
+  );
+}
+
+function getAdFallbackMarkup(slotKey) {
+  const isPublicSlot = slotKey === "public";
+  const heading = isPublicSlot ? "Conteúdo gratuito com apoio de parceiros" : "Anúncio bloqueado no seu navegador";
+  const copy = isPublicSlot
+    ? "Se o anúncio não aparecer, continue explorando a apresentação. Criando sua conta, você acompanha a plataforma e pode avançar para o premium quando quiser."
+    : `Seu navegador ou bloqueador pode ter impedido o carregamento deste anúncio. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`;
+
+  return `
+    <div class="ad-fallback-card" data-ad-fallback="true" hidden>
+      <span class="ad-fallback-badge">Suporte do plano gratuito</span>
+      <strong>${escapeHtml(heading)}</strong>
+      <p>${escapeHtml(copy)}</p>
+    </div>
+  `;
+}
+
+function setupAdFallback(target, slotKey) {
+  if (!target) return;
+
+  target.insertAdjacentHTML("beforeend", getAdFallbackMarkup(slotKey));
+  const fallback = target.querySelector("[data-ad-fallback]");
+  if (!fallback) return;
+
+  const updateFallbackState = () => {
+    fallback.hidden = hasRenderedAdContent(target);
+  };
+
+  const observer = new MutationObserver(() => {
+    updateFallbackState();
+  });
+
+  observer.observe(target, {
+    childList: true,
+    subtree: true,
+  });
+
+  window.setTimeout(() => {
+    updateFallbackState();
+  }, 3500);
+}
+
 function renderAdMarkup(target, markup) {
   if (!target) return;
   target.innerHTML = markup;
@@ -2663,6 +2716,7 @@ function renderMonetization() {
       const host = element.querySelector("[data-ad-slot-host]");
       if (host) {
         renderAdMarkup(host, customMarkup);
+        setupAdFallback(host, slotKey);
       }
     }
   });

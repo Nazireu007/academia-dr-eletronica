@@ -557,6 +557,43 @@ body.guest-mode .guest-restricted {
   max-width: 100%;
 }
 
+.ad-fallback-card {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem 1.05rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(123, 226, 200, 0.2);
+  background:
+    linear-gradient(180deg, rgba(123, 226, 200, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(8, 18, 29, 0.92);
+  color: var(--text);
+}
+
+.ad-fallback-badge {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.32rem 0.62rem;
+  border: 1px solid rgba(123, 226, 200, 0.2);
+  background: rgba(123, 226, 200, 0.1);
+  color: #d9fff2;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ad-fallback-card strong {
+  color: #eef8ff;
+}
+
+.ad-fallback-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
 .admin-member-copy {
   display: grid;
   gap: 0.2rem;
