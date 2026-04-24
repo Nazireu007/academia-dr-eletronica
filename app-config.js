@@ -31,7 +31,8 @@ window.APP_CONFIG = {
     '<script>atOptions = {\'key\' : \'5e49d9488c659c4af18b512586eaa4df\',\'format\' : \'iframe\',\'height\' : 90,\'width\' : 728,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/5e49d9488c659c4af18b512586eaa4df/invoke.js"></script>',
   adsterraPublicMobileMarkup:
     '<script>atOptions = {\'key\' : \'1cb76908544f6267c48a5befc8367e32\',\'format\' : \'iframe\',\'height\' : 50,\'width\' : 320,\'params\' : {}};</script><script src="https://www.highperformanceformat.com/1cb76908544f6267c48a5befc8367e32/invoke.js"></script>',
-  adsterraSocialBarMarkup: "",
+  adsterraSocialBarMarkup:
+    '<script src="https://pl29241661.profitablecpmratenetwork.com/9e/7b/12/9e7b124d03daf0a75ab2fdb0ca35c50b.js"></script>',
   freeModuleNumbers: ["01"],
   previewLessonIds: [],
 };

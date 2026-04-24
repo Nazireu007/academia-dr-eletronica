@@ -1376,8 +1376,9 @@ function maybeRenderAdsterraSocialBar() {
   const socialBarMarkup = String(appConfig.adsterraSocialBarMarkup || "").trim();
   const socialBarHostId = "adsterra-social-bar-host";
   const existingHost = document.getElementById(socialBarHostId);
+  const shouldShowSocialBar = appConfig.adsEnabled && appConfig.adNetwork === "adsterra" && socialBarMarkup && !isPremiumMember() && getMemberPlanKind() !== "blocked";
 
-  if (!appConfig.adsEnabled || appConfig.adNetwork !== "adsterra" || !isFreeMember() || !socialBarMarkup) {
+  if (!shouldShowSocialBar) {
     existingHost?.remove();
     return;
   }
