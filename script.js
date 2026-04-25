@@ -351,7 +351,7 @@ const defaultAppConfig = {
   adNetwork: "adsterra",
   adSenseClient: "",
   adsterraSmartlinkUrl: "",
-  sponsoredClickWarmupClicks: 2,
+  sponsoredClickWarmupClicks: 1,
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
   adsterraPublicFooterMarkup: "",
