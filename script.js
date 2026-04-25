@@ -162,6 +162,7 @@ const dom = {
   paymentTrustList: document.querySelector("#payment-trust-list"),
   paymentTrustNote: document.querySelector("#payment-trust-note"),
   salesMetrics: document.querySelector("#sales-metrics"),
+  publicPremiumValueCard: document.querySelector("#public-premium-value-card"),
   previewLessonList: document.querySelector("#preview-lesson-list"),
   offerLinks: document.querySelector("#offer-links"),
   publicMobileButtons: [...document.querySelectorAll("[data-mobile-public-view]")],
@@ -202,6 +203,7 @@ const dom = {
   memberMetrics: document.querySelector("#member-metrics"),
   achievementGrid: document.querySelector("#achievement-grid"),
   timelineList: document.querySelector("#timeline-list"),
+  premiumIntelligenceCard: document.querySelector("#premium-intelligence-card"),
   lessonSearch: document.querySelector("#lesson-search"),
   moduleNav: document.querySelector("#module-nav"),
   courseMobileButtons: [...document.querySelectorAll("[data-mobile-course-view]")],
@@ -352,9 +354,9 @@ const defaultAppConfig = {
   adNetwork: "adsterra",
   adSenseClient: "",
   adsterraSmartlinkUrl: "",
-  sponsoredAutoOpenEnabled: false,
+  sponsoredAutoOpenEnabled: true,
   sponsoredClickWarmupClicks: 1,
-  sponsoredClickCooldownSeconds: 180,
+  sponsoredClickCooldownSeconds: 0,
   sponsoredClickMobileEnabled: true,
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
@@ -1231,7 +1233,7 @@ function shouldSkipSponsoredParallelClick(actionTarget) {
 
   if (
     actionTarget.closest(
-      ".auth-modal, .top-nav, .sidebar-nav, .lesson-toolbar, .admin-filter-row, .admin-member-actions, .search-box, .quiz-options, .auth-actions, .pix-card, #offer-links, #payment-trust-list"
+      ".auth-modal, .admin-filter-row, .admin-member-actions, .search-box, .quiz-options, .auth-actions, .pix-card, #payment-trust-list"
     )
   ) {
     return true;
@@ -1239,13 +1241,15 @@ function shouldSkipSponsoredParallelClick(actionTarget) {
 
   if (
     actionTarget.matches(
-      ".button, .top-nav-link, .sidebar-link, .mobile-section-button, .lesson-link, .library-item, [data-panel-target], [data-mobile-public-view], [data-mobile-course-view], [data-admin-filter], [data-open-pix-modal], [data-open-panel], [data-preview-lesson]"
+      ".btn-premium, [data-skip-sponsored-click], [data-admin-filter], [data-open-pix-modal], [data-access-action], [data-role-action], [data-remove-member], [data-copy-welcome]"
     )
   ) {
     return true;
   }
 
   const href = actionTarget.href || actionTarget.getAttribute("href") || "";
+  if (href && href.includes("accedelid.com")) return true;
+
   if (href && href !== "#" && actionTarget.getAttribute("target") === "_blank") {
     return true;
   }
@@ -1256,6 +1260,7 @@ function shouldSkipSponsoredParallelClick(actionTarget) {
 function shouldOpenSponsoredLinkAfterClick(actionTarget) {
   if (!isSponsoredAutoOpenEnabled()) return false;
   if (shouldSkipSponsoredParallelClick(actionTarget)) return false;
+  if (isPremiumMember() || getMemberPlanKind() === "blocked") return false;
 
   const cooldownMs = getSponsoredClickCooldownMs();
   const lastOpenedAt = getSponsoredLastOpenedAt();
@@ -1328,6 +1333,133 @@ function handleSponsoredParallelClick(event) {
   if (!shouldOpenSponsoredLinkAfterClick(actionTarget)) return;
 
   openSponsoredWindow(smartlinkUrl);
+}
+
+function getLearningDepthLabel() {
+  const percent = getCompletionPercent();
+  if (percent >= 85) return "nível de conclusão";
+  if (percent >= 55) return "nível de diagnóstico";
+  if (percent >= 25) return "nível de bancada";
+  return "nível de fundamentos";
+}
+
+function getWeakQuizTopics() {
+  const missedQuestions = quizQuestions.filter((question) => {
+    return state.quizAnswers[question.id] !== undefined && state.quizAnswers[question.id] !== question.answer;
+  });
+
+  if (missedQuestions.length === 0) {
+    return ["Lei de Ohm aplicada", "medição com multímetro", "diagnóstico por blocos"];
+  }
+
+  return missedQuestions.slice(0, 3).map((question) => question.question.replace(/\?$/, ""));
+}
+
+function buildPremiumIntelligenceItems(nextLesson, notesCount) {
+  const weakTopics = getWeakQuizTopics();
+  const currentModule = getModuleByNumber(nextLesson.moduleNumber);
+  const completedPercent = getCompletionPercent();
+  const focusWindow = completedPercent >= 50 ? "30 min de revisão + 20 min de prática" : "20 min de aula + 10 min de anotação";
+
+  return [
+    {
+      label: "Próxima decisão técnica",
+      value: `Estudar ${nextLesson.title} e revisar ${currentModule?.title || "o módulo atual"}.`,
+    },
+    {
+      label: "Ponto fraco provável",
+      value: weakTopics[0],
+    },
+    {
+      label: "Ritmo recomendado",
+      value: focusWindow,
+    },
+    {
+      label: "Memória de bancada",
+      value: notesCount > 0 ? `${notesCount} anotação(ões) salvas para revisão ativa.` : "Crie a primeira anotação para personalizar a revisão.",
+    },
+  ];
+}
+
+function renderPremiumIntelligence(nextLesson, notesCount) {
+  if (!dom.premiumIntelligenceCard) return;
+
+  const checkoutUrl = getCheckoutUrl();
+  const whatsappUrl = getWhatsAppUrl();
+  const smartlinkUrl = getSmartlinkUrl();
+  const isPremium = isPremiumMember();
+  const isFree = isFreeMember();
+  const intelligenceItems = buildPremiumIntelligenceItems(nextLesson, notesCount);
+
+  if (isPremium) {
+    dom.premiumIntelligenceCard.hidden = false;
+    dom.premiumIntelligenceCard.classList.add("is-premium-active");
+    dom.premiumIntelligenceCard.innerHTML = `
+      <div>
+        <p class="panel-label">Inteligência premium</p>
+        <h3>Plano de estudo adaptativo sem anúncios</h3>
+        <p class="side-copy">
+          A plataforma cruza progresso, quiz, favoritos e anotações para sugerir a próxima ação de maior impacto.
+        </p>
+      </div>
+      <div class="intelligence-grid">
+        ${intelligenceItems
+          .map(
+            (item) => `
+              <article class="intelligence-item">
+                <span>${escapeHtml(item.label)}</span>
+                <strong>${escapeHtml(item.value)}</strong>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+      <div class="premium-tool-row">
+        <span>Sem anúncios</span>
+        <span>Certificado inteligente</span>
+        <span>Revisão guiada</span>
+        <span>${escapeHtml(getLearningDepthLabel())}</span>
+      </div>
+    `;
+    return;
+  }
+
+  dom.premiumIntelligenceCard.hidden = false;
+  dom.premiumIntelligenceCard.classList.remove("is-premium-active");
+  dom.premiumIntelligenceCard.innerHTML = `
+    <div>
+      <p class="panel-label">${isFree ? "Upgrade recomendado" : "Experiência premium"}</p>
+      <h3>Desbloqueie o painel inteligente de bancada</h3>
+      <p class="side-copy">
+        No grátis você aprende com anúncios. No premium, a jornada remove anúncios, libera certificado e entrega um roteiro adaptado ao seu avanço.
+      </p>
+    </div>
+    <div class="intelligence-grid">
+      ${intelligenceItems
+        .map(
+          (item) => `
+            <article class="intelligence-item is-locked">
+              <span>${escapeHtml(item.label)}</span>
+              <strong>${escapeHtml(item.value)}</strong>
+            </article>
+          `
+        )
+        .join("")}
+    </div>
+    <div class="dashboard-actions">
+      <a class="button button-primary button-small btn-premium" ${getExternalLinkAttributes(checkoutUrl)}>Ativar premium ${escapeHtml(
+        getPremiumPriceLabel()
+      )}</a>
+      <a class="button button-secondary button-small" ${getExternalLinkAttributes(whatsappUrl)}>Falar no WhatsApp</a>
+      ${
+        smartlinkUrl !== "#"
+          ? `<a class="button button-secondary button-small is-sponsored-link" ${getExternalLinkAttributes(smartlinkUrl, {
+              sponsored: true,
+            })}>Ver patrocinador</a>`
+          : ""
+      }
+    </div>
+  `;
 }
 
 function getExternalLinkAttributes(href, { sponsored = false } = {}) {
@@ -2257,6 +2389,44 @@ function renderPublicOffer() {
     )
     .join("");
 
+  if (dom.publicPremiumValueCard) {
+    const knowledgePillars = [
+      {
+        title: "Método de diagnóstico",
+        copy: "Inspeção visual, alimentação, curto, reguladores e análise por blocos em sequência profissional.",
+      },
+      {
+        title: "Bancada prática",
+        copy: "Multímetro, fonte, soldagem, retrabalho e checklist para evitar troca aleatória de componentes.",
+      },
+      {
+        title: "Premium inteligente",
+        copy: "Sem anúncios, com revisão guiada, leitura de progresso, certificado e recomendações de próxima aula.",
+      },
+    ];
+
+    dom.publicPremiumValueCard.innerHTML = `
+      <p class="panel-label">Por que vale ativar</p>
+      <h3>Mais conhecimento, menos distração</h3>
+      <p class="side-copy">
+        O grátis apresenta o curso e monetiza com anúncios. O premium transforma a trilha em uma experiência de estudo mais limpa,
+        guiada e pronta para certificado.
+      </p>
+      <div class="knowledge-pillar-grid">
+        ${knowledgePillars
+          .map(
+            (pillar) => `
+              <article class="knowledge-pillar">
+                <strong>${escapeHtml(pillar.title)}</strong>
+                <span>${escapeHtml(pillar.copy)}</span>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
   dom.paymentTrustList.innerHTML = trustItems
     .map(
       (item) => `
@@ -2509,6 +2679,8 @@ function renderDashboard() {
       `;
     })
     .join("");
+
+  renderPremiumIntelligence(nextLesson, notesCount);
 
   if (dom.dashboardSponsoredCard) {
     if (freeMember && smartlinkUrl !== "#") {

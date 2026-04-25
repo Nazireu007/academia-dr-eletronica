@@ -1548,6 +1548,99 @@ body.access-locked .site-footer {
   color: #e6f1ff;
 }
 
+.premium-value-card,
+.premium-intelligence-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(123, 226, 200, 0.22);
+  background:
+    linear-gradient(135deg, rgba(123, 226, 200, 0.11), rgba(255, 149, 80, 0.1)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    var(--panel);
+}
+
+.premium-intelligence-card.is-premium-active {
+  border-color: rgba(123, 226, 200, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(123, 226, 200, 0.12),
+    0 26px 80px rgba(0, 0, 0, 0.34),
+    0 0 34px rgba(123, 226, 200, 0.12);
+}
+
+.knowledge-pillar-grid,
+.intelligence-grid,
+.premium-tool-row {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.knowledge-pillar-grid {
+  margin-top: 0.95rem;
+}
+
+.knowledge-pillar,
+.intelligence-item {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgba(144, 172, 198, 0.16);
+  border-radius: 1rem;
+  background: rgba(5, 14, 22, 0.42);
+}
+
+.knowledge-pillar strong,
+.intelligence-item strong {
+  color: #eef8ff;
+  line-height: 1.35;
+}
+
+.knowledge-pillar span,
+.intelligence-item span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.intelligence-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.intelligence-item.is-locked {
+  position: relative;
+  border-style: dashed;
+  opacity: 0.78;
+}
+
+.intelligence-item.is-locked::after {
+  content: "Premium";
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.22rem 0.5rem;
+  color: #071018;
+  background: linear-gradient(135deg, #7be2c8, #ffb067);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.premium-tool-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.premium-tool-row span {
+  min-width: 0;
+  border-radius: 999px;
+  padding: 0.62rem 0.75rem;
+  border: 1px solid rgba(123, 226, 200, 0.22);
+  color: #dffef8;
+  background: rgba(123, 226, 200, 0.09);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 .sponsored-entry-card {
   position: relative;
   overflow: hidden;
@@ -2279,7 +2372,9 @@ body.access-locked .site-footer {
   .stats-grid,
   .achievement-grid,
   .lesson-meta-grid,
-  .metric-list {
+  .metric-list,
+  .intelligence-grid,
+  .premium-tool-row {
     grid-template-columns: 1fr;
   }
 
@@ -3013,6 +3108,12 @@ body.access-locked .site-footer {
   .premium-promo-banner {
     gap: 0.25rem;
     animation-duration: 2.4s;
+  }
+
+  .knowledge-pillar,
+  .intelligence-item {
+    padding: 0.72rem;
+    border-radius: 0.9rem;
   }
 
   .premium-promo-badge {
