@@ -554,6 +554,8 @@ body.guest-mode .guest-restricted {
 
 .ad-band-card .ad-slot-host {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
 }
 
@@ -568,6 +570,10 @@ body.guest-mode .guest-restricted {
 }
 
 .ad-slot-host {
+  display: grid;
+  justify-items: center;
+  align-items: center;
+  gap: 0.85rem;
   margin-top: 0.9rem;
   width: 100%;
   overflow: hidden;
@@ -581,6 +587,10 @@ body.guest-mode .guest-restricted {
   display: none;
 }
 
+.ad-slot-host.has-ad-content .ad-fallback-card {
+  display: none !important;
+}
+
 .ad-render-slot {
   display: flex;
   justify-content: center;
@@ -590,9 +600,13 @@ body.guest-mode .guest-restricted {
   overflow: hidden;
 }
 
+.ad-render-slot > * {
+  max-width: 100%;
+}
+
 .desktop-only-slot .ad-slot-host {
-  display: flex;
-  justify-content: center;
+  display: grid;
+  justify-items: center;
 }
 
 .ad-slot-host.is-ad-loading {
@@ -614,6 +628,10 @@ body.guest-mode .guest-restricted {
   max-width: 100%;
 }
 
+.ad-slot-host img {
+  height: auto;
+}
+
 .ad-render-slot iframe {
   display: block;
   margin-inline: auto;
@@ -627,6 +645,7 @@ body.guest-mode .guest-restricted {
   margin-top: 0.65rem;
   display: grid;
   gap: 0.45rem;
+  width: min(100%, 520px);
   padding: 0.95rem 1rem;
   border-radius: 1rem;
   border: 1px solid rgba(123, 226, 200, 0.2);

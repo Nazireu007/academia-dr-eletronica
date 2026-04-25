@@ -352,7 +352,7 @@ const defaultAppConfig = {
   adSenseClient: "",
   adsterraSmartlinkUrl: "",
   sponsoredClickWarmupClicks: 1,
-  sponsoredClickMobileEnabled: false,
+  sponsoredClickMobileEnabled: true,
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
   adsterraPublicFooterMarkup: "",
@@ -1200,6 +1200,24 @@ function shouldOpenSponsoredLinkAfterClick() {
   return nextCount > getSponsoredClickWarmupLimit();
 }
 
+function openSponsoredWindow(url) {
+  const targetUrl = String(url || "").trim();
+  if (!targetUrl || targetUrl === "#") return false;
+
+  const sponsoredWindow = window.open("", "_blank");
+  if (sponsoredWindow) {
+    try {
+      sponsoredWindow.opener = null;
+      sponsoredWindow.location.href = targetUrl;
+      return true;
+    } catch (_error) {
+      sponsoredWindow.close?.();
+    }
+  }
+
+  return Boolean(window.open(targetUrl, "_blank", "noopener,noreferrer"));
+}
+
 function isPremiumActionTarget(actionTarget) {
   if (!actionTarget) return true;
   const label = [
@@ -1237,7 +1255,7 @@ function handleSponsoredParallelClick(event) {
   if (href && href.includes("accedelid.com")) return;
   if (!shouldOpenSponsoredLinkAfterClick()) return;
 
-  window.open(smartlinkUrl, "_blank", "noopener,noreferrer");
+  openSponsoredWindow(smartlinkUrl);
 }
 
 function buildSponsoredEntryCard({
@@ -1381,19 +1399,30 @@ function executeEmbeddedScripts(container) {
 
 function hasRenderedAdContent(target) {
   if (!target) return false;
-  if (target.querySelector("iframe, img, ins, object, embed")) return true;
+  const fallback = target.querySelector("[data-ad-fallback]");
+  const candidates = [
+    ...target.querySelectorAll("iframe, img, ins, object, embed, canvas, video, svg, a, div, section, article, aside"),
+  ];
 
-  return Boolean(
-    [...target.querySelectorAll("[data-ad-render-slot] div, [data-ad-render-slot] section, [data-ad-render-slot] article, [data-ad-render-slot] aside, [data-ad-render-slot] a")].some(
-      (node) => {
-        if (node.hasAttribute("data-ad-fallback") || node.matches(".ad-render-slot")) return false;
-        const box = node.getBoundingClientRect();
-        const text = node.textContent?.trim();
-        const hasVisibleBox = box.width >= 40 && box.height >= 20;
-        return Boolean(hasVisibleBox && (node.children.length > 0 || (text && text.length > 12)));
-      }
-    )
-  );
+  return candidates.some((node) => {
+    if (node === fallback || fallback?.contains(node) || node.matches(".ad-render-slot, script, style")) return false;
+
+    const box = node.getBoundingClientRect();
+    const style = window.getComputedStyle(node);
+    const isVisible =
+      box.width >= 40 &&
+      box.height >= 20 &&
+      style.display !== "none" &&
+      style.visibility !== "hidden" &&
+      Number(style.opacity || 1) > 0;
+    if (!isVisible) return false;
+
+    if (node.matches("iframe, img, ins, object, embed, canvas, video, svg")) return true;
+
+    const hasBackground = Boolean(style.backgroundImage && style.backgroundImage !== "none");
+    const text = node.textContent?.trim();
+    return Boolean(box.width >= 80 && box.height >= 40 && (hasBackground || node.children.length > 0 || (text && text.length > 12)));
+  });
 }
 
 function getAdFallbackMarkup(slotKey) {
@@ -1442,8 +1471,9 @@ function setupAdFallback(target, slotKey) {
     subtree: true,
   });
 
-  window.setTimeout(updateFallbackState, 3500);
-  window.setTimeout(updateFallbackState, 7000);
+  [1200, 3500, 7000, 11000, 15000].forEach((delay) => {
+    window.setTimeout(updateFallbackState, delay);
+  });
 }
 
 function renderAdMarkup(target, markup) {
