@@ -40,7 +40,9 @@ jobs:
           cp access-config.js _site/access-config.js
           cp course-data.js _site/course-data.js
           cp MONETIZACAO.md _site/MONETIZACAO.md
-          cp CHECKLIST-PUBLICACAO.md _site/CHECKLIST-PUBLICACAO.md
+          if [ -f CHECKLIST-PUBLICACAO.md ]; then
+            cp CHECKLIST-PUBLICACAO.md _site/CHECKLIST-PUBLICACAO.md
+          fi
           cp privacidade.html _site/privacidade.html
           cp termos.html _site/termos.html
           cp 404.html _site/404.html

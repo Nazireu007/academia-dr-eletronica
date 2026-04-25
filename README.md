@@ -16,7 +16,6 @@ Esta pasta agora contém uma plataforma web local em formato de área de membros
 - `MONETIZACAO.md`: guia rápido do modelo comercial do curso.
 - `privacidade.html`: política de privacidade pública da plataforma.
 - `termos.html`: termos públicos de uso da plataforma.
-- `CHECKLIST-PUBLICACAO.md`: checklist final para revisar antes de divulgar e monetizar.
 
 ## Recursos da plataforma
 
@@ -49,8 +48,13 @@ O workflow fica em `.github/workflows/deploy-pages.yml` e publica apenas os arqu
 - `access-config.js`
 - `course-data.js`
 - `MONETIZACAO.md`
+- `privacidade.html`
+- `termos.html`
+- `gerar-acesso.html`
+- `favicon.svg`
 - `404.html`
 - `conteudo/curso-eletronica.md`
+- `CHECKLIST-PUBLICACAO.md`, se o arquivo existir
 
 Isso evita expor o arquivo bruto `meuprojeto.txt`.
 

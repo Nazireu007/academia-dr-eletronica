@@ -111,7 +111,8 @@ const storageKeys = {
   quizResult: "academia-dr-quiz-result-v4",
   accessSession: "academia-dr-access-session-v1",
   supabaseUser: "academia-dr-supabase-user-v1",
-  sponsoredClickCount: "nitro-sponsored-click-count-v1",
+  sponsoredClickCount: "nitro-sponsored-click-count-v2",
+  sponsoredLastOpenedAt: "nitro-sponsored-last-opened-at-v1",
 };
 
 const dom = {
@@ -351,7 +352,9 @@ const defaultAppConfig = {
   adNetwork: "adsterra",
   adSenseClient: "",
   adsterraSmartlinkUrl: "",
+  sponsoredAutoOpenEnabled: false,
   sponsoredClickWarmupClicks: 1,
+  sponsoredClickCooldownSeconds: 180,
   sponsoredClickMobileEnabled: true,
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
@@ -1168,10 +1171,20 @@ function getSmartlinkUrl() {
   return String(appConfig.adsterraSmartlinkUrl || "").trim() || "#";
 }
 
+function isSponsoredAutoOpenEnabled() {
+  return appConfig.sponsoredAutoOpenEnabled === true;
+}
+
 function getSponsoredClickWarmupLimit() {
   const configuredLimit = Number(appConfig.sponsoredClickWarmupClicks);
   if (!Number.isFinite(configuredLimit) || configuredLimit < 0) return 0;
   return Math.floor(configuredLimit);
+}
+
+function getSponsoredClickCooldownMs() {
+  const configuredSeconds = Number(appConfig.sponsoredClickCooldownSeconds);
+  if (!Number.isFinite(configuredSeconds) || configuredSeconds <= 0) return 0;
+  return Math.floor(configuredSeconds * 1000);
 }
 
 function getSponsoredClickCount() {
@@ -1194,10 +1207,69 @@ function setSponsoredClickCount(count) {
   }
 }
 
-function shouldOpenSponsoredLinkAfterClick() {
+function getSponsoredLastOpenedAt() {
+  try {
+    const storedAt = Number.parseInt(sessionStorage.getItem(storageKeys.sponsoredLastOpenedAt) || "0", 10);
+    return Number.isFinite(storedAt) && storedAt > 0 ? storedAt : 0;
+  } catch (_error) {
+    return 0;
+  }
+}
+
+function setSponsoredLastOpenedAt(timestamp) {
+  const safeTimestamp = Math.max(0, Number.isFinite(Number(timestamp)) ? Math.floor(Number(timestamp)) : 0);
+
+  try {
+    sessionStorage.setItem(storageKeys.sponsoredLastOpenedAt, String(safeTimestamp));
+  } catch (_error) {
+    // Ignore storage failures; the session still keeps the UI working.
+  }
+}
+
+function shouldSkipSponsoredParallelClick(actionTarget) {
+  if (!actionTarget) return true;
+
+  if (
+    actionTarget.closest(
+      ".auth-modal, .top-nav, .sidebar-nav, .lesson-toolbar, .admin-filter-row, .admin-member-actions, .search-box, .quiz-options, .auth-actions, .pix-card, #offer-links, #payment-trust-list"
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    actionTarget.matches(
+      ".button, .top-nav-link, .sidebar-link, .mobile-section-button, .lesson-link, .library-item, [data-panel-target], [data-mobile-public-view], [data-mobile-course-view], [data-admin-filter], [data-open-pix-modal], [data-open-panel], [data-preview-lesson]"
+    )
+  ) {
+    return true;
+  }
+
+  const href = actionTarget.href || actionTarget.getAttribute("href") || "";
+  if (href && href !== "#" && actionTarget.getAttribute("target") === "_blank") {
+    return true;
+  }
+
+  return false;
+}
+
+function shouldOpenSponsoredLinkAfterClick(actionTarget) {
+  if (!isSponsoredAutoOpenEnabled()) return false;
+  if (shouldSkipSponsoredParallelClick(actionTarget)) return false;
+
+  const cooldownMs = getSponsoredClickCooldownMs();
+  const lastOpenedAt = getSponsoredLastOpenedAt();
+  if (cooldownMs > 0 && lastOpenedAt > 0 && Date.now() - lastOpenedAt < cooldownMs) {
+    return false;
+  }
+
   const nextCount = getSponsoredClickCount() + 1;
-  setSponsoredClickCount(nextCount);
-  return nextCount > getSponsoredClickWarmupLimit();
+  const shouldOpen = nextCount > getSponsoredClickWarmupLimit();
+  setSponsoredClickCount(shouldOpen ? 0 : nextCount);
+  if (shouldOpen) {
+    setSponsoredLastOpenedAt(Date.now());
+  }
+  return shouldOpen;
 }
 
 function openSponsoredWindow(url) {
@@ -1253,9 +1325,42 @@ function handleSponsoredParallelClick(event) {
 
   const href = actionTarget.href || actionTarget.getAttribute("href") || "";
   if (href && href.includes("accedelid.com")) return;
-  if (!shouldOpenSponsoredLinkAfterClick()) return;
+  if (!shouldOpenSponsoredLinkAfterClick(actionTarget)) return;
 
   openSponsoredWindow(smartlinkUrl);
+}
+
+function getExternalLinkAttributes(href, { sponsored = false } = {}) {
+  const targetHref = String(href || "").trim() || "#";
+  if (targetHref === "#") {
+    return 'href="#" aria-disabled="true"';
+  }
+
+  const relTokens = ["noopener", "noreferrer"];
+  if (sponsored) {
+    relTokens.push("nofollow", "sponsored");
+  }
+
+  return `href="${escapeHtml(targetHref)}" target="_blank" rel="${relTokens.join(" ")}"`;
+}
+
+function applyExternalLink(element, href, { sponsored = false } = {}) {
+  if (!element) return;
+
+  const targetHref = String(href || "").trim() || "#";
+  element.href = targetHref === "#" ? "#" : targetHref;
+  element.classList.toggle("is-disabled-link", targetHref === "#");
+
+  if (targetHref === "#") {
+    element.setAttribute("aria-disabled", "true");
+    element.removeAttribute("target");
+    element.removeAttribute("rel");
+    return;
+  }
+
+  element.removeAttribute("aria-disabled");
+  element.setAttribute("target", "_blank");
+  element.setAttribute("rel", sponsored ? "noopener noreferrer nofollow sponsored" : "noopener noreferrer");
 }
 
 function buildSponsoredEntryCard({
@@ -1270,9 +1375,10 @@ function buildSponsoredEntryCard({
     <h3>${escapeHtml(title)}</h3>
     <p class="side-copy">${escapeHtml(copy)}</p>
     <div class="resource-links">
-      <a class="resource-link-card is-sponsored-link ${href === "#" ? "is-disabled-link" : ""}" href="${href}" ${
-        href === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
-      }>
+      <a class="resource-link-card is-sponsored-link ${href === "#" ? "is-disabled-link" : ""}" ${getExternalLinkAttributes(
+        href,
+        { sponsored: true }
+      )}>
         <strong>${escapeHtml(buttonLabel)}</strong>
         <span>${escapeHtml(footer || "Abrir recomendação promocional de parceiro")}</span>
       </a>
@@ -1433,7 +1539,9 @@ function getAdFallbackMarkup(slotKey) {
     : `Seu plano gratuito pode exibir recomendações de parceiros. O premium remove anúncios e libera o certificado por ${getPremiumPriceLabel()}.`;
   const smartlinkUrl = String(appConfig.adsterraSmartlinkUrl || "").trim();
   const smartlinkAction = smartlinkUrl
-    ? `<a class="button button-small button-ghost" href="${escapeHtml(smartlinkUrl)}" target="_blank" rel="noopener sponsored">Abrir indicação patrocinada</a>`
+    ? `<a class="button button-small button-ghost" ${getExternalLinkAttributes(smartlinkUrl, {
+        sponsored: true,
+      })}>Abrir indicação patrocinada</a>`
     : "";
 
   return `
@@ -1955,8 +2063,7 @@ function closeAuthModal() {
 function openPixModal() {
   dom.pixKeyDisplay.textContent = String(appConfig.pixKey || "-").trim() || "-";
   dom.pixFeedback.textContent = "Copie a chave, conclua no seu banco e envie o comprovante para liberar o premium.";
-  dom.pixWhatsappLink.href = getPixWhatsAppUrl();
-  dom.pixWhatsappLink.classList.toggle("is-disabled-link", dom.pixWhatsappLink.href === "#");
+  applyExternalLink(dom.pixWhatsappLink, getPixWhatsAppUrl());
   dom.pixModal.classList.add("is-open");
   dom.pixModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
@@ -2126,10 +2233,8 @@ function renderPublicOffer() {
   }
   dom.primaryCheckoutLink.textContent = "Pagar com cartão ou PicPay";
   dom.enterMemberArea.textContent = signedIn ? "Abrir minha área" : "Entrar ou criar conta grátis";
-  dom.primaryCheckoutLink.href = checkoutUrl;
-  dom.primaryCheckoutLink.classList.toggle("is-disabled-link", checkoutUrl === "#");
-  dom.whatsappSalesLink.href = whatsappUrl;
-  dom.whatsappSalesLink.classList.toggle("is-disabled-link", whatsappUrl === "#");
+  applyExternalLink(dom.primaryCheckoutLink, checkoutUrl);
+  applyExternalLink(dom.whatsappSalesLink, whatsappUrl);
 
   const trustItems = [
     { title: "Cobrança profissional", copy: `${merchantBrand} em checkout externo` },
@@ -2221,7 +2326,9 @@ function renderPublicOffer() {
             ? 'aria-disabled="true"'
             : item.href === "__open_pix_modal__"
               ? 'data-open-pix-modal="true"'
-              : 'target="_blank" rel="noreferrer"'
+              : getExternalLinkAttributes(item.href, {
+                  sponsored: item.variant === "sponsored-link",
+                })
         }>
           <strong>${escapeHtml(item.title)}</strong>
           <span>${escapeHtml(item.meta)}</span>
@@ -2658,8 +2765,10 @@ function renderLibrary() {
     .map((resource) => {
       if (resource.action === "markdown" || resource.action === "external") {
         return `
-          <a class="resource-link-card ${resource.variant ? `is-${resource.variant}` : ""}" href="${resource.href}" ${
-            resource.action === "external" ? 'target="_blank" rel="noreferrer"' : ""
+          <a class="resource-link-card ${resource.variant ? `is-${resource.variant}` : ""}" ${
+            resource.action === "external"
+              ? getExternalLinkAttributes(resource.href, { sponsored: resource.variant === "sponsored-link" })
+              : `href="${escapeHtml(resource.href)}"`
           }>
             <strong>${escapeHtml(resource.title)}</strong>
             <span>${escapeHtml(resource.meta)}</span>
@@ -2856,12 +2965,12 @@ function renderCertificate() {
               : "A conta gratuita permite estudar com anúncios. Para emitir o certificado ao concluir a trilha, ative o plano premium."
           }</p>
           <div class="certificate-upsell-actions">
-            <a class="button button-primary button-small btn-premium ${checkoutUrl === "#" ? "is-disabled-link" : ""}" href="${checkoutUrl}" ${
-              checkoutUrl === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
-            }>Ativar premium agora</a>
-            <a class="button button-secondary button-small ${whatsappUrl === "#" ? "is-disabled-link" : ""}" href="${whatsappUrl}" ${
-              whatsappUrl === "#" ? 'aria-disabled="true"' : 'target="_blank" rel="noreferrer"'
-            }>Tirar dúvida no WhatsApp</a>
+            <a class="button button-primary button-small btn-premium ${checkoutUrl === "#" ? "is-disabled-link" : ""}" ${getExternalLinkAttributes(
+              checkoutUrl
+            )}>Ativar premium agora</a>
+            <a class="button button-secondary button-small ${whatsappUrl === "#" ? "is-disabled-link" : ""}" ${getExternalLinkAttributes(
+              whatsappUrl
+            )}>Tirar dúvida no WhatsApp</a>
           </div>
         </div>
       `;
