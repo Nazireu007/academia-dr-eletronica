@@ -352,6 +352,7 @@ const defaultAppConfig = {
   adSenseClient: "",
   adsterraSmartlinkUrl: "",
   sponsoredClickWarmupClicks: 1,
+  sponsoredClickMobileEnabled: false,
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
   adsterraPublicFooterMarkup: "",
@@ -1223,6 +1224,7 @@ function isPremiumActionTarget(actionTarget) {
 function handleSponsoredParallelClick(event) {
   if (!event.isTrusted || event.defaultPrevented || !appConfig.adsEnabled) return;
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  if (isMobileLayout() && appConfig.sponsoredClickMobileEnabled === false) return;
 
   const actionTarget = event.target?.closest?.("button, a");
   if (!actionTarget || actionTarget.disabled || actionTarget.getAttribute("aria-disabled") === "true") return;
@@ -1368,6 +1370,10 @@ function executeEmbeddedScripts(container) {
     [...oldScript.attributes].forEach((attribute) => {
       newScript.setAttribute(attribute.name, attribute.value);
     });
+    if (newScript.src) {
+      newScript.async = true;
+      newScript.dataset.adInjectedScript = "true";
+    }
     newScript.textContent = oldScript.textContent;
     oldScript.replaceWith(newScript);
   });
@@ -1375,13 +1381,18 @@ function executeEmbeddedScripts(container) {
 
 function hasRenderedAdContent(target) {
   if (!target) return false;
+  if (target.querySelector("iframe, img, ins, object, embed")) return true;
+
   return Boolean(
-    target.querySelector("iframe, img, ins, object, embed") ||
-      [...target.querySelectorAll("div, section, article, aside, a")].some((node) => {
-        if (node.hasAttribute("data-ad-fallback")) return false;
+    [...target.querySelectorAll("[data-ad-render-slot] div, [data-ad-render-slot] section, [data-ad-render-slot] article, [data-ad-render-slot] aside, [data-ad-render-slot] a")].some(
+      (node) => {
+        if (node.hasAttribute("data-ad-fallback") || node.matches(".ad-render-slot")) return false;
+        const box = node.getBoundingClientRect();
         const text = node.textContent?.trim();
-        return Boolean(text && text.length > 12);
-      })
+        const hasVisibleBox = box.width >= 40 && box.height >= 20;
+        return Boolean(hasVisibleBox && (node.children.length > 0 || (text && text.length > 12)));
+      }
+    )
   );
 }
 
@@ -1458,7 +1469,7 @@ function enqueueAdInjection(host, markup, delayMs = 0) {
         new Promise((resolve) => {
           window.setTimeout(() => {
             renderAdMarkup(host, markup);
-            resolve();
+            window.setTimeout(resolve, 900);
           }, delayMs);
         })
     );
@@ -1489,7 +1500,12 @@ function queueAdRender(host, markup) {
   };
 
   const startRender = () => {
-    window.setTimeout(injectMarkup, 450);
+    const renderWhenIdle = () => window.setTimeout(injectMarkup, 450);
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(renderWhenIdle, { timeout: 2800 });
+      return;
+    }
+    renderWhenIdle();
   };
 
   if (!("IntersectionObserver" in window)) {
