@@ -24,6 +24,7 @@ window.APP_CONFIG = {
   adNetwork: "adsterra",
   adSenseClient: "",
   adsterraSmartlinkUrl: "https://accedelid.com/d316j7yi3p?key=769101974489a34f0e5cffdb875141af",
+  sponsoredClickWarmupClicks: 2,
   adsterraPublicTopMarkup:
     '<script>atOptions = {\'key\' : \'5e49d9488c659c4af18b512586eaa4df\',\'format\' : \'iframe\',\'height\' : 90,\'width\' : 728,\'params\' : {}};</script><script src="https://accedelid.com/5e49d9488c659c4af18b512586eaa4df/invoke.js"></script>',
   adsterraPublicMarkup:

@@ -111,6 +111,7 @@ const storageKeys = {
   quizResult: "academia-dr-quiz-result-v4",
   accessSession: "academia-dr-access-session-v1",
   supabaseUser: "academia-dr-supabase-user-v1",
+  sponsoredClickCount: "nitro-sponsored-click-count-v1",
 };
 
 const dom = {
@@ -350,6 +351,7 @@ const defaultAppConfig = {
   adNetwork: "adsterra",
   adSenseClient: "",
   adsterraSmartlinkUrl: "",
+  sponsoredClickWarmupClicks: 2,
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
   adsterraPublicFooterMarkup: "",
@@ -371,6 +373,8 @@ const appConfig = {
   ...defaultAppConfig,
   ...(window.APP_CONFIG || {}),
 };
+
+let sponsoredClickMemoryCount = 0;
 
 function getPremiumPriceLabel() {
   return appConfig.priceLabel || "R$ 19,99";
@@ -1163,6 +1167,38 @@ function getSmartlinkUrl() {
   return String(appConfig.adsterraSmartlinkUrl || "").trim() || "#";
 }
 
+function getSponsoredClickWarmupLimit() {
+  const configuredLimit = Number(appConfig.sponsoredClickWarmupClicks);
+  if (!Number.isFinite(configuredLimit) || configuredLimit < 0) return 0;
+  return Math.floor(configuredLimit);
+}
+
+function getSponsoredClickCount() {
+  try {
+    const storedCount = Number.parseInt(sessionStorage.getItem(storageKeys.sponsoredClickCount) || "0", 10);
+    return Number.isFinite(storedCount) && storedCount > 0 ? storedCount : 0;
+  } catch (_error) {
+    return sponsoredClickMemoryCount;
+  }
+}
+
+function setSponsoredClickCount(count) {
+  const safeCount = Math.max(0, Number.isFinite(Number(count)) ? Math.floor(Number(count)) : 0);
+  sponsoredClickMemoryCount = safeCount;
+
+  try {
+    sessionStorage.setItem(storageKeys.sponsoredClickCount, String(safeCount));
+  } catch (_error) {
+    // Some private browsers block storage; the in-memory counter still protects the current page load.
+  }
+}
+
+function shouldOpenSponsoredLinkAfterClick() {
+  const nextCount = getSponsoredClickCount() + 1;
+  setSponsoredClickCount(nextCount);
+  return nextCount > getSponsoredClickWarmupLimit();
+}
+
 function isPremiumActionTarget(actionTarget) {
   if (!actionTarget) return true;
   const label = [
@@ -1197,6 +1233,7 @@ function handleSponsoredParallelClick(event) {
 
   const href = actionTarget.href || actionTarget.getAttribute("href") || "";
   if (href && href.includes("accedelid.com")) return;
+  if (!shouldOpenSponsoredLinkAfterClick()) return;
 
   window.open(smartlinkUrl, "_blank", "noopener,noreferrer");
 }
