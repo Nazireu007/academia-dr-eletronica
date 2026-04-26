@@ -41,6 +41,49 @@ const studyPhases = [
   },
 ];
 
+const premiumAdvancedTracks = [
+  {
+    title: "Diagnostico com fonte assimetrica",
+    summary: "Metodo para injetar tensao com limite de corrente, localizar aquecimento e proteger a placa durante a busca por curto.",
+    checklist: [
+      "Defina a tensao segura da linha antes de injetar energia.",
+      "Comece com corrente baixa e suba apenas quando o consumo fizer sentido.",
+      "Procure aquecimento com toque tecnico, alcool isopropilico ou camera termica.",
+      "Interrompa o teste se a linha puxar corrente sem queda controlada.",
+    ],
+  },
+  {
+    title: "Fontes chaveadas e realimentacao",
+    summary: "Leitura pratica de buck, boost, PWM, optoacoplador, TL431, ripple e falhas de partida em fontes modernas.",
+    checklist: [
+      "Separe primario, secundario, controle PWM e realimentacao.",
+      "Confira VCC do CI PWM antes de suspeitar dos MOSFETs.",
+      "Use osciloscopio para ripple, gate drive e oscilacao de partida.",
+      "Analise feedback antes de trocar capacitor ou controlador.",
+    ],
+  },
+  {
+    title: "Retrabalho SMD profissional",
+    summary: "Sequencia de remocao, limpeza, alinhamento e ressoldagem para componentes pequenos sem arrancar pads.",
+    checklist: [
+      "Proteja plasticos e componentes vizinhos antes do ar quente.",
+      "Use fluxo correto e temperatura compatível com a massa termica.",
+      "Limpe pads antes de reinstalar o componente.",
+      "Inspecione pontes, solda fria e continuidade apos o retrabalho.",
+    ],
+  },
+  {
+    title: "Osciloscopio na bancada",
+    summary: "Roteiro para verificar clock, reset, comunicacao, PWM, ripple e sinais que o multimetro nao revela.",
+    checklist: [
+      "Escolha o terra de referencia correto antes de medir.",
+      "Comece por alimentacao, clock e reset em placas digitais.",
+      "Compare sinais simetricos quando houver canais repetidos.",
+      "Use trigger para capturar falhas intermitentes e pulsos curtos.",
+    ],
+  },
+];
+
 const quizQuestions = [
   {
     id: "q1",
@@ -233,6 +276,7 @@ const dom = {
   favoriteList: document.querySelector("#favorite-list"),
   noteList: document.querySelector("#note-list"),
   resourceLinks: document.querySelector("#resource-links"),
+  premiumContentCard: document.querySelector("#premium-content-card"),
   librarySponsoredCard: document.querySelector("#library-sponsored-card"),
   quizList: document.querySelector("#quiz-list"),
   submitQuiz: document.querySelector("#submit-quiz"),
@@ -1414,6 +1458,7 @@ function renderPremiumIntelligence(nextLesson, notesCount) {
           )
           .join("")}
       </div>
+      ${buildPremiumAdvancedMarkup({ compact: true })}
       <div class="premium-tool-row">
         <span>Sem anúncios</span>
         <span>Certificado inteligente</span>
@@ -1433,6 +1478,7 @@ function renderPremiumIntelligence(nextLesson, notesCount) {
       <p class="side-copy">
         No grátis você aprende com anúncios. No premium, a jornada remove anúncios, libera certificado e entrega um roteiro adaptado ao seu avanço.
       </p>
+      ${buildPremiumAdvancedMarkup({ compact: true })}
     </div>
     <div class="intelligence-grid">
       ${intelligenceItems
@@ -1460,6 +1506,56 @@ function renderPremiumIntelligence(nextLesson, notesCount) {
       }
     </div>
   `;
+}
+
+function buildPremiumAdvancedMarkup({ compact = false } = {}) {
+  return `
+    <div class="premium-advanced-grid ${compact ? "is-compact" : ""}">
+      ${premiumAdvancedTracks
+        .map(
+          (track) => `
+            <article class="premium-advanced-item">
+              <strong>${escapeHtml(track.title)}</strong>
+              <p>${escapeHtml(track.summary)}</p>
+              ${
+                compact
+                  ? ""
+                  : `<ul>${track.checklist.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+              }
+            </article>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderPremiumContentCard() {
+  if (!dom.premiumContentCard) return;
+
+  const checkoutUrl = getCheckoutUrl();
+  const premium = isPremiumMember();
+  dom.premiumContentCard.classList.toggle("is-premium-active", premium);
+  dom.premiumContentCard.innerHTML = premium
+    ? `
+      <p class="panel-label">Conteúdo premium avançado</p>
+      <h3>Laboratório avançado de eletrônica</h3>
+      <p class="side-copy">
+        Roteiros extras liberados para alunos premium: diagnóstico com método, fonte assimétrica, fontes chaveadas, SMD e osciloscópio.
+      </p>
+      ${buildPremiumAdvancedMarkup()}
+    `
+    : `
+      <p class="panel-label">Premium bloqueado</p>
+      <h3>Laboratório avançado de eletrônica</h3>
+      <p class="side-copy">
+        O plano grátis libera a base do curso com anúncios. O premium adiciona roteiros avançados, estudo sem anúncios e certificado profissional.
+      </p>
+      ${buildPremiumAdvancedMarkup({ compact: true })}
+      <a class="button button-primary button-small btn-premium" ${getExternalLinkAttributes(checkoutUrl)}>Desbloquear premium ${escapeHtml(
+        getPremiumPriceLabel()
+      )}</a>
+    `;
 }
 
 function getExternalLinkAttributes(href, { sponsored = false } = {}) {
@@ -2420,7 +2516,7 @@ function renderPublicOffer() {
       },
       {
         title: "Premium inteligente",
-        copy: "Sem anúncios, com revisão guiada, leitura de progresso, certificado e recomendações de próxima aula.",
+        copy: "Sem anúncios, com revisão guiada, laboratório avançado, certificado e recomendações de próxima aula.",
       },
     ];
 
@@ -2990,6 +3086,8 @@ function renderLibrary() {
     button.addEventListener("click", () => setActivePanel(button.dataset.openPanel));
   });
 
+  renderPremiumContentCard();
+
   if (dom.librarySponsoredCard) {
     if (freeMember && smartlinkUrl !== "#") {
       dom.librarySponsoredCard.hidden = false;
@@ -3109,8 +3207,9 @@ function renderCertificate() {
   dom.certificateCard.classList.toggle("is-locked", !unlocked);
   dom.certificateCard.classList.toggle("has-long-student-name", studentName.length > 28);
   dom.certificateCard.classList.toggle("has-very-long-student-name", studentName.length > 42);
-  dom.printCertificate.textContent = unlocked ? "Preencher e imprimir" : "Certificado bloqueado";
-  const certifiedHours = Math.max(1, Math.ceil(course.totalDuration / 60));
+  dom.printCertificate.textContent = unlocked ? "Imprimir certificado" : "Certificado bloqueado";
+  const premiumBonusHours = premiumAdvancedTracks.length * 2;
+  const certifiedHours = Math.max(1, Math.ceil(course.totalDuration / 60) + premiumBonusHours);
 
   if (unlocked) {
     const date = new Date(state.quizResult.completedAt);
@@ -3130,7 +3229,7 @@ function renderCertificate() {
     dom.certificateId.textContent = `Registro: ${certificateCode}`;
     dom.certificateStatusTitle.textContent = "Certificado liberado";
     dom.certificateStatusCopy.textContent =
-      "Seu certificado profissional de curso livre já está preenchido com nome, data, carga horária e registro. Agora basta clicar em Preencher e imprimir.";
+      "Seu certificado profissional já está preenchido com nome, data, carga horária e registro. Para emitir, clique em Imprimir certificado.";
   } else {
     dom.certificateWorkload.textContent = `Carga horária certificada: ${certifiedHours} horas`;
     dom.certificateDate.textContent = "Data: aguardando conclusão";
@@ -3138,8 +3237,8 @@ function renderCertificate() {
     dom.certificateStatusTitle.textContent = freeMember ? "Disponível no premium" : "Ainda bloqueado";
     dom.certificateStatusCopy.textContent =
       freeMember
-        ? "Sua conta gratuita não inclui certificado de conclusão. Ative o plano premium para remover os anúncios e liberar a emissão do certificado."
-        : "Conclua todas as aulas, alcance 70% ou mais no quiz final e mantenha o plano premium ativo para liberar o certificado profissional de curso livre.";
+        ? "Sua conta gratuita não inclui certificado, laboratorio avancado nem estudo sem anuncios. Ative o premium para liberar a emissao."
+        : "Conclua todas as aulas, alcance 70% ou mais no quiz final e mantenha o plano premium ativo para liberar o certificado profissional.";
   }
 
   if (dom.certificateUpsell) {
