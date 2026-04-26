@@ -672,6 +672,74 @@ async function main() {
         }))()
       `
     );
+    const guestCourseNavigationMatrix = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          const publicLessons = course.lessons.filter((lesson) => isLessonPublic(lesson));
+          const results = [];
+          const checks = [
+            { selector: '.top-nav-link[data-panel-target="library"]', expectedPanel: "library" },
+            { selector: '.top-nav-link[data-panel-target="certificate"]', expectedPanel: "certificate" },
+          ];
+
+          if (publicLessons.length === 0) {
+            resolve(results);
+            return;
+          }
+
+          const resetGuestCourseState = () => {
+            authState.session = null;
+            authState.user = null;
+            authState.accessGranted = false;
+            authState.accessStatus = "guest";
+            state.activePanel = "course";
+            state.selectedLessonId = publicLessons[0].id;
+            renderAll();
+            setActivePanel("course");
+            sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
+            sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
+            window.__smoke.openCalls = [];
+            window.__smoke.lastOpenedWindow = null;
+          };
+
+          const runOne = (index) => {
+            if (index >= checks.length) {
+              resolve(results);
+              return;
+            }
+
+            const check = checks[index];
+            resetGuestCourseState();
+            const target = document.querySelector(check.selector);
+            if (!target) {
+              results.push({ ...check, found: false });
+              runOne(index + 1);
+              return;
+            }
+
+            target.click();
+            const beforeClosePanel = state.activePanel;
+            window.__smoke.lastOpenedWindow?.close();
+            window.dispatchEvent(new Event("focus"));
+
+            window.setTimeout(() => {
+              results.push({
+                ...check,
+                found: true,
+                beforeClosePanel,
+                afterClosePanel: state.activePanel,
+                openCalls: window.__smoke.openCalls.length,
+              });
+              runOne(index + 1);
+            }, 750);
+          };
+
+          runOne(0);
+        }))()
+      `
+    );
     const freeInternalNavigationResult = await evaluate(
       cdp,
       sessionId,
@@ -790,6 +858,18 @@ async function main() {
       freeCourseFlowMatrix.prevStep?.openCalls === 1 &&
         freeCourseFlowMatrix.prevStep?.beforeCloseLesson !== freeCourseFlowMatrix.prevStep?.afterCloseLesson,
       `O botao aula anterior no gratis nao retomou corretamente: ${JSON.stringify(freeCourseFlowMatrix)}`
+    );
+    assert(
+      guestCourseNavigationMatrix.length === 2 && guestCourseNavigationMatrix.every((item) => item.found),
+      `Nem todos os atalhos do player gratuito foram encontrados: ${JSON.stringify(guestCourseNavigationMatrix)}`
+    );
+    assert(
+      guestCourseNavigationMatrix.every((item) => item.openCalls === 1),
+      `Os atalhos do player gratuito deveriam abrir exatamente um anuncio: ${JSON.stringify(guestCourseNavigationMatrix)}`
+    );
+    assert(
+      guestCourseNavigationMatrix.every((item) => item.afterClosePanel === item.expectedPanel),
+      `Os atalhos do player gratuito nao retomaram o painel certo: ${JSON.stringify(guestCourseNavigationMatrix)}`
     );
     assert(
       freeInternalNavigationResult.beforeClose.opened,

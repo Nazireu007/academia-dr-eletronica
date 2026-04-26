@@ -2199,8 +2199,12 @@ function isAdminPanelAvailable() {
   return Boolean(isSupabaseMode() && authState.isAdmin);
 }
 
+function canPreviewPanelWithoutLogin(panelName) {
+  return ["public", "course", "library", "certificate"].includes(panelName);
+}
+
 function isPanelRestricted(panelName) {
-  return panelName !== "public";
+  return !canPreviewPanelWithoutLogin(panelName);
 }
 
 function getModuleProgress(module) {
@@ -2526,7 +2530,7 @@ function setActivePanel(panelName) {
     }
   }
 
-  if (isPanelRestricted(panelName) && panelName !== "course" && !hasMemberAreaAccess()) {
+  if (isPanelRestricted(panelName) && !hasMemberAreaAccess()) {
     openAccessModal("Entre com sua conta para acessar este painel.", panelName);
     panelName = "public";
   }
