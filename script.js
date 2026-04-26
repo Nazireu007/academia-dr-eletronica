@@ -1515,6 +1515,7 @@ function buildPremiumAdvancedMarkup({ compact = false } = {}) {
         .map(
           (track) => `
             <article class="premium-advanced-item">
+              <span class="premium-advanced-badge">Plano premium</span>
               <strong>${escapeHtml(track.title)}</strong>
               <p>${escapeHtml(track.summary)}</p>
               ${

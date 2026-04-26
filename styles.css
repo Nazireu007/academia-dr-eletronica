@@ -1701,6 +1701,7 @@ body.access-locked .site-footer {
 
 .premium-advanced-item {
   display: grid;
+  align-content: start;
   gap: 0.45rem;
   min-width: 0;
   padding: 0.9rem;
@@ -1709,6 +1710,18 @@ body.access-locked .site-footer {
   background:
     linear-gradient(180deg, rgba(123, 226, 200, 0.08), transparent),
     rgba(5, 14, 22, 0.5);
+}
+
+.premium-advanced-badge {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.25rem 0.58rem;
+  color: #071018;
+  background: linear-gradient(135deg, #7be2c8, #ffb067);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .premium-advanced-item strong {
