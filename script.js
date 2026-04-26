@@ -1542,6 +1542,9 @@ function clearPendingSponsoredResume() {
   if (pendingSponsoredResume?.closeCheck) {
     window.clearInterval(pendingSponsoredResume.closeCheck);
   }
+  if (pendingSponsoredResume?.fallbackTimeout) {
+    window.clearTimeout(pendingSponsoredResume.fallbackTimeout);
+  }
   pendingSponsoredResume = null;
 }
 
@@ -1567,6 +1570,7 @@ function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow) {
   pendingSponsoredResume = {
     actionRunner,
     closeCheck: null,
+    fallbackTimeout: null,
     openedAt: Date.now(),
     sponsoredWindow,
   };
@@ -1574,6 +1578,10 @@ function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow) {
   pendingSponsoredResume.closeCheck = window.setInterval(() => {
     flushPendingSponsoredResume();
   }, 350);
+
+  pendingSponsoredResume.fallbackTimeout = window.setTimeout(() => {
+    flushPendingSponsoredResume({ force: true });
+  }, 4000);
 }
 
 function isPremiumActionTarget(actionTarget) {

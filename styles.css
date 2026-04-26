@@ -1544,6 +1544,20 @@ body.access-locked .site-footer {
   grid-column: span 2;
 }
 
+.certificate-layout {
+  grid-template-columns: minmax(0, 2fr) minmax(300px, 0.95fr);
+  align-items: start;
+}
+
+.certificate-layout .certificate-card {
+  grid-column: auto;
+  min-height: 100%;
+}
+
+.certificate-side-panel {
+  grid-template-rows: repeat(3, minmax(0, auto));
+}
+
 .library-item,
 .resource-link-card {
   width: 100%;

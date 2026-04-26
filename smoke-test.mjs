@@ -525,11 +525,85 @@ async function main() {
       `
     );
     await delay(450);
+    const freeSponsoredButtonMatrix = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          const checks = [
+            { selector: '.top-nav-link[data-panel-target="dashboard"]', expectedPanel: "dashboard", startPanel: "public" },
+            { selector: '.top-nav-link[data-panel-target="course"]', expectedPanel: "course", startPanel: "public" },
+            { selector: '.top-nav-link[data-panel-target="library"]', expectedPanel: "library", startPanel: "public" },
+            { selector: '.top-nav-link[data-panel-target="quiz"]', expectedPanel: "quiz", startPanel: "public" },
+            { selector: '.top-nav-link[data-panel-target="certificate"]', expectedPanel: "certificate", startPanel: "public" },
+            { selector: "#open-next-lesson", expectedPanel: "course", startPanel: "dashboard" },
+            { selector: "#open-course-panel", expectedPanel: "course", startPanel: "dashboard" },
+            { selector: '.resource-link-card[data-open-panel="quiz"]', expectedPanel: "quiz", startPanel: "library" },
+            { selector: '.resource-link-card[data-open-panel="certificate"]', expectedPanel: "certificate", startPanel: "library" },
+          ];
+
+          const runOne = (index, results) => {
+            if (index >= checks.length) {
+              resolve(results);
+              return;
+            }
+
+            const check = checks[index];
+            state.activePanel = check.startPanel;
+            renderAll();
+            setActivePanel(check.startPanel);
+            sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
+            sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
+            window.__smoke.openCalls = [];
+            window.__smoke.lastOpenedWindow = null;
+
+            const target = document.querySelector(check.selector);
+            if (!target) {
+              results.push({ ...check, found: false });
+              runOne(index + 1, results);
+              return;
+            }
+
+            const shouldOpen = shouldOpenSponsoredLinkAfterClick(target);
+            const adWindow = shouldOpen ? openSponsoredWindowHandle(getSmartlinkUrl()) : null;
+            const resumeAction = createSponsoredResumeAction(target);
+            if (adWindow && resumeAction) {
+              resumeActionAfterSponsoredClose(resumeAction, adWindow);
+            }
+
+            const beforeClosePanel = state.activePanel;
+            adWindow?.close();
+            window.dispatchEvent(new Event("focus"));
+
+            window.setTimeout(() => {
+              results.push({
+                ...check,
+                afterClosePanel: state.activePanel,
+                beforeClosePanel,
+                found: true,
+                openCalls: window.__smoke.openCalls.length,
+                shouldOpen,
+              });
+              runOne(index + 1, results);
+            }, 750);
+          };
+
+          runOne(0, []);
+        }))()
+      `
+    );
     const freeInternalNavigationResult = await evaluate(
       cdp,
       sessionId,
       `
         (() => new Promise((resolve) => {
+          state.activePanel = "dashboard";
+          renderAll();
+          setActivePanel("dashboard");
+          sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
+          sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
+          window.__smoke.openCalls = [];
+          window.__smoke.lastOpenedWindow = null;
           const target = document.querySelector("#open-course-panel");
           const eligibility = {
             adsEnabled: appConfig.adsEnabled,
@@ -555,6 +629,7 @@ async function main() {
             opened: Boolean(adWindow),
           };
           adWindow?.close();
+          window.dispatchEvent(new Event("focus"));
           window.setTimeout(() => {
             resolve({
               afterClose: {
@@ -606,6 +681,22 @@ async function main() {
     assert(!premiumDashboardAdVisible, "O painel premium nao deveria exibir anuncios.");
     assert(premiumIntelligenceVisible, "O painel premium deveria exibir a inteligencia adaptativa.");
     assert(premiumOpenCallsAfterClicks === 0, "Cliques no premium nao deveriam abrir anuncios.");
+    assert(
+      freeSponsoredButtonMatrix.every((item) => item.found),
+      `Nem todos os botoes monitorados do gratis foram encontrados: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
+      freeSponsoredButtonMatrix.every((item) => item.shouldOpen),
+      `Algum botao do gratis nao ficou elegivel para anuncio quando deveria: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
+      freeSponsoredButtonMatrix.every((item) => item.openCalls === 1),
+      `Algum botao do gratis nao abriu exatamente um anuncio: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
+      freeSponsoredButtonMatrix.every((item) => item.afterClosePanel === item.expectedPanel),
+      `Algum botao do gratis nao retomou para o painel certo: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
     assert(
       freeInternalNavigationResult.beforeClose.opened,
       `A navegacao interna gratuita deveria abrir o anuncio quando o clique estiver elegivel: ${JSON.stringify(
