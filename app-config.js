@@ -12,7 +12,7 @@ window.APP_CONFIG = {
   billingLabel: "pagamento único",
   merchantBrand: "Nitro Scan Pro",
   paymentProviderLabel: "Cartão ou PicPay",
-  checkoutUrl: "https://link.picpay.com/p/177697905069ea8c6a0ab11",
+  checkoutUrl: "https://link.picpay.com/p/177720880969ee0de947176",
   hotmartCheckoutUrl: "",
   hotmartMembersUrl: "",
   whatsappNumber: "5581997567964",

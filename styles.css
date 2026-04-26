@@ -588,7 +588,7 @@ body.guest-mode .guest-restricted {
 }
 
 .ad-slot-host.has-ad-content .ad-fallback-card {
-  display: none !important;
+  display: grid !important;
 }
 
 .ad-render-slot {
@@ -644,15 +644,54 @@ body.guest-mode .guest-restricted {
 .ad-fallback-card {
   margin-top: 0.65rem;
   display: grid;
-  gap: 0.45rem;
-  width: min(100%, 520px);
-  padding: 0.95rem 1rem;
+  gap: 0.85rem;
+  width: min(100%, 760px);
+  padding: 0.85rem;
   border-radius: 1rem;
   border: 1px solid rgba(123, 226, 200, 0.2);
   background:
     linear-gradient(180deg, rgba(123, 226, 200, 0.08), rgba(255, 255, 255, 0.02)),
     rgba(8, 18, 29, 0.92);
   color: var(--text);
+}
+
+.physical-ad-card {
+  grid-template-columns: minmax(130px, 0.42fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.physical-ad-visual {
+  display: grid;
+  place-items: center;
+  gap: 0.32rem;
+  min-height: 118px;
+  border-radius: 0.9rem;
+  border: 1px dashed rgba(124, 186, 255, 0.34);
+  background:
+    linear-gradient(135deg, rgba(124, 186, 255, 0.18), rgba(255, 149, 80, 0.13)),
+    rgba(5, 14, 22, 0.62);
+}
+
+.physical-ad-visual strong {
+  color: #eef8ff;
+  font-size: 1.35rem;
+}
+
+.physical-ad-chip {
+  border-radius: 999px;
+  padding: 0.25rem 0.58rem;
+  color: #071018;
+  background: linear-gradient(135deg, #7be2c8, #ffb067);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.physical-ad-copy {
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
 .ad-fallback-badge {
@@ -1602,7 +1641,7 @@ body.access-locked .site-footer {
 }
 
 .intelligence-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
   margin: 1rem 0;
 }
 
@@ -1610,19 +1649,23 @@ body.access-locked .site-footer {
   position: relative;
   border-style: dashed;
   opacity: 0.78;
+  padding-top: 2.45rem;
 }
 
 .intelligence-item.is-locked::after {
-  content: "Premium";
+  content: "Plano premium";
+  position: absolute;
+  top: 0.72rem;
+  left: 0.85rem;
   width: fit-content;
   border-radius: 999px;
-  padding: 0.22rem 0.5rem;
+  padding: 0.26rem 0.58rem;
   color: #071018;
   background: linear-gradient(135deg, #7be2c8, #ffb067);
   font-size: 0.68rem;
   font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .premium-tool-row {
@@ -1679,6 +1722,39 @@ body.access-locked .site-footer {
 
 .sponsored-entry-card .resource-links {
   margin-top: 0.85rem;
+}
+
+.sponsored-physical-ad {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  margin-top: 0.9rem;
+  padding: 0.82rem 0.92rem;
+  border-radius: 1rem;
+  border: 1px dashed rgba(124, 186, 255, 0.32);
+  background:
+    linear-gradient(135deg, rgba(124, 186, 255, 0.16), rgba(255, 149, 80, 0.08)),
+    rgba(5, 14, 22, 0.52);
+}
+
+.sponsored-physical-ad span {
+  grid-row: span 2;
+  border-radius: 999px;
+  padding: 0.3rem 0.62rem;
+  color: #071018;
+  background: linear-gradient(135deg, #7be2c8, #ffb067);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.sponsored-physical-ad strong,
+.sponsored-physical-ad small {
+  min-width: 0;
+}
+
+.sponsored-physical-ad small {
+  color: var(--muted);
 }
 
 .premium-promo-banner {
@@ -3114,6 +3190,27 @@ body.access-locked .site-footer {
   .intelligence-item {
     padding: 0.72rem;
     border-radius: 0.9rem;
+  }
+
+  .intelligence-item.is-locked {
+    padding-top: 2.35rem;
+  }
+
+  .physical-ad-card {
+    grid-template-columns: 1fr;
+  }
+
+  .physical-ad-visual {
+    min-height: 84px;
+  }
+
+  .sponsored-physical-ad {
+    grid-template-columns: 1fr;
+  }
+
+  .sponsored-physical-ad span {
+    grid-row: auto;
+    width: fit-content;
   }
 
   .premium-promo-badge {

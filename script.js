@@ -1506,6 +1506,11 @@ function buildSponsoredEntryCard({
     <p class="panel-label">Oferta patrocinada</p>
     <h3>${escapeHtml(title)}</h3>
     <p class="side-copy">${escapeHtml(copy)}</p>
+    <div class="sponsored-physical-ad">
+      <span>Anuncio</span>
+      <strong>Parceiro do plano gratuito</strong>
+      <small>Espaco fixo de monetizacao</small>
+    </div>
     <div class="resource-links">
       <a class="resource-link-card is-sponsored-link ${href === "#" ? "is-disabled-link" : ""}" ${getExternalLinkAttributes(
         href,
@@ -1665,23 +1670,37 @@ function hasRenderedAdContent(target) {
 
 function getAdFallbackMarkup(slotKey) {
   const isTopSlot = String(slotKey || "").endsWith("_top");
-  const heading = isTopSlot ? "Parceiro em destaque" : "Recomendação patrocinada";
+  const isFooterSlot = String(slotKey || "").endsWith("_footer");
+  const heading = isTopSlot
+    ? "Parceiro em destaque"
+    : isFooterSlot
+      ? "Anúncio complementar"
+      : "Recomendação patrocinada";
   const copy = isTopSlot
     ? "Este espaço ajuda a manter a apresentação gratuita do curso enquanto você conhece a plataforma."
-    : `Seu plano gratuito pode exibir recomendações de parceiros. O premium remove anúncios e libera o certificado por ${getPremiumPriceLabel()}.`;
+    : isFooterSlot
+      ? `Mais uma indicação patrocinada do plano gratuito. O premium remove esses anúncios por ${getPremiumPriceLabel()}.`
+      : `Seu plano gratuito pode exibir recomendações de parceiros. O premium remove anúncios e libera o certificado por ${getPremiumPriceLabel()}.`;
   const smartlinkUrl = String(appConfig.adsterraSmartlinkUrl || "").trim();
   const smartlinkAction = smartlinkUrl
     ? `<a class="button button-small button-ghost" ${getExternalLinkAttributes(smartlinkUrl, {
         sponsored: true,
       })}>Abrir indicação patrocinada</a>`
     : "";
+  const sizeLabel = isTopSlot ? "728 x 90" : isFooterSlot ? "Feed nativo" : "300 x 250";
 
   return `
-    <div class="ad-fallback-card" data-ad-fallback="true" hidden>
-      <span class="ad-fallback-badge">Suporte do plano gratuito</span>
-      <strong>${escapeHtml(heading)}</strong>
-      <p>${escapeHtml(copy)}</p>
-      ${smartlinkAction}
+    <div class="ad-fallback-card physical-ad-card" data-ad-fallback="true">
+      <div class="physical-ad-visual" aria-hidden="true">
+        <span class="physical-ad-chip">Anuncio</span>
+        <strong>${escapeHtml(sizeLabel)}</strong>
+      </div>
+      <div class="physical-ad-copy">
+        <span class="ad-fallback-badge">Suporte do plano gratuito</span>
+        <strong>${escapeHtml(heading)}</strong>
+        <p>${escapeHtml(copy)}</p>
+        ${smartlinkAction}
+      </div>
     </div>
   `;
 }
@@ -1696,10 +1715,10 @@ function setupAdFallback(target, slotKey) {
 
   const updateFallbackState = () => {
     const hasContent = hasRenderedAdContent(target);
-    fallback.hidden = hasContent;
+    fallback.hidden = false;
     target.classList.toggle("has-ad-content", hasContent);
-    target.classList.toggle("has-ad-fallback-visible", !hasContent);
-    target.closest(".ad-support-card")?.classList.toggle("is-ad-fallback-only", !hasContent);
+    target.classList.toggle("has-ad-fallback-visible", true);
+    target.closest(".ad-support-card")?.classList.toggle("is-ad-fallback-only", true);
   };
 
   const observer = new MutationObserver(() => {
@@ -2686,8 +2705,8 @@ function renderDashboard() {
     if (freeMember && smartlinkUrl !== "#") {
       dom.dashboardSponsoredCard.hidden = false;
       dom.dashboardSponsoredCard.innerHTML = buildSponsoredEntryCard({
-        title: "Oferta patrocinada do painel gratuito",
-        copy: "Seu plano gratuito pode exibir recomendações promocionais enquanto você estuda sem o premium.",
+        title: "Anuncio fisico do painel gratuito",
+        copy: "Espaco patrocinado fixo para monetizar a conta gratuita enquanto o aluno acompanha o progresso.",
         href: smartlinkUrl,
         buttonLabel: "Abrir oferta patrocinada",
         footer: "Conteúdo externo de parceiro",
