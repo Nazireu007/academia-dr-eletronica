@@ -545,8 +545,9 @@ async function main() {
           };
           const shouldOpen = shouldOpenSponsoredLinkAfterClick(target);
           const adWindow = shouldOpen ? openSponsoredWindowHandle(getSmartlinkUrl()) : null;
+          const resumeAction = createSponsoredResumeAction(target);
           if (adWindow) {
-            resumeActionAfterSponsoredClose(target, adWindow);
+            resumeActionAfterSponsoredClose(resumeAction, adWindow);
           }
           const beforeClose = {
             panelName: state.activePanel,
@@ -573,8 +574,8 @@ async function main() {
 
     assert(title.includes("Nitro Scan Pro"), "O título da página não carregou corretamente.");
     assert(guestMode, "A página pública deveria iniciar em modo visitante.");
-    assert(topAdVisible, "O bloco principal de anúncio público não ficou visível.");
-    assert(topAdFallbackVisible, "O fallback do anúncio público não apareceu quando o banner não renderizou.");
+    assert(!topAdVisible, "O bloco físico de anúncio público deveria ficar oculto.");
+    assert(!topAdFallbackVisible, "O fallback físico do anúncio público não deveria aparecer.");
     assert(checkoutRel.includes("noopener") && checkoutRel.includes("noreferrer"), "O link de checkout está sem rel seguro.");
     assert(whatsappRel.includes("noopener") && whatsappRel.includes("noreferrer"), "O link de WhatsApp está sem rel seguro.");
     assert(

@@ -1587,6 +1587,89 @@ body.access-locked .site-footer {
   color: #e6f1ff;
 }
 
+.presentation-signal-grid,
+.presentation-impact-strip,
+.preview-lesson-head {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.presentation-signal-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1rem 0;
+}
+
+.presentation-signal-card {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent),
+    rgba(4, 12, 19, 0.56);
+}
+
+.presentation-signal-card span {
+  color: var(--mint);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.presentation-signal-card strong {
+  color: #f3fbff;
+  line-height: 1.5;
+}
+
+.presentation-impact-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 1rem;
+}
+
+.presentation-impact-strip span {
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(123, 226, 200, 0.2);
+  background: rgba(123, 226, 200, 0.08);
+  color: #e2fff8;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.preview-lesson-card {
+  gap: 0.55rem;
+  border: 1px solid rgba(123, 226, 200, 0.16);
+  background:
+    linear-gradient(135deg, rgba(123, 226, 200, 0.08), rgba(255, 149, 80, 0.08)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.preview-lesson-card small {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.preview-lesson-head {
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.preview-lesson-badge {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.3rem 0.58rem;
+  border: 1px solid rgba(123, 226, 200, 0.24);
+  background: rgba(123, 226, 200, 0.12);
+  color: #d9fff6;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
 .premium-value-card,
 .premium-intelligence-card,
 .premium-content-card {
@@ -3352,6 +3435,15 @@ body.access-locked .site-footer {
   .intelligence-item {
     padding: 0.72rem;
     border-radius: 0.9rem;
+  }
+
+  .presentation-signal-grid,
+  .presentation-impact-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-lesson-head {
+    grid-template-columns: 1fr;
   }
 
   .intelligence-item.is-locked {

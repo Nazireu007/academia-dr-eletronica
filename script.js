@@ -1291,6 +1291,9 @@ function isSponsoredNavigationTarget(actionTarget) {
       "#open-course-panel",
       "#prev-lesson",
       "#next-lesson",
+      "#favorite-lesson",
+      "#mark-complete",
+      "#submit-quiz",
     ].join(", ")
   );
 }
@@ -1366,12 +1369,168 @@ function openSponsoredWindow(url) {
   return Boolean(openSponsoredWindowHandle(url));
 }
 
-function replaySponsoredAction(actionTarget) {
-  if (!actionTarget || !actionTarget.isConnected) return;
+function openPreviewLesson(lessonId) {
+  if (!lessonId) return;
+
+  state.selectedLessonId = lessonId;
+  saveState();
+  setActivePanel("course");
+  renderCourse();
+}
+
+function openCourseLesson(lessonId) {
+  if (!lessonId) return;
+
+  state.selectedLessonId = lessonId;
+  saveState();
+  setMobileCourseView("lesson");
+  renderCourse();
+}
+
+function toggleCurrentLessonFavorite() {
+  const lesson = getLessonById(state.selectedLessonId);
+  if (!lesson) return;
+
+  if (state.favorites.has(lesson.id)) {
+    state.favorites.delete(lesson.id);
+  } else {
+    state.favorites.add(lesson.id);
+  }
+
+  saveState();
+  renderAll();
+}
+
+function toggleCurrentLessonCompletion() {
+  const lesson = getLessonById(state.selectedLessonId);
+  if (!lesson) return;
+
+  if (state.completed.has(lesson.id)) {
+    state.completed.delete(lesson.id);
+  } else {
+    state.completed.add(lesson.id);
+  }
+
+  saveState();
+  renderAll();
+}
+
+function goToAdjacentAccessibleLesson(direction) {
+  const accessibleLessons = getAccessibleLessons();
+  const currentIndex = accessibleLessons.findIndex((lesson) => lesson.id === state.selectedLessonId);
+  const targetIndex = currentIndex + direction;
+  if (targetIndex < 0 || targetIndex >= accessibleLessons.length) return;
+
+  state.selectedLessonId = accessibleLessons[targetIndex].id;
+  saveState();
+  renderCourse();
+}
+
+function createSponsoredResumeAction(actionTarget) {
+  if (!actionTarget) return null;
+
+  const panelTarget = actionTarget.dataset.panelTarget;
+  if (panelTarget) {
+    return () => setActivePanel(panelTarget);
+  }
+
+  const openPanel = actionTarget.dataset.openPanel;
+  if (openPanel) {
+    return () => setActivePanel(openPanel);
+  }
+
+  const mobilePublicView = actionTarget.dataset.mobilePublicView;
+  if (mobilePublicView) {
+    return () => setMobilePublicView(mobilePublicView || "plans");
+  }
+
+  const mobileCourseView = actionTarget.dataset.mobileCourseView;
+  if (mobileCourseView) {
+    return () => setMobileCourseView(mobileCourseView || "lesson");
+  }
+
+  const previewLessonId = actionTarget.dataset.previewLesson;
+  if (previewLessonId) {
+    return () => openPreviewLesson(previewLessonId);
+  }
+
+  const lessonId = actionTarget.dataset.lessonId;
+  if (lessonId) {
+    return () => openCourseLesson(lessonId);
+  }
+
+  const openLessonId = actionTarget.dataset.openLesson;
+  if (openLessonId) {
+    return () => openLessonFromLibrary(openLessonId);
+  }
+
+  switch (actionTarget.id) {
+    case "enter-member-area":
+      return () => {
+        if (hasMemberAreaAccess()) {
+          setActivePanel("dashboard");
+          return;
+        }
+
+        openAccessModal(
+          "Entre com sua conta ou crie sua conta gratuita para liberar painel, progresso e certificado.",
+          "dashboard"
+        );
+      };
+    case "resume-course":
+      return () => {
+        if (hasMemberAreaAccess()) {
+          openNextLesson(true);
+          return;
+        }
+
+        const previewLesson = getPreviewLessons()[0];
+        if (!previewLesson) return;
+        state.selectedLessonId = previewLesson.id;
+        setMobileCourseView("lesson");
+        saveState();
+        setActivePanel("course");
+      };
+    case "go-to-quiz":
+      return () => {
+        if (hasMemberAreaAccess()) {
+          setActivePanel("quiz");
+          return;
+        }
+
+        openAccessModal(
+          "Entre com sua conta ou crie sua conta gratuita para liberar quiz, certificado e painel.",
+          "dashboard"
+        );
+      };
+    case "open-next-lesson":
+      return () => openNextLesson(true);
+    case "open-course-panel":
+      return () => {
+        setMobileCourseView("lesson");
+        setActivePanel("course");
+      };
+    case "favorite-lesson":
+      return () => toggleCurrentLessonFavorite();
+    case "mark-complete":
+      return () => toggleCurrentLessonCompletion();
+    case "prev-lesson":
+      return () => goToAdjacentAccessibleLesson(-1);
+    case "next-lesson":
+      return () => goToAdjacentAccessibleLesson(1);
+    case "submit-quiz":
+      return () => handleQuizSubmit();
+    default:
+      return null;
+  }
+}
+
+function replaySponsoredAction(actionRunner) {
+  if (typeof actionRunner !== "function") return;
 
   sponsoredActionReplayInProgress = true;
   try {
-    actionTarget.click();
+    actionRunner();
   } finally {
     window.setTimeout(() => {
       sponsoredActionReplayInProgress = false;
@@ -1379,9 +1538,9 @@ function replaySponsoredAction(actionTarget) {
   }
 }
 
-function resumeActionAfterSponsoredClose(actionTarget, sponsoredWindow) {
+function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow) {
   if (!sponsoredWindow) {
-    replaySponsoredAction(actionTarget);
+    replaySponsoredAction(actionRunner);
     return;
   }
 
@@ -1389,7 +1548,7 @@ function resumeActionAfterSponsoredClose(actionTarget, sponsoredWindow) {
   const resume = () => {
     if (resumed) return;
     resumed = true;
-    replaySponsoredAction(actionTarget);
+    replaySponsoredAction(actionRunner);
   };
 
   const closeCheck = window.setInterval(() => {
@@ -1437,13 +1596,15 @@ function handleSponsoredParallelClick(event) {
   const href = actionTarget.href || actionTarget.getAttribute("href") || "";
   if (href && href.includes("accedelid.com")) return;
   if (!shouldOpenSponsoredLinkAfterClick(actionTarget)) return;
+  const resumeAction = createSponsoredResumeAction(actionTarget);
+  if (!resumeAction) return;
 
   const sponsoredWindow = openSponsoredWindowHandle(smartlinkUrl);
   if (!sponsoredWindow) return;
 
   event.preventDefault();
   event.stopImmediatePropagation();
-  resumeActionAfterSponsoredClose(actionTarget, sponsoredWindow);
+  resumeActionAfterSponsoredClose(resumeAction, sponsoredWindow);
 }
 
 function getLearningDepthLabel() {
@@ -1670,11 +1831,6 @@ function buildSponsoredEntryCard({
     <p class="panel-label">Oferta patrocinada</p>
     <h3>${escapeHtml(title)}</h3>
     <p class="side-copy">${escapeHtml(copy)}</p>
-    <div class="sponsored-physical-ad">
-      <span>Anuncio</span>
-      <strong>Parceiro do plano gratuito</strong>
-      <small>Espaco fixo de monetizacao</small>
-    </div>
     <div class="resource-links">
       <a class="resource-link-card is-sponsored-link ${href === "#" ? "is-disabled-link" : ""}" ${getExternalLinkAttributes(
         href,
@@ -2535,10 +2691,12 @@ function renderPublicOffer() {
   const paymentProviderLabel = appConfig.paymentProviderLabel || "Cartão ou PicPay";
   const signedIn = Boolean(authState.session);
   const offerMetrics = [
-    { label: "Conta gratuita", value: appConfig.freePlanLabel || "Conta gratuita" },
-    { label: "Plano premium", value: getPremiumPriceLabel() },
+    { label: "Módulos", value: String(course.modules.length) },
+    { label: "Aulas", value: String(course.lessons.length) },
+    { label: "Carga estimada", value: `${Math.ceil(course.totalDuration / 60)}h` },
+    { label: "Conta grátis", value: appConfig.freePlanLabel || "Conta gratuita" },
+    { label: "Premium", value: getPremiumPriceLabel() },
     { label: "Pagamento", value: paymentProviderLabel },
-    { label: "Certificado", value: "Premium" },
   ];
 
   dom.offerTitle.textContent = appConfig.offerTitle;
@@ -2575,26 +2733,61 @@ function renderPublicOffer() {
   if (dom.publicPremiumValueCard) {
     const knowledgePillars = [
       {
-        title: "Método de diagnóstico",
-        copy: "Inspeção visual, alimentação, curto, reguladores e análise por blocos em sequência profissional.",
+        title: "Fundamentos sólidos",
+        copy: "Tensão, corrente, potência, leitura de componentes e interpretação técnica para sair da teoria rasa.",
       },
       {
-        title: "Bancada prática",
-        copy: "Multímetro, fonte, soldagem, retrabalho e checklist para evitar troca aleatória de componentes.",
+        title: "Bancada com método",
+        copy: "Multímetro, fonte, soldagem, retrabalho e rotina prática para medir melhor e errar menos.",
       },
       {
-        title: "Premium inteligente",
-        copy: "Sem anúncios, com revisão guiada, laboratório avançado, certificado e recomendações de próxima aula.",
+        title: "Diagnóstico profissional",
+        copy: "Análise por blocos, alimentação, curto, reguladores e decisão técnica guiada como em bancada real.",
+      },
+      {
+        title: "Escalada premium",
+        copy: "Sem anúncios, certificado, roteiros avançados e uma experiência mais limpa para estudar e aplicar.",
+      },
+    ];
+
+    const presentationSignals = [
+      {
+        label: "Para quem é",
+        value: "Iniciante, técnico em formação e quem quer evoluir para reparo de placas.",
+      },
+      {
+        label: "Formato",
+        value: "Trilha modular com apresentação gratuita, área do aluno, biblioteca, quiz final e certificado premium.",
+      },
+      {
+        label: "Resultado esperado",
+        value: "Mais segurança em medição, soldagem, análise de defeito e leitura prática de circuitos.",
+      },
+      {
+        label: "Upgrade",
+        value: "Plano premium com estudo sem anúncios, laboratório avançado e emissão profissional.",
       },
     ];
 
     dom.publicPremiumValueCard.innerHTML = `
-      <p class="panel-label">Por que vale ativar</p>
-      <h3>Mais conhecimento, menos distração</h3>
+      <p class="panel-label">Visão executiva do curso</p>
+      <h3>Uma formação pensada para bancada, diagnóstico e evolução real</h3>
       <p class="side-copy">
-        O grátis apresenta o curso e monetiza com anúncios. O premium transforma a trilha em uma experiência de estudo mais limpa,
-        guiada e pronta para certificado.
+        A apresentação mostra a estrutura do treinamento. A conta gratuita libera a entrada na plataforma e a navegação com anúncios.
+        O premium transforma a jornada em estudo contínuo, sem interrupções visuais, com certificado e trilhas avançadas.
       </p>
+      <div class="presentation-signal-grid">
+        ${presentationSignals
+          .map(
+            (item) => `
+              <article class="presentation-signal-card">
+                <span>${escapeHtml(item.label)}</span>
+                <strong>${escapeHtml(item.value)}</strong>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
       <div class="knowledge-pillar-grid">
         ${knowledgePillars
           .map(
@@ -2606,6 +2799,12 @@ function renderPublicOffer() {
             `
           )
           .join("")}
+      </div>
+      <div class="presentation-impact-strip">
+        <span>Trilha progressiva</span>
+        <span>Prática orientada</span>
+        <span>Quiz final</span>
+        <span>Certificado premium</span>
       </div>
     `;
   }
@@ -2631,9 +2830,13 @@ function renderPublicOffer() {
       ? previewLessons
           .map(
             (lesson) => `
-              <button class="library-item" data-preview-lesson="${lesson.id}" type="button">
-                <strong>${escapeHtml(lesson.title)}</strong>
+              <button class="library-item preview-lesson-card" data-preview-lesson="${lesson.id}" type="button">
+                <div class="preview-lesson-head">
+                  <strong>${escapeHtml(lesson.title)}</strong>
+                  <span class="preview-lesson-badge">Aula aberta</span>
+                </div>
                 <span>Módulo ${lesson.moduleNumber} • ${lesson.duration} min • acesso de apresentação</span>
+                <small>${escapeHtml(lesson.summary)}</small>
               </button>
             `
           )
@@ -2700,27 +2903,13 @@ function renderPublicOffer() {
 
   dom.previewLessonList.querySelectorAll("[data-preview-lesson]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.selectedLessonId = button.dataset.previewLesson;
-      saveState();
-      setActivePanel("course");
-      renderCourse();
+      openPreviewLesson(button.dataset.previewLesson);
     });
   });
 
   if (dom.publicSponsoredFooterCard) {
-    if (smartlinkUrl !== "#") {
-      dom.publicSponsoredFooterCard.hidden = false;
-      dom.publicSponsoredFooterCard.innerHTML = buildSponsoredEntryCard({
-        title: "Recomendação especial para visitantes",
-        copy: "Enquanto você conhece a plataforma, também pode abrir esta oferta patrocinada de parceiro.",
-        href: smartlinkUrl,
-        buttonLabel: "Abrir oferta patrocinada",
-        footer: "Link promocional externo",
-      });
-    } else {
-      dom.publicSponsoredFooterCard.hidden = true;
-      dom.publicSponsoredFooterCard.innerHTML = "";
-    }
+    dom.publicSponsoredFooterCard.hidden = true;
+    dom.publicSponsoredFooterCard.innerHTML = "";
   }
 }
 
@@ -2786,7 +2975,6 @@ function renderDashboard() {
   const nextLesson = getNextLesson();
   const notesCount = Object.values(state.notes).filter((value) => String(value).trim()).length;
   const freeMember = isFreeMember();
-  const smartlinkUrl = getSmartlinkUrl();
   const memberMetrics = [
     { label: "Aulas concluídas", value: `${state.completed.size}/${course.lessons.length}` },
     { label: "Favoritos", value: String(state.favorites.size) },
@@ -2866,19 +3054,8 @@ function renderDashboard() {
   renderPremiumIntelligence(nextLesson, notesCount);
 
   if (dom.dashboardSponsoredCard) {
-    if (freeMember && smartlinkUrl !== "#") {
-      dom.dashboardSponsoredCard.hidden = false;
-      dom.dashboardSponsoredCard.innerHTML = buildSponsoredEntryCard({
-        title: "Anuncio fisico do painel gratuito",
-        copy: "Espaco patrocinado fixo para monetizar a conta gratuita enquanto o aluno acompanha o progresso.",
-        href: smartlinkUrl,
-        buttonLabel: "Abrir oferta patrocinada",
-        footer: "Conteúdo externo de parceiro",
-      });
-    } else {
-      dom.dashboardSponsoredCard.hidden = true;
-      dom.dashboardSponsoredCard.innerHTML = "";
-    }
+    dom.dashboardSponsoredCard.hidden = true;
+    dom.dashboardSponsoredCard.innerHTML = "";
   }
 }
 
@@ -2939,10 +3116,7 @@ function renderSidebarModules() {
 
   dom.moduleNav.querySelectorAll("[data-lesson-id]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.selectedLessonId = button.dataset.lessonId;
-      saveState();
-      setMobileCourseView("lesson");
-      renderCourse();
+      openCourseLesson(button.dataset.lessonId);
     });
   });
 }
@@ -2952,7 +3126,6 @@ function renderCourse() {
 
   const lesson = getLessonById(state.selectedLessonId);
   const hasPremiumAccess = hasMemberAreaAccess();
-  const smartlinkUrl = getSmartlinkUrl();
   const lessonUnlocked = hasPremiumAccess || isLessonPublic(lesson);
   const accessibleLessons = getAccessibleLessons();
 
@@ -3035,19 +3208,8 @@ function renderCourse() {
   }
 
   if (dom.courseSponsoredCard) {
-    if (isFreeMember() && smartlinkUrl !== "#") {
-      dom.courseSponsoredCard.hidden = false;
-      dom.courseSponsoredCard.innerHTML = buildSponsoredEntryCard({
-        title: "Oferta patrocinada durante o estudo",
-        copy: "Enquanto você usa a conta gratuita, este espaço pode abrir recomendações promocionais de parceiro.",
-        href: smartlinkUrl,
-        buttonLabel: "Abrir oferta patrocinada",
-        footer: "Link externo patrocinado",
-      });
-    } else {
-      dom.courseSponsoredCard.hidden = true;
-      dom.courseSponsoredCard.innerHTML = "";
-    }
+    dom.courseSponsoredCard.hidden = true;
+    dom.courseSponsoredCard.innerHTML = "";
   }
 }
 
@@ -3567,20 +3729,21 @@ function renderMonetization() {
   const coursePanelActive = state.activePanel === "course";
   const showGuestAd = appConfig.adsEnabled && getMemberPlanKind() === "guest";
   const showMemberAds = appConfig.adsEnabled && isFreeMember();
+  const showPhysicalAds = false;
   ensureAdsScript();
   maybeRenderAdsterraSocialBar();
 
   [
     [
       dom.publicTopAdCard,
-      publicPanelActive && showGuestAd,
+      showPhysicalAds && publicPanelActive && showGuestAd,
       "Faixa patrocinada da apresentação",
       "Visitantes visualizam esta faixa patrocinada enquanto conhecem a plataforma antes do cadastro.",
       "public_top",
     ],
     [
       dom.publicAdCard,
-      publicPanelActive && showGuestAd,
+      showPhysicalAds && publicPanelActive && showGuestAd,
       "Patrocínio da apresentação",
       mobile
         ? "Bloco patrocinado principal para visitantes no celular, ajudando a sustentar a apresentação gratuita."
@@ -3589,21 +3752,21 @@ function renderMonetization() {
     ],
     [
       dom.publicFooterAdCard,
-      publicPanelActive && showGuestAd,
+      showPhysicalAds && publicPanelActive && showGuestAd,
       "Espaço patrocinado da apresentação",
       "Bloco complementar de monetização para visitantes antes da criação da conta.",
       "public_footer",
     ],
     [
       dom.dashboardTopAdCard,
-      dashboardPanelActive && showMemberAds,
+      showPhysicalAds && dashboardPanelActive && showMemberAds,
       "Faixa patrocinada do plano gratuito",
       `Topo do plano gratuito com monetização ativa. Para estudar sem anúncios e emitir o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "dashboard_top",
     ],
     [
       dom.dashboardAdCard,
-      dashboardPanelActive && showMemberAds,
+      showPhysicalAds && dashboardPanelActive && showMemberAds,
       "Seu plano gratuito é mantido por anúncios",
       mobile
         ? `Bloco principal do plano gratuito no celular. Para remover os anúncios e emitir o certificado de conclusão, ative o premium por ${getPremiumPriceLabel()}.`
@@ -3612,28 +3775,28 @@ function renderMonetization() {
     ],
     [
       dom.dashboardFooterAdCard,
-      dashboardPanelActive && showMemberAds,
+      showPhysicalAds && dashboardPanelActive && showMemberAds,
       "Anúncio complementar do plano gratuito",
       `Faixa extra de monetização do painel gratuito. O plano premium remove toda a publicidade por ${getPremiumPriceLabel()}.`,
       "dashboard_footer",
     ],
     [
       dom.lessonTopAdCard,
-      coursePanelActive && showMemberAds,
+      showPhysicalAds && coursePanelActive && showMemberAds,
       "Faixa patrocinada da aula gratuita",
       `Antes da aula, o plano gratuito pode exibir esta faixa. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "lesson_top",
     ],
     [
       dom.lessonAdCard,
-      coursePanelActive && showMemberAds,
+      showPhysicalAds && coursePanelActive && showMemberAds,
       "Anúncio lateral do plano gratuito",
       `Bloco lateral de aula no desktop. Para estudar sem anúncios e liberar o certificado, ative o premium por ${getPremiumPriceLabel()}.`,
       "lesson_side",
     ],
     [
       dom.lessonFooterAdCard,
-      coursePanelActive && showMemberAds,
+      showPhysicalAds && coursePanelActive && showMemberAds,
       "Patrocínio complementar da aula",
       `Bloco adicional ao fim da aula gratuita para reforçar a monetização antes do upgrade premium.`,
       "lesson_footer",
@@ -4224,43 +4387,19 @@ dom.lessonSearch.addEventListener("input", (event) => {
 });
 
 dom.favoriteLesson.addEventListener("click", () => {
-  const lesson = getLessonById(state.selectedLessonId);
-  if (state.favorites.has(lesson.id)) {
-    state.favorites.delete(lesson.id);
-  } else {
-    state.favorites.add(lesson.id);
-  }
-  saveState();
-  renderAll();
+  toggleCurrentLessonFavorite();
 });
 
 dom.markComplete.addEventListener("click", () => {
-  const lesson = getLessonById(state.selectedLessonId);
-  if (state.completed.has(lesson.id)) {
-    state.completed.delete(lesson.id);
-  } else {
-    state.completed.add(lesson.id);
-  }
-  saveState();
-  renderAll();
+  toggleCurrentLessonCompletion();
 });
 
 dom.prevLesson.addEventListener("click", () => {
-  const accessibleLessons = getAccessibleLessons();
-  const currentIndex = accessibleLessons.findIndex((lesson) => lesson.id === state.selectedLessonId);
-  if (currentIndex <= 0) return;
-  state.selectedLessonId = accessibleLessons[currentIndex - 1].id;
-  saveState();
-  renderCourse();
+  goToAdjacentAccessibleLesson(-1);
 });
 
 dom.nextLesson.addEventListener("click", () => {
-  const accessibleLessons = getAccessibleLessons();
-  const currentIndex = accessibleLessons.findIndex((lesson) => lesson.id === state.selectedLessonId);
-  if (currentIndex >= accessibleLessons.length - 1) return;
-  state.selectedLessonId = accessibleLessons[currentIndex + 1].id;
-  saveState();
-  renderCourse();
+  goToAdjacentAccessibleLesson(1);
 });
 
 window.addEventListener("resize", applyMobileViews);
