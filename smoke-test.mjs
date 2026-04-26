@@ -587,6 +587,91 @@ async function main() {
         }))()
       `
     );
+    const freeCourseFlowMatrix = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          const publicLessons = course.lessons.filter((lesson) => isLessonPublic(lesson));
+          const results = {
+            publicLessonCount: publicLessons.length,
+            sidebarStep: null,
+            nextStep: null,
+            prevStep: null,
+          };
+
+          if (publicLessons.length < 2) {
+            resolve(results);
+            return;
+          }
+
+          const firstLessonId = publicLessons[0].id;
+          const secondLessonId = publicLessons[1].id;
+
+          const resetFreeCourseState = (lessonId) => {
+            authState.session = { user: { id: "smoke-free", email: "gratis@example.com" } };
+            authState.user = authState.session.user;
+            authState.accessGranted = true;
+            authState.accessStatus = "pending";
+            state.member = { name: "Aluno Gratis", email: "gratis@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+            state.selectedLessonId = lessonId;
+            state.activePanel = "course";
+            renderAll();
+            setActivePanel("course");
+            sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
+            sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
+            window.__smoke.openCalls = [];
+            window.__smoke.lastOpenedWindow = null;
+          };
+
+          resetFreeCourseState(firstLessonId);
+          const sidebarTarget = document.querySelector('[data-lesson-id="' + secondLessonId + '"]');
+          sidebarTarget?.click();
+          const sidebarBeforeClose = state.selectedLessonId;
+          window.__smoke.lastOpenedWindow?.close();
+          window.dispatchEvent(new Event("focus"));
+
+          window.setTimeout(() => {
+            results.sidebarStep = {
+              beforeCloseLesson: sidebarBeforeClose,
+              afterCloseLesson: state.selectedLessonId,
+              openCalls: window.__smoke.openCalls.length,
+            };
+
+            resetFreeCourseState(firstLessonId);
+            const nextTarget = document.querySelector("#next-lesson");
+            nextTarget?.click();
+            const nextBeforeClose = state.selectedLessonId;
+            window.__smoke.lastOpenedWindow?.close();
+            window.dispatchEvent(new Event("focus"));
+
+            window.setTimeout(() => {
+              results.nextStep = {
+                beforeCloseLesson: nextBeforeClose,
+                afterCloseLesson: state.selectedLessonId,
+                openCalls: window.__smoke.openCalls.length,
+              };
+
+              resetFreeCourseState(secondLessonId);
+              const prevTarget = document.querySelector("#prev-lesson");
+              prevTarget?.click();
+              const prevBeforeClose = state.selectedLessonId;
+              window.__smoke.lastOpenedWindow?.close();
+              window.dispatchEvent(new Event("focus"));
+
+              window.setTimeout(() => {
+                results.prevStep = {
+                  beforeCloseLesson: prevBeforeClose,
+                  afterCloseLesson: state.selectedLessonId,
+                  openCalls: window.__smoke.openCalls.length,
+                };
+                resolve(results);
+              }, 750);
+            }, 750);
+          }, 750);
+        }))()
+      `
+    );
     const freeInternalNavigationResult = await evaluate(
       cdp,
       sessionId,
@@ -686,6 +771,25 @@ async function main() {
     assert(
       freeSponsoredButtonMatrix.every((item) => item.afterClosePanel === item.expectedPanel),
       `Algum botao do gratis nao retomou para o painel certo: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
+      freeCourseFlowMatrix.publicLessonCount >= 2,
+      `O smoke do player gratis precisa de pelo menos 2 aulas publicas: ${JSON.stringify(freeCourseFlowMatrix)}`
+    );
+    assert(
+      freeCourseFlowMatrix.sidebarStep?.openCalls === 1 &&
+        freeCourseFlowMatrix.sidebarStep?.beforeCloseLesson !== freeCourseFlowMatrix.sidebarStep?.afterCloseLesson,
+      `A troca de aula pelo menu lateral no gratis nao retomou corretamente: ${JSON.stringify(freeCourseFlowMatrix)}`
+    );
+    assert(
+      freeCourseFlowMatrix.nextStep?.openCalls === 1 &&
+        freeCourseFlowMatrix.nextStep?.beforeCloseLesson !== freeCourseFlowMatrix.nextStep?.afterCloseLesson,
+      `O botao proxima aula no gratis nao retomou corretamente: ${JSON.stringify(freeCourseFlowMatrix)}`
+    );
+    assert(
+      freeCourseFlowMatrix.prevStep?.openCalls === 1 &&
+        freeCourseFlowMatrix.prevStep?.beforeCloseLesson !== freeCourseFlowMatrix.prevStep?.afterCloseLesson,
+      `O botao aula anterior no gratis nao retomou corretamente: ${JSON.stringify(freeCourseFlowMatrix)}`
     );
     assert(
       freeInternalNavigationResult.beforeClose.opened,

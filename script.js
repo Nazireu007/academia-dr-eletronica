@@ -1559,6 +1559,10 @@ function bindSponsoredClick(element, actionRunner, options = {}) {
   if (!element) return;
 
   element.addEventListener("click", (event) => {
+    if (element.disabled || element.getAttribute("aria-disabled") === "true") {
+      event.preventDefault();
+      return;
+    }
     event.preventDefault();
     runSponsoredAction(element, actionRunner, options);
   });
