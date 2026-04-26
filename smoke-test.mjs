@@ -363,6 +363,7 @@ async function main() {
     await clickCenter(cdp, sessionId, "#resume-course");
     await delay(350);
     const openCallsAfterSecondSponsoredClick = await evaluate(cdp, sessionId, "window.__smoke.openCalls.length");
+    const activePanelAfterSponsoredClick = await evaluate(cdp, sessionId, "state.activePanel");
 
     await evaluate(cdp, sessionId, "window.__smoke.openCalls = []; undefined;");
     await evaluate(cdp, sessionId, 'document.querySelector("#enter-member-area").click(); undefined;');
@@ -477,6 +478,7 @@ async function main() {
     assert(sponsoredCooldown === 0, "O smartlink nao deveria ter cooldown quando a regra e abrir no segundo clique.");
     assert(openCallsAfterFirstSponsoredClick === 0, "O primeiro clique elegivel nao deveria abrir anuncio.");
     assert(openCallsAfterSecondSponsoredClick >= 1, "O segundo clique elegivel deveria abrir o smartlink patrocinado.");
+    assert(activePanelAfterSponsoredClick === "course", "A acao do botao deveria ficar aplicada antes/depois do anuncio.");
     assert(accessModalOpen, "O botão principal deveria abrir o modal de acesso.");
     assert(openCallsAfterAccess === 0, "Uma ação crítica abriu janela paralela de anúncio.");
     assert(pixModalOpen, "O atalho de Pix deveria abrir o modal de pagamento.");

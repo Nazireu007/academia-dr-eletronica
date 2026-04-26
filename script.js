@@ -4196,7 +4196,7 @@ dom.nextLesson.addEventListener("click", () => {
 });
 
 window.addEventListener("resize", applyMobileViews);
-document.addEventListener("click", handleSponsoredParallelClick, true);
+document.addEventListener("click", handleSponsoredParallelClick);
 
 dom.lessonNote.addEventListener("input", () => {
   state.notes[state.selectedLessonId] = dom.lessonNote.value;
