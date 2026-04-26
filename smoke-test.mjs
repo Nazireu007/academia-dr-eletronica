@@ -588,11 +588,14 @@ async function main() {
             window.dispatchEvent(new Event("focus"));
 
             window.setTimeout(() => {
+              const activeHud = document.querySelector('.hud-chip.is-active');
               results.push({
                 ...check,
                 afterClosePanel: state.activePanel,
                 afterCourseView: uiState.mobileCourseView,
                 afterPublicView: uiState.mobilePublicView,
+                afterHudActiveTarget: activeHud?.dataset.panelTarget || null,
+                afterHudPressed: activeHud?.getAttribute("aria-pressed") || null,
                 beforeClosePanel,
                 found: true,
                 openCalls: window.__smoke.openCalls.length,
@@ -864,6 +867,12 @@ async function main() {
         .filter((item) => item.expectedCourseView)
         .every((item) => item.afterCourseView === item.expectedCourseView),
       `Algum atalho que abre o player nao restaurou a subview correta: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
+      freeSponsoredButtonMatrix
+        .filter((item) => ["dashboard", "quiz", "certificate"].includes(item.expectedPanel))
+        .every((item) => item.afterHudActiveTarget === item.expectedPanel && item.afterHudPressed === "true"),
+      `O HUD nao refletiu corretamente o painel ativo apos a navegacao gratuita: ${JSON.stringify(freeSponsoredButtonMatrix)}`
     );
     assert(
       freeCourseFlowMatrix.publicLessonCount >= 2,

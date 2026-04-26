@@ -1583,6 +1583,25 @@ function openPrimaryPanel(panelName) {
   setActivePanel(panelName);
 }
 
+function syncPanelNavigationState() {
+  [...dom.topNavLinks, ...dom.sidebarLinks].forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.panelTarget === state.activePanel);
+  });
+
+  const hasAccess = hasMemberAreaAccess();
+  dom.hudButtons.forEach((button) => {
+    const isActive = state.activePanel === button.dataset.panelTarget;
+    button.disabled = !hasAccess;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    if (hasAccess) {
+      button.removeAttribute("aria-disabled");
+    } else {
+      button.setAttribute("aria-disabled", "true");
+    }
+  });
+}
+
 function getLearningDepthLabel() {
   const percent = getCompletionPercent();
   if (percent >= 85) return "nível de conclusão";
@@ -2557,9 +2576,7 @@ function setActivePanel(panelName) {
     panel.classList.toggle("is-active", panel.dataset.panel === panelName);
   });
 
-  [...dom.topNavLinks, ...dom.sidebarLinks].forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.panelTarget === panelName);
-  });
+  syncPanelNavigationState();
 
   if (panelName === "admin" && isAdminPanelAvailable()) {
     void refreshAdminMembers();
@@ -2909,19 +2926,7 @@ function renderHeaderHud() {
     ? `${state.quizResult.score}%`
     : `${getAnsweredQuizCount()}/${quizQuestions.length}`;
   dom.hudCertificateStatus.textContent = hasUnlockedCertificate() ? "Liberado" : "Bloqueado";
-
-  const hasAccess = hasMemberAreaAccess();
-  dom.hudButtons.forEach((button) => {
-    const isActive = state.activePanel === button.dataset.panelTarget;
-    button.disabled = !hasAccess;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", isActive ? "true" : "false");
-    if (hasAccess) {
-      button.removeAttribute("aria-disabled");
-    } else {
-      button.setAttribute("aria-disabled", "true");
-    }
-  });
+  syncPanelNavigationState();
 }
 
 function renderProgress() {
