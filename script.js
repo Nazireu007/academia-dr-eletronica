@@ -154,8 +154,6 @@ const storageKeys = {
   quizResult: "academia-dr-quiz-result-v4",
   accessSession: "academia-dr-access-session-v1",
   supabaseUser: "academia-dr-supabase-user-v1",
-  sponsoredClickCount: "nitro-sponsored-click-count-v2",
-  sponsoredLastOpenedAt: "nitro-sponsored-last-opened-at-v1",
 };
 
 const dom = {
@@ -400,8 +398,6 @@ const defaultAppConfig = {
   adSenseClient: "",
   adsterraSmartlinkUrl: "",
   sponsoredAutoOpenEnabled: true,
-  sponsoredClickWarmupClicks: 1,
-  sponsoredClickCooldownSeconds: 0,
   sponsoredClickMobileEnabled: true,
   adsterraPublicTopMarkup: "",
   adsterraPublicMarkup: "",
@@ -425,7 +421,6 @@ const appConfig = {
   ...(window.APP_CONFIG || {}),
 };
 
-let sponsoredClickMemoryCount = 0;
 let sponsoredActionReplayInProgress = false;
 let pendingSponsoredActionTarget = null;
 
@@ -1224,57 +1219,6 @@ function isSponsoredAutoOpenEnabled() {
   return appConfig.sponsoredAutoOpenEnabled === true;
 }
 
-function getSponsoredClickWarmupLimit() {
-  const configuredLimit = Number(appConfig.sponsoredClickWarmupClicks);
-  if (!Number.isFinite(configuredLimit) || configuredLimit < 0) return 0;
-  return Math.floor(configuredLimit);
-}
-
-function getSponsoredClickCooldownMs() {
-  const configuredSeconds = Number(appConfig.sponsoredClickCooldownSeconds);
-  if (!Number.isFinite(configuredSeconds) || configuredSeconds <= 0) return 0;
-  return Math.floor(configuredSeconds * 1000);
-}
-
-function getSponsoredClickCount() {
-  try {
-    const storedCount = Number.parseInt(sessionStorage.getItem(storageKeys.sponsoredClickCount) || "0", 10);
-    return Number.isFinite(storedCount) && storedCount > 0 ? storedCount : 0;
-  } catch (_error) {
-    return sponsoredClickMemoryCount;
-  }
-}
-
-function setSponsoredClickCount(count) {
-  const safeCount = Math.max(0, Number.isFinite(Number(count)) ? Math.floor(Number(count)) : 0);
-  sponsoredClickMemoryCount = safeCount;
-
-  try {
-    sessionStorage.setItem(storageKeys.sponsoredClickCount, String(safeCount));
-  } catch (_error) {
-    // Some private browsers block storage; the in-memory counter still protects the current page load.
-  }
-}
-
-function getSponsoredLastOpenedAt() {
-  try {
-    const storedAt = Number.parseInt(sessionStorage.getItem(storageKeys.sponsoredLastOpenedAt) || "0", 10);
-    return Number.isFinite(storedAt) && storedAt > 0 ? storedAt : 0;
-  } catch (_error) {
-    return 0;
-  }
-}
-
-function setSponsoredLastOpenedAt(timestamp) {
-  const safeTimestamp = Math.max(0, Number.isFinite(Number(timestamp)) ? Math.floor(Number(timestamp)) : 0);
-
-  try {
-    sessionStorage.setItem(storageKeys.sponsoredLastOpenedAt, String(safeTimestamp));
-  } catch (_error) {
-    // Ignore storage failures; the session still keeps the UI working.
-  }
-}
-
 function isSponsoredNavigationTarget(actionTarget) {
   if (!actionTarget) return false;
 
@@ -1334,20 +1278,7 @@ function shouldOpenSponsoredLinkAfterClick(actionTarget) {
   if (shouldSkipSponsoredParallelClick(actionTarget)) return false;
   if (!isSponsoredNavigationTarget(actionTarget)) return false;
   if (isPremiumMember() || getMemberPlanKind() === "blocked") return false;
-
-  const cooldownMs = getSponsoredClickCooldownMs();
-  const lastOpenedAt = getSponsoredLastOpenedAt();
-  if (cooldownMs > 0 && lastOpenedAt > 0 && Date.now() - lastOpenedAt < cooldownMs) {
-    return false;
-  }
-
-  const nextCount = getSponsoredClickCount() + 1;
-  const shouldOpen = nextCount > getSponsoredClickWarmupLimit();
-  setSponsoredClickCount(shouldOpen ? 0 : nextCount);
-  if (shouldOpen) {
-    setSponsoredLastOpenedAt(Date.now());
-  }
-  return shouldOpen;
+  return true;
 }
 
 function openSponsoredWindowHandle(url) {
@@ -1527,6 +1458,10 @@ function isPremiumActionTarget(actionTarget) {
 
 function runSponsoredAction(actionTarget, actionRunner, { allowSponsored = true } = {}) {
   if (typeof actionRunner !== "function") return;
+
+  if (pendingSponsoredResume && !sponsoredActionReplayInProgress) {
+    return;
+  }
 
   if (!allowSponsored || !actionTarget) {
     actionRunner();

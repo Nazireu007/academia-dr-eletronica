@@ -349,27 +349,16 @@ async function main() {
       sessionId,
       'document.querySelector("#offer-links .is-sponsored-link")?.rel || ""'
     );
-    const autoOpenDisabled = await evaluate(
+    const autoOpenEnabled = await evaluate(
       cdp,
       sessionId,
       'typeof appConfig !== "undefined" && appConfig.sponsoredAutoOpenEnabled === true'
     );
-    const sponsoredWarmupLimit = await evaluate(cdp, sessionId, "getSponsoredClickWarmupLimit()");
-    const sponsoredCooldown = await evaluate(cdp, sessionId, "getSponsoredClickCooldownMs()");
 
     await evaluate(
       cdp,
       sessionId,
-      'sessionStorage.removeItem("nitro-sponsored-click-count-v2"); sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1"); window.__smoke.openCalls = []; window.__smoke.lastOpenedWindow = null; setActivePanel("public"); undefined;'
-    );
-    await clickCenter(cdp, sessionId, "#resume-course");
-    await delay(350);
-    const openCallsAfterFirstSponsoredClick = await evaluate(cdp, sessionId, "window.__smoke.openCalls.length");
-    const activePanelAfterFirstSponsoredClick = await evaluate(cdp, sessionId, "state.activePanel");
-    await evaluate(
-      cdp,
-      sessionId,
-      'setActivePanel("public"); sessionStorage.setItem("nitro-sponsored-click-count-v2", "1"); sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1"); window.__smoke.openCalls = []; window.__smoke.lastOpenedWindow = null; undefined;'
+      'window.__smoke.openCalls = []; window.__smoke.lastOpenedWindow = null; setActivePanel("public"); undefined;'
     );
     await clickCenter(cdp, sessionId, "#resume-course");
     await delay(350);
@@ -381,6 +370,7 @@ async function main() {
           panelName: state.activePanel,
           openCalls: window.__smoke.openCalls.length,
           opened: Boolean(window.__smoke.lastOpenedWindow),
+          pending: document.querySelector("#resume-course")?.classList.contains("is-sponsored-pending") || false,
         })
       `
     );
@@ -441,13 +431,11 @@ async function main() {
           closeAccessModal();
           state.activePanel = "public";
           setActivePanel("public");
-          sessionStorage.removeItem("nitro-sponsored-click-count-v2");
-          sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
           window.__smoke.openCalls = [];
           const target = document.querySelector("#resume-course");
           const first = shouldOpenSponsoredLinkAfterClick(target);
+          if (first) openSponsoredWindow(getSmartlinkUrl());
           const second = shouldOpenSponsoredLinkAfterClick(target);
-          if (second) openSponsoredWindow(getSmartlinkUrl());
           return {
             first,
             second,
@@ -469,8 +457,6 @@ async function main() {
         authState.accessStatus = "active";
         state.member = { name: "Aluno Premium", email: "premium@example.com", goal: "diagnosticar placas", rhythm: "30 min por dia", joinedAt: new Date().toISOString() };
         state.activePanel = "dashboard";
-        sessionStorage.removeItem("nitro-sponsored-click-count-v2");
-        sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
         window.__smoke.openCalls = [];
         renderAll();
         undefined;
@@ -515,8 +501,6 @@ async function main() {
         authState.accessStatus = "pending";
         state.member = { name: "Aluno Gratis", email: "gratis@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
         state.activePanel = "dashboard";
-        sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
-        sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
         window.__smoke.openCalls = [];
         window.__smoke.lastOpenedWindow = null;
         renderAll();
@@ -569,8 +553,6 @@ async function main() {
             uiState.mobilePublicView = check.presetPublicView || "plans";
             renderAll();
             setActivePanel(check.startPanel);
-            sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
-            sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
             window.__smoke.openCalls = [];
             window.__smoke.lastOpenedWindow = null;
 
@@ -647,8 +629,6 @@ async function main() {
             state.activePanel = "course";
             renderAll();
             setActivePanel("course");
-            sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
-            sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
             window.__smoke.openCalls = [];
             window.__smoke.lastOpenedWindow = null;
           };
@@ -727,8 +707,6 @@ async function main() {
             state.selectedLessonId = publicLessons[0].id;
             renderAll();
             setActivePanel("course");
-            sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
-            sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
             window.__smoke.openCalls = [];
             window.__smoke.lastOpenedWindow = null;
           };
@@ -784,14 +762,11 @@ async function main() {
           state.activePanel = "dashboard";
           renderAll();
           setActivePanel("dashboard");
-          sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
-          sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
           window.__smoke.openCalls = [];
           window.__smoke.lastOpenedWindow = null;
           const target = document.querySelector("#open-course-panel");
           const eligibility = {
             adsEnabled: appConfig.adsEnabled,
-            count: sessionStorage.getItem("nitro-sponsored-click-count-v2"),
             mobile: isMobileLayout(),
             navigationTarget: isSponsoredNavigationTarget(target),
             plan: getMemberPlanKind(),
@@ -799,7 +774,6 @@ async function main() {
             skip: shouldSkipSponsoredParallelClick(target),
             smartlink: getSmartlinkUrl(),
             targetText: target?.textContent?.trim() || "",
-            warmup: getSponsoredClickWarmupLimit(),
           };
           target.click();
           const beforeClose = {
@@ -823,6 +797,52 @@ async function main() {
         }))()
       `
     );
+    const pendingClickLockResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          authState.session = { user: { id: "smoke-free-lock", email: "gratis2@example.com" } };
+          authState.user = authState.session.user;
+          authState.accessGranted = true;
+          authState.accessStatus = "pending";
+          state.member = { name: "Aluno Gratis 2", email: "gratis2@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+          state.activePanel = "public";
+          window.__smoke.openCalls = [];
+          window.__smoke.lastOpenedWindow = null;
+          renderAll();
+          setActivePanel("public");
+
+          const firstTarget = document.querySelector('.top-nav-link[data-panel-target="dashboard"]');
+          const secondTarget = document.querySelector('.top-nav-link[data-panel-target="course"]');
+          firstTarget?.click();
+          const panelAfterFirstClick = state.activePanel;
+          const openCallsAfterFirstClick = window.__smoke.openCalls.length;
+          const pendingAfterFirstClick = firstTarget?.classList.contains("is-sponsored-pending") || false;
+          secondTarget?.click();
+          const panelAfterSecondClick = state.activePanel;
+          const openCallsAfterSecondClick = window.__smoke.openCalls.length;
+          const pendingFirstAfterSecondClick = firstTarget?.classList.contains("is-sponsored-pending") || false;
+          const pendingSecondAfterSecondClick = secondTarget?.classList.contains("is-sponsored-pending") || false;
+
+          window.__smoke.lastOpenedWindow?.close();
+          window.dispatchEvent(new Event("focus"));
+
+          window.setTimeout(() => {
+            resolve({
+              openCallsAfterFirstClick,
+              openCallsAfterSecondClick,
+              panelAfterFirstClick,
+              panelAfterSecondClick,
+              pendingAfterFirstClick,
+              pendingFirstAfterSecondClick,
+              pendingSecondAfterSecondClick,
+              finalPanel: state.activePanel,
+            });
+          }, 700);
+        }))()
+      `
+    );
     const smokeConsoleErrors = await evaluate(cdp, sessionId, "window.__smoke.consoleErrors");
     const smokeUncaughtErrors = await evaluate(cdp, sessionId, "window.__smoke.uncaughtErrors");
 
@@ -836,13 +856,10 @@ async function main() {
       sponsoredLinkRel.includes("sponsored") && sponsoredLinkRel.includes("nofollow"),
       "O link patrocinado não recebeu os atributos corretos."
     );
-    assert(autoOpenDisabled, "A abertura do smartlink patrocinado deveria estar ativada para o plano gratuito.");
-    assert(sponsoredWarmupLimit === 1, "O smartlink deveria abrir no segundo clique elegivel.");
-    assert(sponsoredCooldown === 0, "O smartlink nao deveria ter cooldown quando a regra e abrir no segundo clique.");
-    assert(openCallsAfterFirstSponsoredClick === 0, "O primeiro clique elegivel nao deveria abrir anuncio.");
-    assert(activePanelAfterFirstSponsoredClick === "course", "O primeiro clique elegivel deveria executar a navegacao normalmente.");
-    assert(sponsoredNavigationBeforeClose.opened, "O segundo clique elegivel deveria abrir o smartlink patrocinado.");
-    assert(sponsoredNavigationBeforeClose.openCalls === 1, "O segundo clique elegivel deveria abrir apenas um anuncio.");
+    assert(autoOpenEnabled, "A abertura do smartlink patrocinado deveria estar ativada para o plano gratuito.");
+    assert(sponsoredNavigationBeforeClose.opened, "O primeiro clique elegivel deveria abrir o smartlink patrocinado.");
+    assert(sponsoredNavigationBeforeClose.openCalls === 1, "O primeiro clique elegivel deveria abrir apenas um anuncio.");
+    assert(sponsoredNavigationBeforeClose.pending, "O botao clicado deveria ficar pendente ate o fechamento do anuncio.");
     assert(sponsoredNavigationBeforeClose.panelName === "public", "A navegacao patrocinada deveria aguardar o fechamento do anuncio.");
     assert(sponsoredNavigationAfterClose.panelName === "course", "A acao do botao deveria ser aplicada apos fechar o anuncio.");
     assert(sponsoredNavigationAfterClose.openCalls === 1, "A acao retomada nao deveria abrir outro anuncio.");
@@ -853,9 +870,9 @@ async function main() {
     assert(mobileSwitcherVisible, "A navegação móvel da apresentação não ficou visível no viewport reduzido.");
     assert(mobileSponsoredResult.mobile, "O smoke test deveria estar em viewport mobile.");
     assert(mobileSponsoredResult.mobileEnabled, "A monetizacao por clique mobile deveria estar ativa.");
-    assert(mobileSponsoredResult.first === false, "O primeiro clique mobile elegivel nao deveria abrir anuncio.");
-    assert(mobileSponsoredResult.second === true, "O segundo clique mobile elegivel deveria abrir o smartlink patrocinado.");
-    assert(mobileSponsoredResult.openCalls >= 1, "O smartlink mobile nao abriu janela patrocinada no segundo clique.");
+    assert(mobileSponsoredResult.first === true, "O primeiro clique mobile elegivel deveria abrir anuncio.");
+    assert(mobileSponsoredResult.second === true, "A elegibilidade mobile deveria permanecer ativa a cada novo clique.");
+    assert(mobileSponsoredResult.openCalls >= 1, "O smartlink mobile nao abriu janela patrocinada no primeiro clique.");
 
     assert(!premiumDashboardAdVisible, "O painel premium nao deveria exibir anuncios.");
     assert(premiumIntelligenceVisible, "O painel premium deveria exibir a inteligencia adaptativa.");
@@ -954,6 +971,24 @@ async function main() {
     assert(freeInternalNavigationResult.beforeClose.panelName !== "course", "O painel interno so deveria abrir depois que o anuncio fosse fechado.");
     assert(freeInternalNavigationResult.afterClose.panelOpen, "A navegacao interna deveria continuar automaticamente apos fechar o anuncio.");
     assert(freeInternalNavigationResult.afterClose.openCalls === 1, "A repeticao automatica da acao nao deveria abrir outro anuncio.");
+    assert(
+      pendingClickLockResult.openCallsAfterFirstClick === 1 && pendingClickLockResult.openCallsAfterSecondClick === 1,
+      `Um segundo clique durante o anuncio nao deveria abrir nova janela patrocinada: ${JSON.stringify(pendingClickLockResult)}`
+    );
+    assert(
+      pendingClickLockResult.panelAfterFirstClick === "public" && pendingClickLockResult.panelAfterSecondClick === "public",
+      `Nenhum painel deveria trocar enquanto o anuncio ainda estiver aberto: ${JSON.stringify(pendingClickLockResult)}`
+    );
+    assert(
+      pendingClickLockResult.pendingAfterFirstClick &&
+        pendingClickLockResult.pendingFirstAfterSecondClick &&
+        pendingClickLockResult.pendingSecondAfterSecondClick === false,
+      `O primeiro botao deveria permanecer dono da acao pendente ate o fechamento do anuncio: ${JSON.stringify(pendingClickLockResult)}`
+    );
+    assert(
+      pendingClickLockResult.finalPanel === "dashboard",
+      `Ao fechar o anuncio, a plataforma deveria executar a acao do primeiro clique apenas: ${JSON.stringify(pendingClickLockResult)}`
+    );
     assert(runtimeExceptions.length === 0, `Houve exceções do navegador: ${runtimeExceptions.join(" | ")}`);
     assert(consoleErrors.length === 0, `Houve erros no console do navegador: ${consoleErrors.join(" | ")}`);
     assert(smokeConsoleErrors.length === 0, `console.error foi chamado na página: ${smokeConsoleErrors.join(" | ")}`);
