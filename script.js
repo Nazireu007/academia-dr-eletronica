@@ -195,6 +195,7 @@ const dom = {
   adminSidebarLink: document.querySelector("#admin-sidebar-link"),
   topNavLinks: [...document.querySelectorAll(".top-nav-link")],
   sidebarLinks: [...document.querySelectorAll(".sidebar-link")],
+  hudButtons: [...document.querySelectorAll(".hud-chip[data-panel-target]")],
   panels: [...document.querySelectorAll(".member-panel")],
   offerTitle: document.querySelector("#offer-title"),
   offerCopy: document.querySelector("#offer-copy"),
@@ -1568,6 +1569,20 @@ function bindSponsoredClick(element, actionRunner, options = {}) {
   });
 }
 
+function openPrimaryPanel(panelName) {
+  if (!panelName) return;
+
+  if (panelName === "public") {
+    setMobilePublicView("plans");
+  }
+
+  if (panelName === "course") {
+    setMobileCourseView("lesson");
+  }
+
+  setActivePanel(panelName);
+}
+
 function getLearningDepthLabel() {
   const percent = getCompletionPercent();
   if (percent >= 85) return "nível de conclusão";
@@ -2894,6 +2909,19 @@ function renderHeaderHud() {
     ? `${state.quizResult.score}%`
     : `${getAnsweredQuizCount()}/${quizQuestions.length}`;
   dom.hudCertificateStatus.textContent = hasUnlockedCertificate() ? "Liberado" : "Bloqueado";
+
+  const hasAccess = hasMemberAreaAccess();
+  dom.hudButtons.forEach((button) => {
+    const isActive = state.activePanel === button.dataset.panelTarget;
+    button.disabled = !hasAccess;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    if (hasAccess) {
+      button.removeAttribute("aria-disabled");
+    } else {
+      button.setAttribute("aria-disabled", "true");
+    }
+  });
 }
 
 function renderProgress() {
@@ -3279,7 +3307,7 @@ function renderLibrary() {
   });
 
   dom.resourceLinks.querySelectorAll("[data-open-panel]").forEach((button) => {
-    bindSponsoredClick(button, () => setActivePanel(button.dataset.openPanel));
+    bindSponsoredClick(button, () => openPrimaryPanel(button.dataset.openPanel));
   });
 
   renderPremiumContentCard();
@@ -4293,15 +4321,15 @@ dom.logoutButton.addEventListener("click", () => {
   logoutMemberArea();
 });
 
-[...dom.topNavLinks, ...dom.sidebarLinks].forEach((button) => {
+[...dom.topNavLinks, ...dom.sidebarLinks, ...dom.hudButtons].forEach((button) => {
   bindSponsoredClick(button, () => {
-    setActivePanel(button.dataset.panelTarget);
+    openPrimaryPanel(button.dataset.panelTarget);
   });
 });
 
 bindSponsoredClick(dom.enterMemberArea, () => {
   if (hasMemberAreaAccess()) {
-    setActivePanel("dashboard");
+    openPrimaryPanel("dashboard");
     return;
   }
 
@@ -4317,13 +4345,12 @@ bindSponsoredClick(dom.resumeCourse, () => {
   const previewLesson = getPreviewLessons()[0];
   if (!previewLesson) return;
   state.selectedLessonId = previewLesson.id;
-  setMobileCourseView("lesson");
   saveState();
-  setActivePanel("course");
+  openPrimaryPanel("course");
 });
 bindSponsoredClick(dom.goToQuiz, () => {
   if (hasMemberAreaAccess()) {
-    setActivePanel("quiz");
+    openPrimaryPanel("quiz");
     return;
   }
 
@@ -4331,8 +4358,7 @@ bindSponsoredClick(dom.goToQuiz, () => {
 });
 bindSponsoredClick(dom.openNextLesson, () => openNextLesson(true));
 bindSponsoredClick(dom.openCoursePanel, () => {
-  setMobileCourseView("lesson");
-  setActivePanel("course");
+  openPrimaryPanel("course");
 });
 
 dom.publicMobileButtons.forEach((button) => {

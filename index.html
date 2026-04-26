@@ -236,18 +236,18 @@
           <button class="button button-secondary button-small" id="logout-button" type="button">Sair</button>
 
           <div class="header-hud" aria-label="Resumo rápido da conta">
-            <article class="hud-chip">
+            <button class="hud-chip guest-restricted" data-panel-target="dashboard" type="button">
               <span class="hud-label">Progresso</span>
               <strong id="hud-progress-percent">0%</strong>
-            </article>
-            <article class="hud-chip">
+            </button>
+            <button class="hud-chip guest-restricted" data-panel-target="quiz" type="button">
               <span class="hud-label">Quiz</span>
               <strong id="hud-quiz-status">Pendente</strong>
-            </article>
-            <article class="hud-chip hud-chip-active">
+            </button>
+            <button class="hud-chip guest-restricted" data-panel-target="certificate" type="button">
               <span class="hud-label">Certificado</span>
               <strong id="hud-certificate-status">Bloqueado</strong>
-            </article>
+            </button>
           </div>
 
           <button class="member-pill" id="edit-profile" type="button">

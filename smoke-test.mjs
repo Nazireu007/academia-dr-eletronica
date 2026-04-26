@@ -532,12 +532,27 @@ async function main() {
         (() => new Promise((resolve) => {
           const checks = [
             { selector: '.top-nav-link[data-panel-target="dashboard"]', expectedPanel: "dashboard", startPanel: "public" },
-            { selector: '.top-nav-link[data-panel-target="course"]', expectedPanel: "course", startPanel: "public" },
+            {
+              selector: '.top-nav-link[data-panel-target="course"]',
+              expectedPanel: "course",
+              startPanel: "public",
+              presetCourseView: "modules",
+              expectedCourseView: "lesson",
+            },
             { selector: '.top-nav-link[data-panel-target="library"]', expectedPanel: "library", startPanel: "public" },
             { selector: '.top-nav-link[data-panel-target="quiz"]', expectedPanel: "quiz", startPanel: "public" },
             { selector: '.top-nav-link[data-panel-target="certificate"]', expectedPanel: "certificate", startPanel: "public" },
+            { selector: '.hud-chip[data-panel-target="dashboard"]', expectedPanel: "dashboard", startPanel: "course" },
+            { selector: '.hud-chip[data-panel-target="quiz"]', expectedPanel: "quiz", startPanel: "dashboard" },
+            { selector: '.hud-chip[data-panel-target="certificate"]', expectedPanel: "certificate", startPanel: "course" },
             { selector: "#open-next-lesson", expectedPanel: "course", startPanel: "dashboard" },
-            { selector: "#open-course-panel", expectedPanel: "course", startPanel: "dashboard" },
+            {
+              selector: "#open-course-panel",
+              expectedPanel: "course",
+              startPanel: "dashboard",
+              presetCourseView: "modules",
+              expectedCourseView: "lesson",
+            },
             { selector: '.resource-link-card[data-open-panel="quiz"]', expectedPanel: "quiz", startPanel: "library" },
             { selector: '.resource-link-card[data-open-panel="certificate"]', expectedPanel: "certificate", startPanel: "library" },
           ];
@@ -550,6 +565,8 @@ async function main() {
 
             const check = checks[index];
             state.activePanel = check.startPanel;
+            uiState.mobileCourseView = check.presetCourseView || "lesson";
+            uiState.mobilePublicView = check.presetPublicView || "plans";
             renderAll();
             setActivePanel(check.startPanel);
             sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
@@ -574,6 +591,8 @@ async function main() {
               results.push({
                 ...check,
                 afterClosePanel: state.activePanel,
+                afterCourseView: uiState.mobileCourseView,
+                afterPublicView: uiState.mobilePublicView,
                 beforeClosePanel,
                 found: true,
                 openCalls: window.__smoke.openCalls.length,
@@ -839,6 +858,12 @@ async function main() {
     assert(
       freeSponsoredButtonMatrix.every((item) => item.afterClosePanel === item.expectedPanel),
       `Algum botao do gratis nao retomou para o painel certo: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
+      freeSponsoredButtonMatrix
+        .filter((item) => item.expectedCourseView)
+        .every((item) => item.afterCourseView === item.expectedCourseView),
+      `Algum atalho que abre o player nao restaurou a subview correta: ${JSON.stringify(freeSponsoredButtonMatrix)}`
     );
     assert(
       freeCourseFlowMatrix.publicLessonCount >= 2,

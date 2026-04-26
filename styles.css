@@ -826,11 +826,22 @@ body.guest-mode .guest-restricted {
 }
 
 .hud-chip {
+  width: 100%;
+  border: 1px solid transparent;
   border-radius: 1rem;
   padding: 0.76rem 0.88rem;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
     rgba(255, 255, 255, 0.03);
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .hud-chip strong {
@@ -838,11 +849,23 @@ body.guest-mode .guest-restricted {
   margin-top: 0.16rem;
 }
 
+.hud-chip:hover:not(:disabled),
+.hud-chip.is-active,
 .hud-chip-active {
   border-color: rgba(123, 226, 200, 0.22);
   background:
     linear-gradient(180deg, rgba(123, 226, 200, 0.12), transparent),
     rgba(255, 255, 255, 0.03);
+  box-shadow: 0 10px 24px rgba(5, 14, 28, 0.22);
+}
+
+.hud-chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.hud-chip:disabled {
+  cursor: default;
+  opacity: 0.68;
 }
 
 .member-pill {
