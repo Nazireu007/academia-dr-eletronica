@@ -460,6 +460,55 @@ async function main() {
     await clickCenter(cdp, sessionId, "#open-course-panel");
     await delay(300);
     const premiumOpenCallsAfterClicks = await evaluate(cdp, sessionId, "window.__smoke.openCalls.length");
+
+    await cdp.send(
+      "Emulation.setDeviceMetricsOverride",
+      {
+        deviceScaleFactor: 1,
+        height: 900,
+        mobile: false,
+        width: 1366,
+      },
+      sessionId
+    );
+    await evaluate(cdp, sessionId, 'window.dispatchEvent(new Event("resize")); undefined;');
+    await delay(300);
+    await evaluate(
+      cdp,
+      sessionId,
+      `
+        authState.session = { user: { id: "smoke-free", email: "gratis@example.com" } };
+        authState.user = authState.session.user;
+        authState.accessGranted = true;
+        authState.accessStatus = "pending";
+        state.member = { name: "Aluno Gratis", email: "gratis@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+        state.activePanel = "dashboard";
+        sessionStorage.setItem("nitro-sponsored-click-count-v2", "1");
+        sessionStorage.removeItem("nitro-sponsored-last-opened-at-v1");
+        window.__smoke.openCalls = [];
+        renderAll();
+        undefined;
+      `
+    );
+    await delay(450);
+    const freeCertificateNavigationResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => {
+          const target = document.querySelector('.top-nav-link[data-panel-target="certificate"]');
+          const skipped = shouldSkipSponsoredParallelClick(target);
+          const shouldOpenAd = shouldOpenSponsoredLinkAfterClick(target);
+          setActivePanel("certificate");
+          return {
+            panelOpen: state.activePanel === "certificate",
+            openCalls: window.__smoke.openCalls.length,
+            shouldOpenAd,
+            skipped,
+          };
+        })()
+      `
+    );
     const smokeConsoleErrors = await evaluate(cdp, sessionId, "window.__smoke.consoleErrors");
     const smokeUncaughtErrors = await evaluate(cdp, sessionId, "window.__smoke.uncaughtErrors");
 
@@ -489,9 +538,14 @@ async function main() {
     assert(mobileSponsoredResult.first === false, "O primeiro clique mobile elegivel nao deveria abrir anuncio.");
     assert(mobileSponsoredResult.second === true, "O segundo clique mobile elegivel deveria abrir o smartlink patrocinado.");
     assert(mobileSponsoredResult.openCalls >= 1, "O smartlink mobile nao abriu janela patrocinada no segundo clique.");
+
     assert(!premiumDashboardAdVisible, "O painel premium nao deveria exibir anuncios.");
     assert(premiumIntelligenceVisible, "O painel premium deveria exibir a inteligencia adaptativa.");
     assert(premiumOpenCallsAfterClicks === 0, "Cliques no premium nao deveriam abrir anuncios.");
+    assert(freeCertificateNavigationResult.panelOpen, "A navegacao para o certificado deveria funcionar sem clique extra.");
+    assert(freeCertificateNavigationResult.skipped, "A navegacao para certificado deveria ignorar o gatilho patrocinado.");
+    assert(!freeCertificateNavigationResult.shouldOpenAd, "A navegacao para certificado nao deveria armar anuncio paralelo.");
+    assert(freeCertificateNavigationResult.openCalls === 0, "A navegacao para certificado nao deveria abrir anuncio paralelo.");
     assert(runtimeExceptions.length === 0, `Houve exceções do navegador: ${runtimeExceptions.join(" | ")}`);
     assert(consoleErrors.length === 0, `Houve erros no console do navegador: ${consoleErrors.join(" | ")}`);
     assert(smokeConsoleErrors.length === 0, `console.error foi chamado na página: ${smokeConsoleErrors.join(" | ")}`);

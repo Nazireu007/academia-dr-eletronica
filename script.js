@@ -1277,7 +1277,7 @@ function shouldSkipSponsoredParallelClick(actionTarget) {
 
   if (
     actionTarget.closest(
-      ".auth-modal, .admin-filter-row, .admin-member-actions, .search-box, .quiz-options, .auth-actions, .pix-card, #payment-trust-list"
+      ".auth-modal, .admin-filter-row, .admin-member-actions, .search-box, .quiz-options, .auth-actions, .pix-card, #payment-trust-list, .top-nav, .sidebar-nav, .mobile-section-switcher, .certificate-layout, .certificate-side-panel"
     )
   ) {
     return true;
@@ -1285,7 +1285,7 @@ function shouldSkipSponsoredParallelClick(actionTarget) {
 
   if (
     actionTarget.matches(
-      ".btn-premium, [data-skip-sponsored-click], [data-admin-filter], [data-open-pix-modal], [data-access-action], [data-role-action], [data-remove-member], [data-copy-welcome]"
+      ".btn-premium, [data-skip-sponsored-click], [data-panel-target], [data-open-panel], [data-admin-filter], [data-open-pix-modal], [data-access-action], [data-role-action], [data-remove-member], [data-copy-welcome], #print-certificate, #logout-button, #edit-profile, #open-course-panel, #prev-lesson, #refresh-admin-members"
     )
   ) {
     return true;
