@@ -564,14 +564,9 @@ async function main() {
               return;
             }
 
-            const shouldOpen = shouldOpenSponsoredLinkAfterClick(target);
-            const adWindow = shouldOpen ? openSponsoredWindowHandle(getSmartlinkUrl()) : null;
-            const resumeAction = createSponsoredResumeAction(target);
-            if (adWindow && resumeAction) {
-              resumeActionAfterSponsoredClose(resumeAction, adWindow);
-            }
-
+            target.click();
             const beforeClosePanel = state.activePanel;
+            const adWindow = window.__smoke.lastOpenedWindow;
             adWindow?.close();
             window.dispatchEvent(new Event("focus"));
 
@@ -582,7 +577,7 @@ async function main() {
                 beforeClosePanel,
                 found: true,
                 openCalls: window.__smoke.openCalls.length,
-                shouldOpen,
+                shouldOpen: window.__smoke.openCalls.length === 1,
               });
               runOne(index + 1, results);
             }, 750);
@@ -617,18 +612,13 @@ async function main() {
             targetText: target?.textContent?.trim() || "",
             warmup: getSponsoredClickWarmupLimit(),
           };
-          const shouldOpen = shouldOpenSponsoredLinkAfterClick(target);
-          const adWindow = shouldOpen ? openSponsoredWindowHandle(getSmartlinkUrl()) : null;
-          const resumeAction = createSponsoredResumeAction(target);
-          if (adWindow) {
-            resumeActionAfterSponsoredClose(resumeAction, adWindow);
-          }
+          target.click();
           const beforeClose = {
             panelName: state.activePanel,
             openCalls: window.__smoke.openCalls.length,
-            opened: Boolean(adWindow),
+            opened: Boolean(window.__smoke.lastOpenedWindow),
           };
-          adWindow?.close();
+          window.__smoke.lastOpenedWindow?.close();
           window.dispatchEvent(new Event("focus"));
           window.setTimeout(() => {
             resolve({
@@ -638,7 +628,7 @@ async function main() {
               },
               beforeClose,
               eligibility,
-              shouldOpen,
+              shouldOpen: window.__smoke.openCalls.length === 1,
             });
           }, 700);
         }))()

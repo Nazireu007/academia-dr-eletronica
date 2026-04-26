@@ -1426,105 +1426,6 @@ function goToAdjacentAccessibleLesson(direction) {
   renderCourse();
 }
 
-function createSponsoredResumeAction(actionTarget) {
-  if (!actionTarget) return null;
-
-  const panelTarget = actionTarget.dataset.panelTarget;
-  if (panelTarget) {
-    return () => setActivePanel(panelTarget);
-  }
-
-  const openPanel = actionTarget.dataset.openPanel;
-  if (openPanel) {
-    return () => setActivePanel(openPanel);
-  }
-
-  const mobilePublicView = actionTarget.dataset.mobilePublicView;
-  if (mobilePublicView) {
-    return () => setMobilePublicView(mobilePublicView || "plans");
-  }
-
-  const mobileCourseView = actionTarget.dataset.mobileCourseView;
-  if (mobileCourseView) {
-    return () => setMobileCourseView(mobileCourseView || "lesson");
-  }
-
-  const previewLessonId = actionTarget.dataset.previewLesson;
-  if (previewLessonId) {
-    return () => openPreviewLesson(previewLessonId);
-  }
-
-  const lessonId = actionTarget.dataset.lessonId;
-  if (lessonId) {
-    return () => openCourseLesson(lessonId);
-  }
-
-  const openLessonId = actionTarget.dataset.openLesson;
-  if (openLessonId) {
-    return () => openLessonFromLibrary(openLessonId);
-  }
-
-  switch (actionTarget.id) {
-    case "enter-member-area":
-      return () => {
-        if (hasMemberAreaAccess()) {
-          setActivePanel("dashboard");
-          return;
-        }
-
-        openAccessModal(
-          "Entre com sua conta ou crie sua conta gratuita para liberar painel, progresso e certificado.",
-          "dashboard"
-        );
-      };
-    case "resume-course":
-      return () => {
-        if (hasMemberAreaAccess()) {
-          openNextLesson(true);
-          return;
-        }
-
-        const previewLesson = getPreviewLessons()[0];
-        if (!previewLesson) return;
-        state.selectedLessonId = previewLesson.id;
-        setMobileCourseView("lesson");
-        saveState();
-        setActivePanel("course");
-      };
-    case "go-to-quiz":
-      return () => {
-        if (hasMemberAreaAccess()) {
-          setActivePanel("quiz");
-          return;
-        }
-
-        openAccessModal(
-          "Entre com sua conta ou crie sua conta gratuita para liberar quiz, certificado e painel.",
-          "dashboard"
-        );
-      };
-    case "open-next-lesson":
-      return () => openNextLesson(true);
-    case "open-course-panel":
-      return () => {
-        setMobileCourseView("lesson");
-        setActivePanel("course");
-      };
-    case "favorite-lesson":
-      return () => toggleCurrentLessonFavorite();
-    case "mark-complete":
-      return () => toggleCurrentLessonCompletion();
-    case "prev-lesson":
-      return () => goToAdjacentAccessibleLesson(-1);
-    case "next-lesson":
-      return () => goToAdjacentAccessibleLesson(1);
-    case "submit-quiz":
-      return () => handleQuizSubmit();
-    default:
-      return null;
-  }
-}
-
 function replaySponsoredAction(actionRunner) {
   if (typeof actionRunner !== "function") return;
 
@@ -1605,31 +1506,62 @@ function isPremiumActionTarget(actionTarget) {
   );
 }
 
-function handleSponsoredParallelClick(event) {
-  if (sponsoredActionReplayInProgress) return;
-  if (!event.isTrusted || event.defaultPrevented || !appConfig.adsEnabled) return;
-  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  if (isMobileLayout() && appConfig.sponsoredClickMobileEnabled === false) return;
+function runSponsoredAction(actionTarget, actionRunner, { allowSponsored = true } = {}) {
+  if (typeof actionRunner !== "function") return;
 
-  const actionTarget = event.target?.closest?.("button, a");
-  if (!actionTarget || actionTarget.disabled || actionTarget.getAttribute("aria-disabled") === "true") return;
-  if (isPremiumActionTarget(actionTarget)) return;
+  if (!allowSponsored || !actionTarget) {
+    actionRunner();
+    return;
+  }
+
+  if (sponsoredActionReplayInProgress) {
+    actionRunner();
+    return;
+  }
+
+  if (!appConfig.adsEnabled || isPremiumActionTarget(actionTarget)) {
+    actionRunner();
+    return;
+  }
+
+  if (isMobileLayout() && appConfig.sponsoredClickMobileEnabled === false) {
+    actionRunner();
+    return;
+  }
 
   const smartlinkUrl = getSmartlinkUrl();
-  if (smartlinkUrl === "#") return;
+  if (smartlinkUrl === "#") {
+    actionRunner();
+    return;
+  }
 
   const href = actionTarget.href || actionTarget.getAttribute("href") || "";
-  if (href && href.includes("accedelid.com")) return;
-  if (!shouldOpenSponsoredLinkAfterClick(actionTarget)) return;
-  const resumeAction = createSponsoredResumeAction(actionTarget);
-  if (!resumeAction) return;
+  if (href && href.includes("accedelid.com")) {
+    actionRunner();
+    return;
+  }
+
+  if (!shouldOpenSponsoredLinkAfterClick(actionTarget)) {
+    actionRunner();
+    return;
+  }
 
   const sponsoredWindow = openSponsoredWindowHandle(smartlinkUrl);
-  if (!sponsoredWindow) return;
+  if (!sponsoredWindow) {
+    actionRunner();
+    return;
+  }
 
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  resumeActionAfterSponsoredClose(resumeAction, sponsoredWindow);
+  resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow);
+}
+
+function bindSponsoredClick(element, actionRunner, options = {}) {
+  if (!element) return;
+
+  element.addEventListener("click", (event) => {
+    event.preventDefault();
+    runSponsoredAction(element, actionRunner, options);
+  });
 }
 
 function getLearningDepthLabel() {
@@ -2928,7 +2860,7 @@ function renderPublicOffer() {
   });
 
   dom.previewLessonList.querySelectorAll("[data-preview-lesson]").forEach((button) => {
-    button.addEventListener("click", () => {
+    bindSponsoredClick(button, () => {
       openPreviewLesson(button.dataset.previewLesson);
     });
   });
@@ -3141,7 +3073,7 @@ function renderSidebarModules() {
     .join("");
 
   dom.moduleNav.querySelectorAll("[data-lesson-id]").forEach((button) => {
-    button.addEventListener("click", () => {
+    bindSponsoredClick(button, () => {
       openCourseLesson(button.dataset.lessonId);
     });
   });
@@ -3331,15 +3263,15 @@ function renderLibrary() {
     .join("");
 
   dom.favoriteList.querySelectorAll("[data-open-lesson]").forEach((button) => {
-    button.addEventListener("click", () => openLessonFromLibrary(button.dataset.openLesson));
+    bindSponsoredClick(button, () => openLessonFromLibrary(button.dataset.openLesson));
   });
 
   dom.noteList.querySelectorAll("[data-open-lesson]").forEach((button) => {
-    button.addEventListener("click", () => openLessonFromLibrary(button.dataset.openLesson));
+    bindSponsoredClick(button, () => openLessonFromLibrary(button.dataset.openLesson));
   });
 
   dom.resourceLinks.querySelectorAll("[data-open-panel]").forEach((button) => {
-    button.addEventListener("click", () => setActivePanel(button.dataset.openPanel));
+    bindSponsoredClick(button, () => setActivePanel(button.dataset.openPanel));
   });
 
   renderPremiumContentCard();
@@ -4354,12 +4286,12 @@ dom.logoutButton.addEventListener("click", () => {
 });
 
 [...dom.topNavLinks, ...dom.sidebarLinks].forEach((button) => {
-  button.addEventListener("click", () => {
+  bindSponsoredClick(button, () => {
     setActivePanel(button.dataset.panelTarget);
   });
 });
 
-dom.enterMemberArea.addEventListener("click", () => {
+bindSponsoredClick(dom.enterMemberArea, () => {
   if (hasMemberAreaAccess()) {
     setActivePanel("dashboard");
     return;
@@ -4368,7 +4300,7 @@ dom.enterMemberArea.addEventListener("click", () => {
   openAccessModal("Entre com sua conta ou crie sua conta gratuita para liberar painel, progresso e certificado.", "dashboard");
 });
 
-dom.resumeCourse.addEventListener("click", () => {
+bindSponsoredClick(dom.resumeCourse, () => {
   if (hasMemberAreaAccess()) {
     openNextLesson(true);
     return;
@@ -4381,7 +4313,7 @@ dom.resumeCourse.addEventListener("click", () => {
   saveState();
   setActivePanel("course");
 });
-dom.goToQuiz.addEventListener("click", () => {
+bindSponsoredClick(dom.goToQuiz, () => {
   if (hasMemberAreaAccess()) {
     setActivePanel("quiz");
     return;
@@ -4389,20 +4321,20 @@ dom.goToQuiz.addEventListener("click", () => {
 
   openAccessModal("Entre com sua conta ou crie sua conta gratuita para liberar quiz, certificado e painel.", "dashboard");
 });
-dom.openNextLesson.addEventListener("click", () => openNextLesson(true));
-dom.openCoursePanel.addEventListener("click", () => {
+bindSponsoredClick(dom.openNextLesson, () => openNextLesson(true));
+bindSponsoredClick(dom.openCoursePanel, () => {
   setMobileCourseView("lesson");
   setActivePanel("course");
 });
 
 dom.publicMobileButtons.forEach((button) => {
-  button.addEventListener("click", () => {
+  bindSponsoredClick(button, () => {
     setMobilePublicView(button.dataset.mobilePublicView || "plans");
   });
 });
 
 dom.courseMobileButtons.forEach((button) => {
-  button.addEventListener("click", () => {
+  bindSponsoredClick(button, () => {
     setMobileCourseView(button.dataset.mobileCourseView || "lesson");
   });
 });
@@ -4412,24 +4344,23 @@ dom.lessonSearch.addEventListener("input", (event) => {
   renderSidebarModules();
 });
 
-dom.favoriteLesson.addEventListener("click", () => {
+bindSponsoredClick(dom.favoriteLesson, () => {
   toggleCurrentLessonFavorite();
 });
 
-dom.markComplete.addEventListener("click", () => {
+bindSponsoredClick(dom.markComplete, () => {
   toggleCurrentLessonCompletion();
 });
 
-dom.prevLesson.addEventListener("click", () => {
+bindSponsoredClick(dom.prevLesson, () => {
   goToAdjacentAccessibleLesson(-1);
 });
 
-dom.nextLesson.addEventListener("click", () => {
+bindSponsoredClick(dom.nextLesson, () => {
   goToAdjacentAccessibleLesson(1);
 });
 
 window.addEventListener("resize", applyMobileViews);
-document.addEventListener("click", handleSponsoredParallelClick, true);
 
 dom.lessonNote.addEventListener("input", () => {
   state.notes[state.selectedLessonId] = dom.lessonNote.value;
@@ -4440,7 +4371,7 @@ dom.lessonNote.addEventListener("input", () => {
   renderDashboard();
 });
 
-dom.submitQuiz.addEventListener("click", handleQuizSubmit);
+bindSponsoredClick(dom.submitQuiz, handleQuizSubmit);
 
 dom.printCertificate.addEventListener("click", () => {
   if (!hasUnlockedCertificate()) return;
