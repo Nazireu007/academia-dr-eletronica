@@ -1538,25 +1538,42 @@ function replaySponsoredAction(actionRunner) {
   }
 }
 
-function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow) {
-  if (!sponsoredWindow) {
-    replaySponsoredAction(actionRunner);
-    return;
+function clearPendingSponsoredResume() {
+  if (pendingSponsoredResume?.closeCheck) {
+    window.clearInterval(pendingSponsoredResume.closeCheck);
+  }
+  pendingSponsoredResume = null;
+}
+
+function flushPendingSponsoredResume({ force = false } = {}) {
+  if (!pendingSponsoredResume) return false;
+
+  const { actionRunner, openedAt, sponsoredWindow } = pendingSponsoredResume;
+  const elapsed = Date.now() - openedAt;
+  const windowClosed = !sponsoredWindow || sponsoredWindow.closed;
+  const readyByFocus = force && elapsed >= 350;
+
+  if (!windowClosed && !readyByFocus) {
+    return false;
   }
 
-  let resumed = false;
-  const resume = () => {
-    if (resumed) return;
-    resumed = true;
-    replaySponsoredAction(actionRunner);
+  clearPendingSponsoredResume();
+  replaySponsoredAction(actionRunner);
+  return true;
+}
+
+function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow) {
+  clearPendingSponsoredResume();
+  pendingSponsoredResume = {
+    actionRunner,
+    closeCheck: null,
+    openedAt: Date.now(),
+    sponsoredWindow,
   };
 
-  const closeCheck = window.setInterval(() => {
-    if (sponsoredWindow.closed) {
-      window.clearInterval(closeCheck);
-      resume();
-    }
-  }, 450);
+  pendingSponsoredResume.closeCheck = window.setInterval(() => {
+    flushPendingSponsoredResume();
+  }, 350);
 }
 
 function isPremiumActionTarget(actionTarget) {
@@ -2069,6 +2086,7 @@ function renderAdMarkup(target, markup) {
 
 let adRenderQueue = Promise.resolve();
 let socialBarScheduled = false;
+let pendingSponsoredResume = null;
 
 function enqueueAdInjection(host, markup, delayMs = 0) {
   adRenderQueue = adRenderQueue
@@ -4444,6 +4462,10 @@ dom.adminFilterButtons.forEach((button) => {
 });
 
 window.addEventListener("focus", () => {
+  if (flushPendingSponsoredResume({ force: true })) {
+    return;
+  }
+
   if (isSupabaseMode()) {
     if (authState.session && !authState.accessGranted && state.activePanel !== "public" && !authState.isAdmin) {
       void applySupabaseSession(authState.session);
@@ -4456,6 +4478,12 @@ window.addEventListener("focus", () => {
       "Sua sessao expirou ou ainda nao foi validada. Digite o codigo de acesso para continuar."
     );
     setActivePanel("public");
+  }
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    flushPendingSponsoredResume({ force: true });
   }
 });
 
