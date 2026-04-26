@@ -427,6 +427,7 @@ const appConfig = {
 
 let sponsoredClickMemoryCount = 0;
 let sponsoredActionReplayInProgress = false;
+let pendingSponsoredActionTarget = null;
 
 function getPremiumPriceLabel() {
   return appConfig.priceLabel || "R$ 19,99";
@@ -1440,25 +1441,47 @@ function replaySponsoredAction(actionRunner) {
   }
 }
 
+function setPendingSponsoredActionTarget(actionTarget) {
+  if (pendingSponsoredActionTarget && pendingSponsoredActionTarget !== actionTarget) {
+    pendingSponsoredActionTarget.classList.remove("is-sponsored-pending");
+    pendingSponsoredActionTarget.removeAttribute("aria-busy");
+  }
+
+  if (!(actionTarget instanceof Element)) {
+    pendingSponsoredActionTarget = null;
+    return;
+  }
+
+  pendingSponsoredActionTarget = actionTarget;
+  pendingSponsoredActionTarget.classList.add("is-sponsored-pending");
+  pendingSponsoredActionTarget.setAttribute("aria-busy", "true");
+}
+
+function clearPendingSponsoredActionTarget() {
+  if (!(pendingSponsoredActionTarget instanceof Element)) {
+    pendingSponsoredActionTarget = null;
+    return;
+  }
+
+  pendingSponsoredActionTarget.classList.remove("is-sponsored-pending");
+  pendingSponsoredActionTarget.removeAttribute("aria-busy");
+  pendingSponsoredActionTarget = null;
+}
+
 function clearPendingSponsoredResume() {
   if (pendingSponsoredResume?.closeCheck) {
     window.clearInterval(pendingSponsoredResume.closeCheck);
   }
-  if (pendingSponsoredResume?.fallbackTimeout) {
-    window.clearTimeout(pendingSponsoredResume.fallbackTimeout);
-  }
+  clearPendingSponsoredActionTarget();
   pendingSponsoredResume = null;
 }
 
-function flushPendingSponsoredResume({ force = false } = {}) {
+function flushPendingSponsoredResume() {
   if (!pendingSponsoredResume) return false;
 
-  const { actionRunner, openedAt, sponsoredWindow } = pendingSponsoredResume;
-  const elapsed = Date.now() - openedAt;
+  const { actionRunner, sponsoredWindow } = pendingSponsoredResume;
   const windowClosed = !sponsoredWindow || sponsoredWindow.closed;
-  const readyByFocus = force && elapsed >= 350;
-
-  if (!windowClosed && !readyByFocus) {
+  if (!windowClosed) {
     return false;
   }
 
@@ -1467,23 +1490,18 @@ function flushPendingSponsoredResume({ force = false } = {}) {
   return true;
 }
 
-function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow) {
+function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow, actionTarget) {
   clearPendingSponsoredResume();
+  setPendingSponsoredActionTarget(actionTarget);
   pendingSponsoredResume = {
     actionRunner,
     closeCheck: null,
-    fallbackTimeout: null,
-    openedAt: Date.now(),
     sponsoredWindow,
   };
 
   pendingSponsoredResume.closeCheck = window.setInterval(() => {
     flushPendingSponsoredResume();
-  }, 350);
-
-  pendingSponsoredResume.fallbackTimeout = window.setTimeout(() => {
-    flushPendingSponsoredResume({ force: true });
-  }, 4000);
+  }, 250);
 }
 
 function isPremiumActionTarget(actionTarget) {
@@ -1553,7 +1571,7 @@ function runSponsoredAction(actionTarget, actionRunner, { allowSponsored = true 
     return;
   }
 
-  resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow);
+  resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow, actionTarget);
 }
 
 function bindSponsoredClick(element, actionRunner, options = {}) {
@@ -1565,6 +1583,7 @@ function bindSponsoredClick(element, actionRunner, options = {}) {
       return;
     }
     event.preventDefault();
+    event.stopPropagation();
     runSponsoredAction(element, actionRunner, options);
   });
 }
@@ -4440,7 +4459,7 @@ dom.adminFilterButtons.forEach((button) => {
 });
 
 window.addEventListener("focus", () => {
-  if (flushPendingSponsoredResume({ force: true })) {
+  if (flushPendingSponsoredResume()) {
     return;
   }
 
@@ -4461,7 +4480,7 @@ window.addEventListener("focus", () => {
 
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
-    flushPendingSponsoredResume({ force: true });
+    flushPendingSponsoredResume();
   }
 });
 

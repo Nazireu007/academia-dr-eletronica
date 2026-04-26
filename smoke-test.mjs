@@ -583,22 +583,29 @@ async function main() {
 
             target.click();
             const beforeClosePanel = state.activePanel;
+            const pendingBeforeClose = target.classList.contains("is-sponsored-pending");
             const adWindow = window.__smoke.lastOpenedWindow;
             adWindow?.close();
             window.dispatchEvent(new Event("focus"));
 
             window.setTimeout(() => {
+              const activeTopNav = document.querySelector('.top-nav-link.is-active');
+              const activeSidebarLink = document.querySelector('.sidebar-link.is-active');
               const activeHud = document.querySelector('.hud-chip.is-active');
               results.push({
                 ...check,
                 afterClosePanel: state.activePanel,
                 afterCourseView: uiState.mobileCourseView,
                 afterPublicView: uiState.mobilePublicView,
+                afterNavActiveTarget: activeTopNav?.dataset.panelTarget || null,
+                afterSidebarActiveTarget: activeSidebarLink?.dataset.panelTarget || null,
                 afterHudActiveTarget: activeHud?.dataset.panelTarget || null,
                 afterHudPressed: activeHud?.getAttribute("aria-pressed") || null,
                 beforeClosePanel,
                 found: true,
                 openCalls: window.__smoke.openCalls.length,
+                pendingAfterClose: target.classList.contains("is-sponsored-pending"),
+                pendingBeforeClose,
                 shouldOpen: window.__smoke.openCalls.length === 1,
               });
               runOne(index + 1, results);
@@ -743,16 +750,23 @@ async function main() {
 
             target.click();
             const beforeClosePanel = state.activePanel;
+            const pendingBeforeClose = target.classList.contains("is-sponsored-pending");
             window.__smoke.lastOpenedWindow?.close();
             window.dispatchEvent(new Event("focus"));
 
             window.setTimeout(() => {
+              const activeTopNav = document.querySelector('.top-nav-link.is-active');
+              const activeSidebarLink = document.querySelector('.sidebar-link.is-active');
               results.push({
                 ...check,
                 found: true,
                 beforeClosePanel,
                 afterClosePanel: state.activePanel,
+                afterNavActiveTarget: activeTopNav?.dataset.panelTarget || null,
+                afterSidebarActiveTarget: activeSidebarLink?.dataset.panelTarget || null,
                 openCalls: window.__smoke.openCalls.length,
+                pendingAfterClose: target.classList.contains("is-sponsored-pending"),
+                pendingBeforeClose,
               });
               runOne(index + 1);
             }, 750);
@@ -859,8 +873,20 @@ async function main() {
       `Algum botao do gratis nao abriu exatamente um anuncio: ${JSON.stringify(freeSponsoredButtonMatrix)}`
     );
     assert(
+      freeSponsoredButtonMatrix.every((item) => item.pendingBeforeClose && item.pendingAfterClose === false),
+      `Algum botao do gratis nao manteve o estado pendente corretamente durante o anuncio: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
       freeSponsoredButtonMatrix.every((item) => item.afterClosePanel === item.expectedPanel),
       `Algum botao do gratis nao retomou para o painel certo: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
+      freeSponsoredButtonMatrix.every((item) => item.afterNavActiveTarget === item.expectedPanel),
+      `A navegacao superior do gratis nao refletiu o painel retomado: ${JSON.stringify(freeSponsoredButtonMatrix)}`
+    );
+    assert(
+      freeSponsoredButtonMatrix.every((item) => item.afterSidebarActiveTarget === item.expectedPanel),
+      `A navegacao lateral do gratis nao refletiu o painel retomado: ${JSON.stringify(freeSponsoredButtonMatrix)}`
     );
     assert(
       freeSponsoredButtonMatrix
@@ -902,8 +928,20 @@ async function main() {
       `Os atalhos do player gratuito deveriam abrir exatamente um anuncio: ${JSON.stringify(guestCourseNavigationMatrix)}`
     );
     assert(
+      guestCourseNavigationMatrix.every((item) => item.pendingBeforeClose && item.pendingAfterClose === false),
+      `Os atalhos do player gratuito nao ficaram pendentes corretamente durante o anuncio: ${JSON.stringify(guestCourseNavigationMatrix)}`
+    );
+    assert(
       guestCourseNavigationMatrix.every((item) => item.afterClosePanel === item.expectedPanel),
       `Os atalhos do player gratuito nao retomaram o painel certo: ${JSON.stringify(guestCourseNavigationMatrix)}`
+    );
+    assert(
+      guestCourseNavigationMatrix.every((item) => item.afterNavActiveTarget === item.expectedPanel),
+      `A navegacao superior publica nao refletiu o painel retomado: ${JSON.stringify(guestCourseNavigationMatrix)}`
+    );
+    assert(
+      guestCourseNavigationMatrix.every((item) => item.afterSidebarActiveTarget === item.expectedPanel),
+      `A navegacao lateral publica nao refletiu o painel retomado: ${JSON.stringify(guestCourseNavigationMatrix)}`
     );
     assert(
       freeInternalNavigationResult.beforeClose.opened,
