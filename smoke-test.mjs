@@ -405,6 +405,50 @@ async function main() {
       'document.querySelector("#pix-modal").classList.contains("is-open")'
     );
     const pixWhatsappHref = await evaluate(cdp, sessionId, 'document.querySelector("#pix-whatsapp-link").href');
+    await cdp.send(
+      "Emulation.setDeviceMetricsOverride",
+      {
+        deviceScaleFactor: 1,
+        height: 768,
+        mobile: false,
+        width: 1366,
+      },
+      sessionId
+    );
+    await evaluate(
+      cdp,
+      sessionId,
+      `
+        closePixModal();
+        window.dispatchEvent(new Event("resize"));
+        openPixModal();
+        undefined;
+      `
+    );
+    await delay(300);
+    const desktopPixModalFit = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => {
+          const card = document.querySelector("#pix-modal .pix-card");
+          const actions = document.querySelector("#pix-modal .auth-actions");
+          const whatsappButton = document.querySelector("#pix-whatsapp-link");
+          if (!card || !actions || !whatsappButton) return null;
+          const cardRect = card.getBoundingClientRect();
+          const actionsRect = actions.getBoundingClientRect();
+          const whatsappRect = whatsappButton.getBoundingClientRect();
+          return {
+            actionsBottom: Math.round(actionsRect.bottom),
+            cardBottom: Math.round(cardRect.bottom),
+            cardTop: Math.round(cardRect.top),
+            viewportHeight: window.innerHeight,
+            whatsappBottom: Math.round(whatsappRect.bottom),
+          };
+        })()
+      `
+    );
+    await evaluate(cdp, sessionId, "closePixModal(); undefined;");
 
     await cdp.send(
       "Emulation.setDeviceMetricsOverride",
@@ -926,6 +970,14 @@ async function main() {
     assert(openCallsAfterAccess === 0, "Uma ação crítica abriu janela paralela de anúncio.");
     assert(pixModalOpen, "O atalho de Pix deveria abrir o modal de pagamento.");
     assert(pixWhatsappHref.includes("wa.me/"), "O botão de comprovante no WhatsApp não foi configurado.");
+    assert(desktopPixModalFit !== null, "Nao foi possivel medir o encaixe do modal Pix no desktop.");
+    assert(
+      desktopPixModalFit.cardTop >= 0 &&
+        desktopPixModalFit.cardBottom <= desktopPixModalFit.viewportHeight + 2 &&
+        desktopPixModalFit.actionsBottom <= desktopPixModalFit.viewportHeight + 2 &&
+        desktopPixModalFit.whatsappBottom <= desktopPixModalFit.viewportHeight + 2,
+      `O modal Pix no desktop ainda esta cortando os botoes inferiores: ${JSON.stringify(desktopPixModalFit)}`
+    );
     assert(mobileSwitcherVisible, "A navegação móvel da apresentação não ficou visível no viewport reduzido.");
     assert(mobileSponsoredResult.mobile, "O smoke test deveria estar em viewport mobile.");
     assert(mobileSponsoredResult.mobileEnabled, "A monetizacao por clique mobile deveria estar ativa.");
