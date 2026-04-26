@@ -1407,12 +1407,29 @@ function clearPendingSponsoredResume() {
   pendingSponsoredResume = null;
 }
 
+function notePendingSponsoredBlur() {
+  if (!pendingSponsoredResume) return;
+  pendingSponsoredResume.blurObserved = true;
+  pendingSponsoredResume.focusReturned = false;
+}
+
+function notePendingSponsoredFocusReturn() {
+  if (!pendingSponsoredResume || !pendingSponsoredResume.blurObserved) return;
+  pendingSponsoredResume.focusReturned = true;
+}
+
 function flushPendingSponsoredResume() {
   if (!pendingSponsoredResume) return false;
 
-  const { actionRunner, sponsoredWindow } = pendingSponsoredResume;
+  const { actionRunner, sponsoredWindow, openedAt, minHoldMs, blurObserved, focusReturned } = pendingSponsoredResume;
+  const elapsed = Date.now() - openedAt;
+  if (elapsed < minHoldMs) {
+    return false;
+  }
+
   const windowClosed = !sponsoredWindow || sponsoredWindow.closed;
-  if (!windowClosed) {
+  const readyToReplay = blurObserved ? focusReturned : windowClosed;
+  if (!readyToReplay) {
     return false;
   }
 
@@ -1427,6 +1444,10 @@ function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow, actionTa
   pendingSponsoredResume = {
     actionRunner,
     closeCheck: null,
+    blurObserved: false,
+    focusReturned: false,
+    minHoldMs: 400,
+    openedAt: Date.now(),
     sponsoredWindow,
   };
 
@@ -4394,6 +4415,7 @@ dom.adminFilterButtons.forEach((button) => {
 });
 
 window.addEventListener("focus", () => {
+  notePendingSponsoredFocusReturn();
   if (flushPendingSponsoredResume()) {
     return;
   }
@@ -4413,7 +4435,17 @@ window.addEventListener("focus", () => {
   }
 });
 
+window.addEventListener("blur", () => {
+  notePendingSponsoredBlur();
+});
+
 document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    notePendingSponsoredBlur();
+    return;
+  }
+
+  notePendingSponsoredFocusReturn();
   if (document.visibilityState === "visible") {
     flushPendingSponsoredResume();
   }

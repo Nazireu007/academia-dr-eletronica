@@ -590,7 +590,9 @@ async function main() {
                 pendingBeforeClose,
                 shouldOpen: window.__smoke.openCalls.length === 1,
               });
-              runOne(index + 1, results);
+              window.setTimeout(() => {
+                runOne(index + 1, results);
+              }, 30);
             }, 750);
           };
 
@@ -647,36 +649,40 @@ async function main() {
               openCalls: window.__smoke.openCalls.length,
             };
 
-            resetFreeCourseState(firstLessonId);
-            const nextTarget = document.querySelector("#next-lesson");
-            nextTarget?.click();
-            const nextBeforeClose = state.selectedLessonId;
-            window.__smoke.lastOpenedWindow?.close();
-            window.dispatchEvent(new Event("focus"));
-
             window.setTimeout(() => {
-              results.nextStep = {
-                beforeCloseLesson: nextBeforeClose,
-                afterCloseLesson: state.selectedLessonId,
-                openCalls: window.__smoke.openCalls.length,
-              };
-
-              resetFreeCourseState(secondLessonId);
-              const prevTarget = document.querySelector("#prev-lesson");
-              prevTarget?.click();
-              const prevBeforeClose = state.selectedLessonId;
+              resetFreeCourseState(firstLessonId);
+              const nextTarget = document.querySelector("#next-lesson");
+              nextTarget?.click();
+              const nextBeforeClose = state.selectedLessonId;
               window.__smoke.lastOpenedWindow?.close();
               window.dispatchEvent(new Event("focus"));
 
               window.setTimeout(() => {
-                results.prevStep = {
-                  beforeCloseLesson: prevBeforeClose,
+                results.nextStep = {
+                  beforeCloseLesson: nextBeforeClose,
                   afterCloseLesson: state.selectedLessonId,
                   openCalls: window.__smoke.openCalls.length,
                 };
-                resolve(results);
+
+                window.setTimeout(() => {
+                  resetFreeCourseState(secondLessonId);
+                  const prevTarget = document.querySelector("#prev-lesson");
+                  prevTarget?.click();
+                  const prevBeforeClose = state.selectedLessonId;
+                  window.__smoke.lastOpenedWindow?.close();
+                  window.dispatchEvent(new Event("focus"));
+
+                  window.setTimeout(() => {
+                    results.prevStep = {
+                      beforeCloseLesson: prevBeforeClose,
+                      afterCloseLesson: state.selectedLessonId,
+                      openCalls: window.__smoke.openCalls.length,
+                    };
+                    resolve(results);
+                  }, 750);
+                }, 30);
               }, 750);
-            }, 750);
+            }, 30);
           }, 750);
         }))()
       `
@@ -746,7 +752,9 @@ async function main() {
                 pendingAfterClose: target.classList.contains("is-sponsored-pending"),
                 pendingBeforeClose,
               });
-              runOne(index + 1);
+              window.setTimeout(() => {
+                runOne(index + 1);
+              }, 30);
             }, 750);
           };
 
@@ -840,6 +848,57 @@ async function main() {
               finalPanel: state.activePanel,
             });
           }, 700);
+        }))()
+      `
+    );
+    const focusOwnedReplayResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          authState.session = { user: { id: "smoke-focus-owner", email: "gratis3@example.com" } };
+          authState.user = authState.session.user;
+          authState.accessGranted = true;
+          authState.accessStatus = "pending";
+          state.member = { name: "Aluno Gratis 3", email: "gratis3@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+          state.activePanel = "public";
+          window.__smoke.openCalls = [];
+          window.__smoke.lastOpenedWindow = null;
+          renderAll();
+          setActivePanel("public");
+
+          let replayCount = 0;
+          const target = document.querySelector('.top-nav-link[data-panel-target="quiz"]');
+          const fakeWindow = { closed: false };
+          resumeActionAfterSponsoredClose(() => {
+            replayCount += 1;
+            openPrimaryPanel("quiz");
+          }, fakeWindow, target);
+
+          window.dispatchEvent(new Event("blur"));
+
+          window.setTimeout(() => {
+            const beforeFocus = {
+              replayCount,
+              panel: state.activePanel,
+              pending: Boolean(pendingSponsoredResume),
+              pendingTarget: target?.classList.contains("is-sponsored-pending") || false,
+            };
+
+            window.dispatchEvent(new Event("focus"));
+
+            window.setTimeout(() => {
+              resolve({
+                beforeFocus,
+                afterFocus: {
+                  replayCount,
+                  panel: state.activePanel,
+                  pending: Boolean(pendingSponsoredResume),
+                  pendingTarget: target?.classList.contains("is-sponsored-pending") || false,
+                },
+              });
+            }, 900);
+          }, 250);
         }))()
       `
     );
@@ -988,6 +1047,20 @@ async function main() {
     assert(
       pendingClickLockResult.finalPanel === "dashboard",
       `Ao fechar o anuncio, a plataforma deveria executar a acao do primeiro clique apenas: ${JSON.stringify(pendingClickLockResult)}`
+    );
+    assert(
+      focusOwnedReplayResult.beforeFocus.replayCount === 0 &&
+        focusOwnedReplayResult.beforeFocus.panel === "public" &&
+        focusOwnedReplayResult.beforeFocus.pending &&
+        focusOwnedReplayResult.beforeFocus.pendingTarget,
+      `A acao patrocinada nao deveria escapar antes do retorno de foco do anuncio: ${JSON.stringify(focusOwnedReplayResult)}`
+    );
+    assert(
+      focusOwnedReplayResult.afterFocus.replayCount === 1 &&
+        focusOwnedReplayResult.afterFocus.panel === "quiz" &&
+        focusOwnedReplayResult.afterFocus.pending === false &&
+        focusOwnedReplayResult.afterFocus.pendingTarget === false,
+      `Ao voltar do anuncio, a plataforma deveria retomar exatamente o destino original: ${JSON.stringify(focusOwnedReplayResult)}`
     );
     assert(runtimeExceptions.length === 0, `Houve exceções do navegador: ${runtimeExceptions.join(" | ")}`);
     assert(consoleErrors.length === 0, `Houve erros no console do navegador: ${consoleErrors.join(" | ")}`);
