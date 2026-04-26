@@ -425,6 +425,7 @@ const appConfig = {
 };
 
 let sponsoredClickMemoryCount = 0;
+let sponsoredActionReplayInProgress = false;
 
 function getPremiumPriceLabel() {
   return appConfig.priceLabel || "R$ 19,99";
@@ -1272,12 +1273,34 @@ function setSponsoredLastOpenedAt(timestamp) {
   }
 }
 
+function isSponsoredNavigationTarget(actionTarget) {
+  if (!actionTarget) return false;
+
+  return actionTarget.matches(
+    [
+      "[data-panel-target]",
+      "[data-open-panel]",
+      "[data-mobile-public-view]",
+      "[data-mobile-course-view]",
+      "[data-preview-lesson]",
+      "[data-lesson-id]",
+      "[data-open-lesson]",
+      "#resume-course",
+      "#go-to-quiz",
+      "#open-next-lesson",
+      "#open-course-panel",
+      "#prev-lesson",
+      "#next-lesson",
+    ].join(", ")
+  );
+}
+
 function shouldSkipSponsoredParallelClick(actionTarget) {
   if (!actionTarget) return true;
 
   if (
     actionTarget.closest(
-      ".auth-modal, .admin-filter-row, .admin-member-actions, .search-box, .quiz-options, .auth-actions, .pix-card, #payment-trust-list, .top-nav, .sidebar-nav, .mobile-section-switcher, .certificate-layout, .certificate-side-panel"
+      ".auth-modal, .admin-filter-row, .admin-member-actions, .search-box, .quiz-options, .auth-actions, .pix-card, #payment-trust-list, .certificate-layout, .certificate-side-panel"
     )
   ) {
     return true;
@@ -1285,7 +1308,7 @@ function shouldSkipSponsoredParallelClick(actionTarget) {
 
   if (
     actionTarget.matches(
-      ".btn-premium, [data-skip-sponsored-click], [data-panel-target], [data-open-panel], [data-admin-filter], [data-open-pix-modal], [data-access-action], [data-role-action], [data-remove-member], [data-copy-welcome], #print-certificate, #logout-button, #edit-profile, #open-course-panel, #prev-lesson, #refresh-admin-members"
+      ".btn-premium, [data-skip-sponsored-click], [data-admin-filter], [data-open-pix-modal], [data-access-action], [data-role-action], [data-remove-member], [data-copy-welcome], #print-certificate, #logout-button, #edit-profile, #refresh-admin-members, #admin-top-link, #admin-sidebar-link"
     )
   ) {
     return true;
@@ -1304,6 +1327,7 @@ function shouldSkipSponsoredParallelClick(actionTarget) {
 function shouldOpenSponsoredLinkAfterClick(actionTarget) {
   if (!isSponsoredAutoOpenEnabled()) return false;
   if (shouldSkipSponsoredParallelClick(actionTarget)) return false;
+  if (!isSponsoredNavigationTarget(actionTarget)) return false;
   if (isPremiumMember() || getMemberPlanKind() === "blocked") return false;
 
   const cooldownMs = getSponsoredClickCooldownMs();
@@ -1321,22 +1345,59 @@ function shouldOpenSponsoredLinkAfterClick(actionTarget) {
   return shouldOpen;
 }
 
-function openSponsoredWindow(url) {
+function openSponsoredWindowHandle(url) {
   const targetUrl = String(url || "").trim();
-  if (!targetUrl || targetUrl === "#") return false;
+  if (!targetUrl || targetUrl === "#") return null;
 
-  const sponsoredWindow = window.open("", "_blank");
+  const sponsoredWindow = window.open(targetUrl, "_blank");
   if (sponsoredWindow) {
     try {
       sponsoredWindow.opener = null;
-      sponsoredWindow.location.href = targetUrl;
-      return true;
+      return sponsoredWindow;
     } catch (_error) {
       sponsoredWindow.close?.();
     }
   }
 
-  return Boolean(window.open(targetUrl, "_blank", "noopener,noreferrer"));
+  return null;
+}
+
+function openSponsoredWindow(url) {
+  return Boolean(openSponsoredWindowHandle(url));
+}
+
+function replaySponsoredAction(actionTarget) {
+  if (!actionTarget || !actionTarget.isConnected) return;
+
+  sponsoredActionReplayInProgress = true;
+  try {
+    actionTarget.click();
+  } finally {
+    window.setTimeout(() => {
+      sponsoredActionReplayInProgress = false;
+    }, 0);
+  }
+}
+
+function resumeActionAfterSponsoredClose(actionTarget, sponsoredWindow) {
+  if (!sponsoredWindow) {
+    replaySponsoredAction(actionTarget);
+    return;
+  }
+
+  let resumed = false;
+  const resume = () => {
+    if (resumed) return;
+    resumed = true;
+    replaySponsoredAction(actionTarget);
+  };
+
+  const closeCheck = window.setInterval(() => {
+    if (sponsoredWindow.closed) {
+      window.clearInterval(closeCheck);
+      resume();
+    }
+  }, 450);
 }
 
 function isPremiumActionTarget(actionTarget) {
@@ -1361,6 +1422,7 @@ function isPremiumActionTarget(actionTarget) {
 }
 
 function handleSponsoredParallelClick(event) {
+  if (sponsoredActionReplayInProgress) return;
   if (!event.isTrusted || event.defaultPrevented || !appConfig.adsEnabled) return;
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   if (isMobileLayout() && appConfig.sponsoredClickMobileEnabled === false) return;
@@ -1376,7 +1438,12 @@ function handleSponsoredParallelClick(event) {
   if (href && href.includes("accedelid.com")) return;
   if (!shouldOpenSponsoredLinkAfterClick(actionTarget)) return;
 
-  openSponsoredWindow(smartlinkUrl);
+  const sponsoredWindow = openSponsoredWindowHandle(smartlinkUrl);
+  if (!sponsoredWindow) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  resumeActionAfterSponsoredClose(actionTarget, sponsoredWindow);
 }
 
 function getLearningDepthLabel() {
@@ -4197,7 +4264,7 @@ dom.nextLesson.addEventListener("click", () => {
 });
 
 window.addEventListener("resize", applyMobileViews);
-document.addEventListener("click", handleSponsoredParallelClick);
+document.addEventListener("click", handleSponsoredParallelClick, true);
 
 dom.lessonNote.addEventListener("input", () => {
   state.notes[state.selectedLessonId] = dom.lessonNote.value;
