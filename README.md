@@ -72,6 +72,7 @@ Isso evita expor ferramentas e arquivos internos como `access-config.js`, `gerar
 - `SECURITY.md` documenta como reportar vulnerabilidades e reforça que chaves privadas não devem entrar no front-end.
 - `.github/workflows/quality.yml` roda validação de sintaxe, checagem de policies críticas e smoke test em PRs e execuções manuais.
 - `.github/workflows/deploy-pages.yml` roda as mesmas verificações antes de publicar o GitHub Pages.
+- O cadastro consulta a API pública do HaveIBeenPwned por k-anonymity para bloquear senhas já vazadas sem enviar a senha real.
 
 ## Verificações automáticas
 
@@ -137,6 +138,7 @@ Depois disso:
 - o acesso pode ser liberado por aluno na tabela `course_access`
 - progresso, notas e quiz sobem para o backend
 - edição de perfil do aluno sobe para `member_profiles`
+- senhas fracas ou conhecidas em vazamentos públicos são bloqueadas antes da criação da conta
 - o codigo de acesso local deixa de ser o fluxo principal
 - novos cadastros criam perfil remoto antes de abrir a plataforma
 - o painel admin usa a RPC `admin_set_course_access` para centralizar a liberação no banco, com fallback para a política antiga enquanto o SQL novo não for aplicado

@@ -26,6 +26,8 @@ function findPolicy(sql, policyName) {
 
 const schema = await readFile("supabase-schema.sql", "utf8");
 const deployWorkflow = await readFile(".github/workflows/deploy-pages.yml", "utf8");
+const appConfig = await readFile("app-config.js", "utf8");
+const script = await readFile("script.js", "utf8");
 
 const profilesInsertOwn = findPolicy(schema, "profiles_upsert_own");
 const profilesUpdateOwn = findPolicy(schema, "profiles_update_own");
@@ -88,5 +90,17 @@ assert(
     `${privateFile} nao deve ser copiado para o GitHub Pages.`
   );
 });
+
+assert(
+  appConfig.includes("passwordBreachCheckEnabled: true"),
+  "A protecao gratuita contra senha vazada deve ficar ativa em app-config.js."
+);
+
+assert(
+  script.includes("https://api.pwnedpasswords.com/range/") &&
+    script.includes("getSignupPasswordIssue") &&
+    script.includes("getCompromisedPasswordCount"),
+  "O cadastro precisa consultar a API k-anonymity do HaveIBeenPwned antes de criar conta."
+);
 
 console.log("Security check concluido com sucesso.");

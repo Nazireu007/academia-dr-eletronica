@@ -1338,6 +1338,43 @@ async function main() {
         })()
       `
     );
+    const compromisedPasswordGuardResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (async () => {
+          const passwordHash = await sha1Hex("password");
+          const passwordSuffix = passwordHash.slice(5);
+          const parsedCount = parsePwnedPasswordRangeResponse(passwordSuffix + ":12345\\nABCDEF:1", passwordSuffix);
+          const strengthIssue = getPasswordStrengthIssue("senhafraca");
+          const originalGetCompromisedPasswordCount = getCompromisedPasswordCount;
+          const originalGetAuthClient = getAuthClient;
+          let clientRequested = false;
+
+          getCompromisedPasswordCount = async () => 12345;
+          getAuthClient = async () => {
+            clientRequested = true;
+            return null;
+          };
+
+          document.querySelector("#auth-email-input").value = "vazado@example.com";
+          document.querySelector("#auth-password-input").value = "SenhaForte123!";
+          await signUpWithSupabase();
+          const feedback = document.querySelector("#access-feedback").textContent;
+
+          getCompromisedPasswordCount = originalGetCompromisedPasswordCount;
+          getAuthClient = originalGetAuthClient;
+
+          return {
+            clientRequested,
+            feedback,
+            parsedCount,
+            passwordHash,
+            strengthIssue,
+          };
+        })()
+      `
+    );
     const smokeConsoleErrors = await evaluate(cdp, sessionId, "window.__smoke.consoleErrors");
     const smokeUncaughtErrors = await evaluate(cdp, sessionId, "window.__smoke.uncaughtErrors");
 
@@ -1580,6 +1617,14 @@ async function main() {
         remoteProfilePersistenceResult.roleSent === false &&
         remoteProfilePersistenceResult.upsertPayload === null,
       `Edicao de perfil deveria persistir no Supabase sem enviar role: ${JSON.stringify(remoteProfilePersistenceResult)}`
+    );
+    assert(
+      compromisedPasswordGuardResult.passwordHash === "5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8" &&
+        compromisedPasswordGuardResult.parsedCount === 12345 &&
+        compromisedPasswordGuardResult.strengthIssue.includes("3 tipos de caracteres") &&
+        compromisedPasswordGuardResult.feedback.includes("vazamentos") &&
+        compromisedPasswordGuardResult.clientRequested === false,
+      `Cadastro deveria bloquear senha comprometida antes do Supabase: ${JSON.stringify(compromisedPasswordGuardResult)}`
     );
     assert(runtimeExceptions.length === 0, `Houve exceções do navegador: ${runtimeExceptions.join(" | ")}`);
     assert(consoleErrors.length === 0, `Houve erros no console do navegador: ${consoleErrors.join(" | ")}`);

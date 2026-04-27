@@ -627,6 +627,11 @@ const defaultAppConfig = {
   pixKey: "",
   freePlanLabel: "Conta gratuita",
   premiumPlanLabel: "Plano premium",
+  passwordMinLength: 10,
+  passwordRequireCharacterMix: true,
+  passwordBreachCheckEnabled: true,
+  passwordBreachCheckTimeoutMs: 5000,
+  blockSignupWhenPasswordBreachCheckUnavailable: false,
   adsEnabled: true,
   adNetwork: "adsterra",
   adSenseClient: "",
@@ -694,6 +699,104 @@ function encodeBase64(bytes) {
     binary += String.fromCharCode(byte);
   });
   return window.btoa(binary);
+}
+
+function bytesToHex(bytes) {
+  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+
+async function sha1Hex(value) {
+  if (!window.crypto?.subtle) return "";
+  const digest = await window.crypto.subtle.digest("SHA-1", new TextEncoder().encode(String(value || "")));
+  return bytesToHex(new Uint8Array(digest));
+}
+
+function parsePwnedPasswordRangeResponse(responseText, suffix) {
+  const targetSuffix = String(suffix || "").trim().toUpperCase();
+  if (!targetSuffix) return 0;
+
+  return String(responseText || "")
+    .split(/\r?\n/)
+    .reduce((foundCount, line) => {
+      if (foundCount > 0) return foundCount;
+      const [hashSuffix, count] = line.trim().split(":");
+      if (String(hashSuffix || "").toUpperCase() !== targetSuffix) return 0;
+      return Number.parseInt(count, 10) || 0;
+    }, 0);
+}
+
+function getPasswordStrengthIssue(password) {
+  const value = String(password || "");
+  const minLength = Math.max(8, Number(appConfig.passwordMinLength) || 10);
+  if (value.length < minLength) {
+    return `Use uma senha com pelo menos ${minLength} caracteres.`;
+  }
+
+  if (appConfig.passwordRequireCharacterMix === false) return "";
+
+  const strengthGroups = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((pattern) => pattern.test(value)).length;
+  if (strengthGroups < 3) {
+    return "Use uma senha com pelo menos 3 tipos de caracteres: letras maiúsculas, minúsculas, números ou símbolos.";
+  }
+
+  return "";
+}
+
+async function getCompromisedPasswordCount(password) {
+  if (appConfig.passwordBreachCheckEnabled !== true) return 0;
+  if (!window.crypto?.subtle || typeof window.fetch !== "function") return null;
+
+  const passwordHash = await sha1Hex(password);
+  if (!passwordHash) return null;
+
+  const prefix = passwordHash.slice(0, 5);
+  const suffix = passwordHash.slice(5);
+  const controller = "AbortController" in window ? new AbortController() : null;
+  const timeoutMs = Math.max(1500, Number(appConfig.passwordBreachCheckTimeoutMs) || 5000);
+  const timeout = controller
+    ? window.setTimeout(() => {
+        controller.abort();
+      }, timeoutMs)
+    : null;
+
+  try {
+    const response = await window.fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+      cache: "no-store",
+      method: "GET",
+      mode: "cors",
+      signal: controller?.signal,
+    });
+
+    if (!response.ok) return null;
+    const responseText = await response.text();
+    return parsePwnedPasswordRangeResponse(responseText, suffix);
+  } catch (_error) {
+    return null;
+  } finally {
+    if (timeout !== null) {
+      window.clearTimeout(timeout);
+    }
+  }
+}
+
+async function getSignupPasswordIssue(password) {
+  const strengthIssue = getPasswordStrengthIssue(password);
+  if (strengthIssue) return strengthIssue;
+
+  if (appConfig.passwordBreachCheckEnabled !== true) return "";
+
+  setAccessFeedback("Verificando se a senha já apareceu em vazamentos...", "");
+  const compromisedCount = await getCompromisedPasswordCount(password);
+
+  if (compromisedCount > 0) {
+    return "Esta senha já apareceu em vazamentos públicos. Crie uma senha nova e exclusiva para esta plataforma.";
+  }
+
+  if (compromisedCount === null && appConfig.blockSignupWhenPasswordBreachCheckUnavailable === true) {
+    return "Nao foi possivel consultar a protecao contra senhas vazadas agora. Tente novamente em instantes.";
+  }
+
+  return "";
 }
 
 async function deriveAccessHash(code) {
@@ -4628,8 +4731,9 @@ async function signUpWithSupabase() {
     return;
   }
 
-  if (password.length < 8) {
-    setAccessFeedback("Use uma senha com pelo menos 8 caracteres.", "is-error");
+  const passwordIssue = await getSignupPasswordIssue(password);
+  if (passwordIssue) {
+    setAccessFeedback(passwordIssue, "is-error");
     return;
   }
 
