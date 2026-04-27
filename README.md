@@ -13,6 +13,9 @@ Esta pasta agora contém uma plataforma web local em formato de área de membros
 - `conteudo/curso-eletronica.md`: texto-base limpo extraído do material bruto.
 - `gerar-acesso.html`: ferramenta local para gerar um novo hash de acesso.
 - `supabase-schema.sql`: estrutura do backend para contas individuais, liberação por aluno e estado remoto.
+- `supabase-security-audit.sql`: auditoria para confirmar no Supabase se RLS e policies críticas estão ativas.
+- `security-check.mjs`: checagem local/CI para impedir regressão nas policies de admin.
+- `package.json`: scripts de validação automática do projeto.
 - `MONETIZACAO.md`: guia rápido do modelo comercial do curso.
 - `privacidade.html`: política de privacidade pública da plataforma.
 - `termos.html`: termos públicos de uso da plataforma.
@@ -58,7 +61,7 @@ O workflow fica em `.github/workflows/deploy-pages.yml` e publica apenas os arqu
 - `sw.js`
 - `404.html`
 
-Isso evita expor ferramentas e arquivos internos como `access-config.js`, `gerar-acesso.html`, `access-generator.js`, `supabase-schema.sql`, `smoke-test.mjs`, `MONETIZACAO.md`, `meuprojeto.txt`, `.tools/` e documentação do repositório.
+Isso evita expor ferramentas e arquivos internos como `access-config.js`, `gerar-acesso.html`, `access-generator.js`, `supabase-schema.sql`, `supabase-security-audit.sql`, `security-check.mjs`, `smoke-test.mjs`, `MONETIZACAO.md`, `meuprojeto.txt`, `.tools/` e documentação do repositório.
 
 ## SEO, PWA e segurança
 
@@ -67,6 +70,20 @@ Isso evita expor ferramentas e arquivos internos como `access-config.js`, `gerar
 - `site.webmanifest` ativa metadados de instalação do app.
 - `sw.js` registra um service worker transparente, sem cache agressivo, para não prender versão velha nem interferir com login/anúncios.
 - `SECURITY.md` documenta como reportar vulnerabilidades e reforça que chaves privadas não devem entrar no front-end.
+- `.github/workflows/quality.yml` roda validação de sintaxe, checagem de policies críticas e smoke test em PRs e execuções manuais.
+- `.github/workflows/deploy-pages.yml` roda as mesmas verificações antes de publicar o GitHub Pages.
+
+## Verificações automáticas
+
+Rode antes de publicar:
+
+```bash
+npm install
+npm run check
+npm run smoke
+```
+
+No Supabase, depois de aplicar `supabase-schema.sql`, rode `supabase-security-audit.sql` no SQL Editor. Ele lista os admins atuais e falha se RLS ou as policies críticas de admin estiverem inseguras.
 
 ### Passo a passo
 
@@ -119,6 +136,7 @@ Depois disso:
 - cada aluno entra com e-mail e senha
 - o acesso pode ser liberado por aluno na tabela `course_access`
 - progresso, notas e quiz sobem para o backend
+- edição de perfil do aluno sobe para `member_profiles`
 - o codigo de acesso local deixa de ser o fluxo principal
 - novos cadastros criam perfil remoto antes de abrir a plataforma
 - o painel admin usa a RPC `admin_set_course_access` para centralizar a liberação no banco, com fallback para a política antiga enquanto o SQL novo não for aplicado

@@ -1,0 +1,15 @@
+{
+  "name": "academia-dr-eletronica",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npm run check:js && npm run check:security",
+    "check:js": "node --check script.js && node --check app-config.js && node --check access-generator.js && node --check access-config.js && node --check course-data.js && node --check sw.js && node --check security-check.mjs",
+    "check:security": "node security-check.mjs",
+    "smoke": "node smoke-test.mjs"
+  },
+  "devDependencies": {
+    "ws": "^8.18.0"
+  }
+}

@@ -1261,6 +1261,62 @@ async function loadRemoteProfile() {
   return authState.profileExists;
 }
 
+async function pushRemoteProfile(member) {
+  if (!isSupabaseMode() || !authState.user) return false;
+  const client = await getAuthClient();
+  if (!client) return false;
+
+  const source = member && typeof member === "object" ? member : {};
+  const payload = {
+    email: String(source.email || authState.user.email || "").trim(),
+    full_name:
+      String(source.name || "").trim() ||
+      authState.user.user_metadata?.name ||
+      String(authState.user.email || "").split("@")[0] ||
+      "Aluno",
+    goal: source.goal || "dominar fundamentos",
+    rhythm: source.rhythm || "30 min por dia",
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await client
+    .from("member_profiles")
+    .update(payload)
+    .eq("user_id", authState.user.id)
+    .select("user_id")
+    .maybeSingle();
+
+  if (error) return false;
+
+  if (data?.user_id) {
+    authState.profileExists = true;
+    return true;
+  }
+
+  const fallback = await client
+    .from("member_profiles")
+    .upsert(
+      {
+        user_id: authState.user.id,
+        ...payload,
+      },
+      {
+        onConflict: "user_id",
+      }
+    )
+    .select("user_id")
+    .maybeSingle();
+
+  if (fallback.error) return false;
+  authState.profileExists = Boolean(fallback.data?.user_id);
+  return authState.profileExists;
+}
+
+async function syncRemoteProfileAndState(member) {
+  await pushRemoteProfile(member);
+  await pushRemoteState();
+}
+
 async function pullRemoteState() {
   if (!isSupabaseMode() || !authState.user) return;
   const client = await getAuthClient();
@@ -4897,7 +4953,7 @@ dom.memberForm.addEventListener("submit", (event) => {
   closeAuthModal();
   renderAll();
   if (isSupabaseMode()) {
-    void pushRemoteState();
+    void syncRemoteProfileAndState(state.member);
   }
 });
 

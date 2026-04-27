@@ -1259,6 +1259,85 @@ async function main() {
         }))()
       `
     );
+    const remoteProfilePersistenceResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (async () => {
+          const originalGetAuthClient = getAuthClient;
+          let updatePayload = null;
+          let updateUserId = null;
+          let upsertPayload = null;
+
+          getAuthClient = async () => ({
+            from(tableName) {
+              return {
+                update(payload) {
+                  updatePayload = { tableName, ...payload };
+                  return {
+                    eq(column, value) {
+                      updateUserId = value;
+                      return {
+                        select() {
+                          return {
+                            maybeSingle() {
+                              return Promise.resolve({ data: { user_id: value }, error: null });
+                            },
+                          };
+                        },
+                      };
+                    },
+                  };
+                },
+                upsert(payload) {
+                  upsertPayload = { tableName, ...payload };
+                  return {
+                    select() {
+                      return {
+                        maybeSingle() {
+                          return Promise.resolve({ data: { user_id: payload.user_id }, error: null });
+                        },
+                      };
+                    },
+                  };
+                },
+              };
+            },
+          });
+
+          authState.session = {
+            user: {
+              id: "smoke-profile-user",
+              email: "perfil@example.com",
+              user_metadata: { name: "Perfil Smoke" },
+            },
+          };
+          authState.user = authState.session.user;
+          authState.profileExists = true;
+          authState.accessGranted = true;
+          authState.accessStatus = "pending";
+          authState.isAdmin = false;
+
+          const saved = await pushRemoteProfile({
+            name: "Aluno Perfil",
+            email: "aluno.perfil@example.com",
+            goal: "diagnosticar placas",
+            rhythm: "45 min por dia",
+          });
+
+          getAuthClient = originalGetAuthClient;
+
+          return {
+            profileExists: authState.profileExists,
+            roleSent: Object.prototype.hasOwnProperty.call(updatePayload || {}, "role"),
+            saved,
+            updatePayload,
+            updateUserId,
+            upsertPayload,
+          };
+        })()
+      `
+    );
     const smokeConsoleErrors = await evaluate(cdp, sessionId, "window.__smoke.consoleErrors");
     const smokeUncaughtErrors = await evaluate(cdp, sessionId, "window.__smoke.uncaughtErrors");
 
@@ -1488,6 +1567,19 @@ async function main() {
         focusOwnedReplayResult.afterFocus.pending === false &&
         focusOwnedReplayResult.afterFocus.pendingTarget === false,
       `Ao voltar do anuncio, a plataforma deveria retomar exatamente o destino original: ${JSON.stringify(focusOwnedReplayResult)}`
+    );
+    assert(
+      remoteProfilePersistenceResult.saved &&
+        remoteProfilePersistenceResult.profileExists &&
+        remoteProfilePersistenceResult.updateUserId === "smoke-profile-user" &&
+        remoteProfilePersistenceResult.updatePayload?.tableName === "member_profiles" &&
+        remoteProfilePersistenceResult.updatePayload?.full_name === "Aluno Perfil" &&
+        remoteProfilePersistenceResult.updatePayload?.email === "aluno.perfil@example.com" &&
+        remoteProfilePersistenceResult.updatePayload?.goal === "diagnosticar placas" &&
+        remoteProfilePersistenceResult.updatePayload?.rhythm === "45 min por dia" &&
+        remoteProfilePersistenceResult.roleSent === false &&
+        remoteProfilePersistenceResult.upsertPayload === null,
+      `Edicao de perfil deveria persistir no Supabase sem enviar role: ${JSON.stringify(remoteProfilePersistenceResult)}`
     );
     assert(runtimeExceptions.length === 0, `Houve exceções do navegador: ${runtimeExceptions.join(" | ")}`);
     assert(consoleErrors.length === 0, `Houve erros no console do navegador: ${consoleErrors.join(" | ")}`);
