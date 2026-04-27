@@ -1006,7 +1006,8 @@ body.access-locked .site-footer {
   box-shadow: 0 16px 30px rgba(255, 108, 47, 0.22);
 }
 
-.button-primary.btn-premium {
+.button-primary.btn-premium,
+.button-offer-accent {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -1020,7 +1021,8 @@ body.access-locked .site-footer {
     0 16px 30px rgba(255, 108, 47, 0.24);
 }
 
-.button-primary.btn-premium::before {
+.button-primary.btn-premium::before,
+.button-offer-accent::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -1032,7 +1034,8 @@ body.access-locked .site-footer {
   animation: premiumButtonSheen 3.2s ease-in-out infinite;
 }
 
-.button-primary.btn-premium::after {
+.button-primary.btn-premium::after,
+.button-offer-accent::after {
   content: "";
   position: absolute;
   inset: 2px;
@@ -1042,7 +1045,8 @@ body.access-locked .site-footer {
   border: 1px solid rgba(255, 255, 255, 0.26);
 }
 
-.button-primary.btn-premium:hover:not(:disabled) {
+.button-primary.btn-premium:hover:not(:disabled),
+.button-offer-accent:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
     0 0 0 1px rgba(123, 226, 200, 0.28),
