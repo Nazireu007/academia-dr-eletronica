@@ -1059,6 +1059,39 @@ body.access-locked .site-footer {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.button-secondary.button-offer-accent {
+  border-color: rgba(123, 226, 200, 0.55);
+  background:
+    linear-gradient(135deg, rgba(123, 226, 200, 0.96) 0%, rgba(141, 248, 255, 0.94) 38%, rgba(255, 176, 103, 0.98) 100%);
+  color: #071018;
+}
+
+.offer-actions {
+  align-items: stretch;
+  gap: 0.82rem;
+}
+
+.offer-actions .button {
+  min-height: 3.15rem;
+  min-width: 11.8rem;
+  padding-inline: 1.35rem;
+  text-align: center;
+}
+
+.offer-actions .button:focus-visible {
+  outline: 3px solid rgba(141, 248, 255, 0.42);
+  outline-offset: 3px;
+}
+
+.offer-actions #whatsapp-sales-link.button-offer-accent {
+  background:
+    linear-gradient(135deg, rgba(123, 226, 200, 0.98) 0%, rgba(68, 235, 166, 0.96) 46%, rgba(255, 176, 103, 0.98) 100%);
+  box-shadow:
+    0 0 0 1px rgba(123, 226, 200, 0.22),
+    0 0 22px rgba(68, 235, 166, 0.26),
+    0 16px 30px rgba(255, 108, 47, 0.2);
+}
+
 .button-small {
   padding: 0.76rem 1rem;
 }
