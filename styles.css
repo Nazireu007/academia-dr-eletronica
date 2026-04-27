@@ -1698,6 +1698,75 @@ body.access-locked .site-footer {
   color: #e6f1ff;
 }
 
+#offer-links {
+  gap: 0.72rem;
+}
+
+#offer-links .resource-link-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 4.6rem;
+  border: 1px solid rgba(123, 226, 200, 0.55);
+  background:
+    linear-gradient(135deg, rgba(123, 226, 200, 0.96) 0%, rgba(141, 248, 255, 0.94) 38%, rgba(255, 176, 103, 0.98) 100%);
+  color: #071018;
+  box-shadow:
+    0 0 0 1px rgba(123, 226, 200, 0.2),
+    0 0 20px rgba(123, 226, 200, 0.28),
+    0 16px 30px rgba(255, 108, 47, 0.2);
+}
+
+#offer-links .resource-link-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.24) 42%, transparent 58%);
+  transform: translateX(-130%);
+  animation: premiumButtonSheen 3.2s ease-in-out infinite;
+}
+
+#offer-links .resource-link-card::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+}
+
+#offer-links .resource-link-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+#offer-links .resource-link-card strong,
+#offer-links .resource-link-card.is-primary-payment strong,
+#offer-links .resource-link-card.is-sponsored-link strong {
+  color: #071018;
+}
+
+#offer-links .resource-link-card span,
+#offer-links .resource-link-card.is-sponsored-link span {
+  color: rgba(7, 16, 24, 0.72);
+}
+
+#offer-links .resource-link-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(123, 226, 200, 0.28),
+    0 0 26px rgba(123, 226, 200, 0.38),
+    0 18px 34px rgba(255, 108, 47, 0.3);
+}
+
+#offer-links .resource-link-card.is-disabled-link {
+  opacity: 0.5;
+}
+
 .presentation-signal-grid,
 .presentation-impact-strip,
 .preview-lesson-head {
