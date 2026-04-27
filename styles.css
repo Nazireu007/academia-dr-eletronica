@@ -2010,6 +2010,249 @@ body.access-locked .site-footer {
   padding-left: 1.1rem;
 }
 
+.guided-trail-grid,
+.final-project-milestones,
+.premium-material-grid,
+.lesson-layer-grid,
+.lesson-proof-strip {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.guided-trail-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin: 1rem 0;
+}
+
+.guided-trail-grid.is-compact {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.guided-trail-item,
+.final-project-milestone,
+.premium-material-item,
+.lesson-layer-card,
+.lesson-challenge-card {
+  min-width: 0;
+  border: 1px solid rgba(123, 226, 200, 0.18);
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent),
+    rgba(5, 14, 22, 0.48);
+}
+
+.guided-trail-item {
+  display: grid;
+  gap: 0.38rem;
+  padding: 0.82rem;
+}
+
+.guided-trail-item span,
+.premium-material-item span,
+.lesson-layer-card span {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.guided-trail-item strong,
+.final-project-milestone strong,
+.premium-material-item strong,
+.lesson-layer-card strong,
+.lesson-challenge-card strong {
+  color: #effffb;
+  line-height: 1.35;
+}
+
+.guided-trail-item p,
+.final-project-milestone p,
+.premium-material-item p,
+.lesson-layer-card p,
+.lesson-challenge-card p,
+.lesson-challenge-card small,
+.timeline-item small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.module-objective {
+  max-width: 46ch;
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.final-project-block,
+.premium-material-block,
+.lesson-guidance-block {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.final-project-block.is-locked,
+.premium-material-block.is-locked {
+  opacity: 0.86;
+}
+
+.final-project-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.project-progress-pill {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 6.5rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(123, 226, 200, 0.26);
+  border-radius: 1rem;
+  background: rgba(123, 226, 200, 0.1);
+  text-align: center;
+}
+
+.project-progress-pill strong {
+  color: #effffb;
+  font-size: 1.35rem;
+}
+
+.project-progress-pill span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.project-progress-track {
+  height: 0.48rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.project-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), #ffb067);
+}
+
+.final-project-milestones {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.final-project-milestones.is-compact {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.final-project-milestone {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  padding: 0.85rem;
+}
+
+.final-project-milestone.is-done {
+  border-color: rgba(123, 226, 200, 0.42);
+  background:
+    linear-gradient(180deg, rgba(123, 226, 200, 0.13), transparent),
+    rgba(5, 14, 22, 0.56);
+}
+
+.project-check-button,
+.project-check-label {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.48rem 0.7rem;
+  border: 1px solid rgba(123, 226, 200, 0.24);
+  color: #dffef8;
+  background: rgba(123, 226, 200, 0.1);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.project-check-button {
+  cursor: pointer;
+}
+
+.project-check-button.is-done {
+  color: #071018;
+  background: linear-gradient(135deg, var(--accent), #ffb067);
+}
+
+.final-project-result {
+  border-left: 3px solid var(--accent);
+  padding-left: 0.85rem;
+}
+
+.premium-material-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.premium-material-item {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  padding: 0.9rem;
+}
+
+.premium-material-item em {
+  color: var(--accent);
+  font-style: normal;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.lesson-guidance-block {
+  margin-top: 1.4rem;
+  padding: 1rem;
+  border: 1px solid rgba(123, 226, 200, 0.2);
+  border-radius: 1.1rem;
+  background:
+    linear-gradient(135deg, rgba(123, 226, 200, 0.09), rgba(255, 149, 80, 0.07)),
+    rgba(5, 14, 22, 0.5);
+}
+
+.lesson-layer-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.lesson-layer-card,
+.lesson-challenge-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem;
+}
+
+.lesson-challenge-card {
+  border-color: rgba(255, 176, 103, 0.24);
+  background:
+    linear-gradient(135deg, rgba(255, 176, 103, 0.1), rgba(123, 226, 200, 0.07)),
+    rgba(5, 14, 22, 0.52);
+}
+
+.lesson-proof-strip {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.lesson-proof-strip span {
+  min-width: 0;
+  border-radius: 999px;
+  padding: 0.58rem 0.72rem;
+  border: 1px solid rgba(144, 172, 198, 0.18);
+  color: #dffef8;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 .sponsored-entry-card {
   position: relative;
   overflow: hidden;

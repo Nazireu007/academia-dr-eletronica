@@ -522,6 +522,18 @@ async function main() {
     await clickCenter(cdp, sessionId, "#open-course-panel");
     await delay(300);
     const premiumOpenCallsAfterClicks = await evaluate(cdp, sessionId, "window.__smoke.openCalls.length");
+    const premiumCoreResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        ({
+          guidedModulesReady: course.modules.every((module) => Boolean(module.objective && module.outcome && module.project)),
+          lessonGuidanceVisible: Boolean(document.querySelector("#lesson-content .lesson-guidance-block")),
+          projectMilestones: course.finalProject?.milestones?.length || 0,
+          premiumProjectVisible: Boolean(document.querySelector("#premium-intelligence-card .final-project-block")),
+        })
+      `
+    );
 
     await cdp.send(
       "Emulation.setDeviceMetricsOverride",
@@ -1289,6 +1301,13 @@ async function main() {
     assert(!premiumDashboardAdVisible, "O painel premium nao deveria exibir anuncios.");
     assert(premiumIntelligenceVisible, "O painel premium deveria exibir a inteligencia adaptativa.");
     assert(premiumOpenCallsAfterClicks === 0, "Cliques no premium nao deveriam abrir anuncios.");
+    assert(
+      premiumCoreResult.guidedModulesReady &&
+        premiumCoreResult.lessonGuidanceVisible &&
+        premiumCoreResult.projectMilestones >= 5 &&
+        premiumCoreResult.premiumProjectVisible,
+      `O nucleo premium completo nao apareceu corretamente: ${JSON.stringify(premiumCoreResult)}`
+    );
     assert(
       freeSponsoredButtonMatrix.every((item) => item.found),
       `Nem todos os botoes monitorados do gratis foram encontrados: ${JSON.stringify(freeSponsoredButtonMatrix)}`

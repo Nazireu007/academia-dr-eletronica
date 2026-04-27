@@ -2,6 +2,7 @@ const studyPhases = [
   {
     title: "Fase 1",
     subtitle: "Fundamentos",
+    moduleNumbers: ["01", "02", "03", "04"],
     items: [
       "Tensão, corrente, resistência e potência",
       "Lei de Ohm aplicada",
@@ -12,6 +13,7 @@ const studyPhases = [
   {
     title: "Fase 2",
     subtitle: "Bancada e soldagem",
+    moduleNumbers: ["05", "06", "07", "08"],
     items: [
       "Organização da bancada",
       "Soldagem e dessoldagem",
@@ -22,6 +24,7 @@ const studyPhases = [
   {
     title: "Fase 3",
     subtitle: "Diagnóstico",
+    moduleNumbers: ["09", "10", "11", "12"],
     items: [
       "Análise por blocos",
       "Testes de alimentação",
@@ -32,6 +35,7 @@ const studyPhases = [
   {
     title: "Fase 4",
     subtitle: "Avançado",
+    moduleNumbers: ["13", "14", "15", "16"],
     items: [
       "Retrabalho SMD",
       "Fonte de bancada no diagnóstico",
@@ -81,6 +85,235 @@ const premiumAdvancedTracks = [
       "Compare sinais simetricos quando houver canais repetidos.",
       "Use trigger para capturar falhas intermitentes e pulsos curtos.",
     ],
+  },
+];
+
+const moduleJourneyBlueprints = {
+  "01": {
+    stage: "Fundamentos",
+    level: "Básico",
+    objective: "Entender o que a eletrônica faz e como tensão, corrente e resistência se conectam.",
+    outcome: "Explicar com suas palavras como um circuito transforma energia em função útil.",
+    project: "Identificar blocos básicos em um aparelho simples antes de medir qualquer coisa.",
+  },
+  "02": {
+    stage: "Cálculo aplicado",
+    level: "Básico",
+    objective: "Usar Lei de Ohm e potência para prever corrente, queda de tensão e aquecimento.",
+    outcome: "Escolher valores de resistor e potência sem depender de chute.",
+    project: "Calcular a corrente de um LED com resistor limitador e conferir o resultado no multímetro.",
+  },
+  "03": {
+    stage: "Componentes",
+    level: "Básico",
+    objective: "Reconhecer componentes, códigos e funções antes de interpretar a placa.",
+    outcome: "Separar resistor, capacitor, diodo, transistor, regulador e CI pela função provável.",
+    project: "Montar uma tabela pessoal de componentes encontrados em sucata eletrônica.",
+  },
+  "04": {
+    stage: "Leitura de placa",
+    level: "Intermediário",
+    objective: "Ler esquemas, trilhas, referência de terra e blocos funcionais.",
+    outcome: "Mapear entrada, proteção, alimentação, controle e saída em uma placa real.",
+    project: "Desenhar o mapa de blocos da placa usada no projeto final.",
+  },
+  "05": {
+    stage: "Bancada",
+    level: "Intermediário",
+    objective: "Montar uma bancada organizada, segura e pronta para diagnóstico.",
+    outcome: "Escolher ferramenta, escala e procedimento antes de tocar na placa.",
+    project: "Criar o checklist de bancada para ligar e testar a placa do projeto final.",
+  },
+  "06": {
+    stage: "Medição",
+    level: "Intermediário",
+    objective: "Usar o multímetro como instrumento de decisão técnica.",
+    outcome: "Medir tensão, continuidade, resistência e diodo sabendo interpretar leituras estranhas.",
+    project: "Registrar as medições principais da placa antes e depois de energizar.",
+  },
+  "07": {
+    stage: "Alimentação",
+    level: "Intermediário",
+    objective: "Entender fontes, reguladores e sintomas ligados à alimentação.",
+    outcome: "Descobrir se uma falha está na entrada, proteção, regulador ou carga.",
+    project: "Validar as linhas de alimentação da placa do projeto final com limite de corrente.",
+  },
+  "08": {
+    stage: "Soldagem",
+    level: "Intermediário",
+    objective: "Soldar, ressoldar e dessoldar sem criar defeitos novos.",
+    outcome: "Diferenciar solda boa, solda fria, excesso, ponte e pad em risco.",
+    project: "Treinar ressoldagem em conectores e componentes de sucata antes da placa principal.",
+  },
+  "09": {
+    stage: "Diagnóstico",
+    level: "Avançado",
+    objective: "Aplicar método de diagnóstico em falhas reais de placas.",
+    outcome: "Trocar componente somente quando houver evidência técnica.",
+    project: "Executar o roteiro de diagnóstico completo do projeto final.",
+  },
+  "10": {
+    stage: "SMD",
+    level: "Avançado",
+    objective: "Reconhecer e testar componentes SMD sem depender só da aparência.",
+    outcome: "Localizar curto, fuga e falha provável em SMD com comparação e medição.",
+    project: "Identificar componentes SMD críticos na placa do projeto final.",
+  },
+  "11": {
+    stage: "Sinais",
+    level: "Avançado",
+    objective: "Separar raciocínio analógico e digital durante análise de defeito.",
+    outcome: "Saber quando procurar tensão, sinal, clock, ruído, acionamento ou comando.",
+    project: "Marcar no mapa da placa onde existem sinais analógicos, digitais e de potência.",
+  },
+  "12": {
+    stage: "Embarcados",
+    level: "Avançado",
+    objective: "Entender microcontroladores, reset, clock e comunicação em placas modernas.",
+    outcome: "Evitar culpar o CI principal antes de conferir alimentação, reset e periféricos.",
+    project: "Criar uma sequência de verificação para placas com microcontrolador.",
+  },
+  "13": {
+    stage: "Profissional",
+    level: "Avançado",
+    objective: "Trabalhar com documentação, segurança, ESD e método de bancada.",
+    outcome: "Atender uma placa com processo mais limpo, repetível e seguro.",
+    project: "Documentar sintomas, medições e decisão técnica do projeto final.",
+  },
+  "14": {
+    stage: "Prática guiada",
+    level: "Prática",
+    objective: "Transformar estudo em treino real com exercícios e desafios.",
+    outcome: "Executar tarefas sem olhar a solução antes de comparar o resultado.",
+    project: "Concluir a rodada de exercícios que prepara a entrega final.",
+  },
+  "15": {
+    stage: "Roteiro de evolução",
+    level: "Prática",
+    objective: "Organizar a evolução do iniciante ao avançado com metas claras.",
+    outcome: "Saber qual habilidade treinar depois de cada bloco do curso.",
+    project: "Montar seu plano de 30 dias depois do projeto final.",
+  },
+  "16": {
+    stage: "Revisão final",
+    level: "Prática",
+    objective: "Fixar vocabulário técnico e revisar a jornada completa.",
+    outcome: "Explicar termos essenciais sem travar durante leitura de placa ou aula avançada.",
+    project: "Revisar o relatório final e preparar a emissão do certificado.",
+  },
+};
+
+const finalProject = {
+  title: "Projeto final: diagnóstico completo de uma placa real",
+  summary:
+    "O aluno escolhe uma placa simples ou sucata eletrônica segura, mapeia blocos, mede alimentação, identifica suspeitas e documenta a decisão técnica.",
+  result: "Ao final, o aluno entrega um relatório de bancada com mapa da placa, medições, hipótese de defeito e próximos passos.",
+  milestones: [
+    {
+      id: "map-board",
+      title: "Mapear a placa",
+      modules: ["01", "03", "04"],
+      deliverable: "Foto ou desenho com entrada, proteção, alimentação, controle e saída marcados.",
+    },
+    {
+      id: "bench-check",
+      title: "Preparar bancada e segurança",
+      modules: ["05", "13"],
+      deliverable: "Checklist de escala, polaridade, ESD, inspeção visual e limite de corrente.",
+    },
+    {
+      id: "measure-power",
+      title: "Medir alimentação",
+      modules: ["02", "06", "07"],
+      deliverable: "Tabela com tensão de entrada, curto, reguladores, GND e pontos de teste.",
+    },
+    {
+      id: "inspect-rework",
+      title: "Inspecionar solda e SMD",
+      modules: ["08", "10"],
+      deliverable: "Lista de soldas suspeitas, componentes críticos e testes fora da placa se necessário.",
+    },
+    {
+      id: "diagnostic-report",
+      title: "Fechar diagnóstico",
+      modules: ["09", "11", "12", "14", "15", "16"],
+      deliverable: "Relatório final com sintoma, evidências, hipótese, ação recomendada e revisão técnica.",
+    },
+  ],
+};
+
+const premiumExtraMaterials = [
+  {
+    title: "Checklist de bancada segura",
+    type: "Checklist",
+    copy: "Antes de energizar: inspeção visual, polaridade, escala do multímetro, limite de corrente, GND e proteção ESD.",
+  },
+  {
+    title: "Mapa de diagnóstico por blocos",
+    type: "Roteiro",
+    copy: "Entrada, proteção, fonte, regulador, controle, potência e saída. A falha precisa cair em um bloco antes da troca de peça.",
+  },
+  {
+    title: "Guia rápido de medições",
+    type: "Guia",
+    copy: "Ordem recomendada: continuidade, curto em alimentação, tensão de entrada, reguladores, ripple, sinais de comando e comparação.",
+  },
+  {
+    title: "Erros comuns de iniciante",
+    type: "Troubleshooting",
+    copy: "Medir resistência com placa energizada, trocar componente sem evidência, ignorar GND, forçar conector e aquecer pad por tempo demais.",
+  },
+];
+
+const lessonPracticePresets = [
+  {
+    keywords: ["lei de ohm", "potencia"],
+    basic: "Memorize a relação entre tensão, corrente, resistência e potência usando um exemplo numérico simples.",
+    intermediate: "Calcule corrente e potência antes de ligar o componente na bancada.",
+    advanced: "Explique onde a energia vira calor e por que isso muda a escolha do componente.",
+    challenge: "Resolva um cálculo de resistor para LED e confira se a potência escolhida suporta a montagem.",
+  },
+  {
+    keywords: ["multimetro", "medir", "medição"],
+    basic: "Identifique qual escala usar e o que a leitura realmente significa.",
+    intermediate: "Compare medição na placa e fora da placa, anotando quando caminhos paralelos confundem a leitura.",
+    advanced: "Use a leitura para decidir a próxima medição, não apenas para confirmar um palpite.",
+    challenge: "Meça continuidade, resistência e diodo em três componentes e escreva a conclusão de cada teste.",
+  },
+  {
+    keywords: ["soldagem", "ressoldagem", "dessoldagem"],
+    basic: "Reconheça visualmente solda boa, solda fria, excesso e ponte.",
+    intermediate: "Treine aquecer ilha e terminal juntos antes de adicionar estanho.",
+    advanced: "Defina quando ressoldar faz sentido e quando isso vira tentativa sem diagnóstico.",
+    challenge: "Refaça cinco pontos de solda em sucata e compare acabamento, brilho e firmeza mecânica.",
+  },
+  {
+    keywords: ["reparo", "defeito", "diagnostico", "curto", "fuga"],
+    basic: "Descreva o sintoma antes de suspeitar de peças.",
+    intermediate: "Divida a placa em blocos e escolha o primeiro ponto seguro de medição.",
+    advanced: "Crie uma hipótese técnica baseada em evidências e diga o que a derrubaria.",
+    challenge: "Pegue uma placa simples e escreva um roteiro de diagnóstico com no mínimo cinco medições.",
+  },
+  {
+    keywords: ["smd", "transistor", "mosfet", "diodo"],
+    basic: "Identifique encapsulamento, marcação e função provável do componente.",
+    intermediate: "Teste curto, fuga e polarização comparando componentes parecidos na mesma placa.",
+    advanced: "Explique como um defeito em SMD pode parecer falha de outro bloco.",
+    challenge: "Liste cinco componentes SMD de uma placa e marque quais podem ser testados em circuito.",
+  },
+  {
+    keywords: ["fonte", "regulador", "alimentacao"],
+    basic: "Localize entrada, proteção, filtragem e saída regulada.",
+    intermediate: "Meça tensão antes e depois do regulador com referência de terra correta.",
+    advanced: "Interprete queda de tensão, consumo alto e ripple como sintomas diferentes.",
+    challenge: "Monte uma tabela com entrada, saída, GND, curto e consumo esperado de uma linha de alimentação.",
+  },
+  {
+    keywords: ["esquematico", "diagrama", "trilha", "blocos"],
+    basic: "Diferencie a lógica elétrica do esquemático e o caminho físico da placa.",
+    intermediate: "Siga uma trilha da entrada até o bloco alimentado.",
+    advanced: "Explique como o layout da placa ajuda ou atrapalha a leitura do defeito.",
+    challenge: "Desenhe um mapa simples da placa com setas indicando o caminho da alimentação.",
   },
 ];
 
@@ -152,6 +385,7 @@ const storageKeys = {
   activePanel: "academia-dr-panel-v4",
   quizAnswers: "academia-dr-quiz-answers-v4",
   quizResult: "academia-dr-quiz-result-v4",
+  projectMilestones: "academia-dr-project-milestones-v1",
   accessSession: "academia-dr-access-session-v1",
   supabaseUser: "academia-dr-supabase-user-v1",
 };
@@ -526,6 +760,7 @@ function getRemoteStatePayload() {
     notes: state.notes,
     quizAnswers: state.quizAnswers,
     quizResult: state.quizResult,
+    projectMilestones: [...state.projectMilestones],
     selectedLessonId: state.selectedLessonId,
   };
 }
@@ -537,6 +772,7 @@ function applyRemoteStatePayload(payload) {
   state.notes = sanitizeNotesMap(source.notes);
   state.quizAnswers = sanitizeQuizAnswers(source.quizAnswers);
   state.quizResult = source.quizResult || null;
+  state.projectMilestones = new Set(sanitizeProjectMilestones(source.projectMilestones));
   state.selectedLessonId = validLessonIds.has(source.selectedLessonId)
     ? source.selectedLessonId
     : course.lessons[0]?.id;
@@ -762,7 +998,74 @@ function extractGlossary(course) {
   return items.slice(0, 6);
 }
 
-const course = parseCourse(window.COURSE_MARKDOWN || "");
+function findLessonPracticePreset(lesson) {
+  const haystack = normalize(`${lesson?.title || ""} ${lesson?.summary || ""}`);
+  return lessonPracticePresets.find((preset) => preset.keywords.some((keyword) => haystack.includes(normalize(keyword))));
+}
+
+function buildLessonLearningLayers(lesson, module) {
+  const preset = findLessonPracticePreset(lesson);
+  const fallbackTarget = module?.outcome || "transformar a teoria em decisão de bancada";
+
+  return [
+    {
+      level: "Básico",
+      title: "Entenda a ideia central",
+      copy: preset?.basic || `Leia a aula buscando responder qual problema técnico "${lesson.title}" resolve na eletrônica.`,
+    },
+    {
+      level: "Intermediário",
+      title: "Leve para a bancada",
+      copy: preset?.intermediate || `Aplique o conceito em um exemplo real e conecte com o objetivo do módulo: ${fallbackTarget}.`,
+    },
+    {
+      level: "Avançado",
+      title: "Explique o porquê",
+      copy: preset?.advanced || "Explique a causa técnica, os limites do procedimento e o que poderia dar errado em uma placa real.",
+    },
+  ];
+}
+
+function buildLessonPracticeChallenge(lesson, module) {
+  const preset = findLessonPracticePreset(lesson);
+  return {
+    title: "Desafio prático da aula",
+    task:
+      preset?.challenge ||
+      `Explique ${lesson.title.toLowerCase()} com suas palavras, faça uma anotação de bancada e diga como isso ajuda no projeto final.`,
+    proof: module?.project || "Registre uma evidência simples: cálculo, foto, mapa, medição ou conclusão técnica.",
+  };
+}
+
+function enhanceCourseForPremium(parsedCourse) {
+  parsedCourse.modules.forEach((module) => {
+    const blueprint = moduleJourneyBlueprints[module.number] || {
+      stage: "Trilha guiada",
+      level: "Prática",
+      objective: `Dominar ${module.title.toLowerCase()} com aplicação real.`,
+      outcome: "Saber explicar e aplicar o conteúdo em bancada.",
+      project: "Registrar uma evidência prática ligada ao projeto final.",
+    };
+
+    Object.assign(module, blueprint);
+
+    module.lessons.forEach((lesson) => {
+      lesson.learningLayers = buildLessonLearningLayers(lesson, module);
+      lesson.practiceChallenge = buildLessonPracticeChallenge(lesson, module);
+    });
+  });
+
+  parsedCourse.finalProject = finalProject;
+  parsedCourse.extraMaterials = premiumExtraMaterials;
+  return parsedCourse;
+}
+
+function sanitizeProjectMilestones(values) {
+  const validMilestoneIds = new Set(finalProject.milestones.map((milestone) => milestone.id));
+  return (Array.isArray(values) ? values : []).filter((value) => validMilestoneIds.has(value));
+}
+
+const course = enhanceCourseForPremium(parseCourse(window.COURSE_MARKDOWN || ""));
 const validLessonIds = new Set(course.lessons.map((lesson) => lesson.id));
 
 function sanitizeLessonIdCollection(values) {
@@ -809,6 +1112,7 @@ const state = {
   notes: sanitizeNotesMap(loadJSON(storageKeys.notes, {})),
   quizAnswers: sanitizeQuizAnswers(loadJSON(storageKeys.quizAnswers, {})),
   quizResult: loadJSON(storageKeys.quizResult, null),
+  projectMilestones: new Set(sanitizeProjectMilestones(loadJSON(storageKeys.projectMilestones, []))),
   selectedLessonId: validLessonIds.has(loadJSON(storageKeys.selectedLesson, course.lessons[0]?.id))
     ? loadJSON(storageKeys.selectedLesson, course.lessons[0]?.id)
     : course.lessons[0]?.id,
@@ -831,6 +1135,7 @@ function saveState() {
   saveJSON(storageKeys.notes, state.notes);
   saveJSON(storageKeys.quizAnswers, state.quizAnswers);
   saveJSON(storageKeys.quizResult, state.quizResult);
+  saveJSON(storageKeys.projectMilestones, [...state.projectMilestones]);
   saveJSON(storageKeys.selectedLesson, state.selectedLessonId);
   saveJSON(storageKeys.activePanel, state.activePanel);
   if (state.accessSession) {
@@ -887,6 +1192,7 @@ function resetMemberWorkspace() {
   state.notes = {};
   state.quizAnswers = {};
   state.quizResult = null;
+  state.projectMilestones = new Set();
   state.selectedLessonId = course.lessons[0]?.id;
   state.activePanel = "public";
 }
@@ -1672,6 +1978,7 @@ function buildPremiumIntelligenceItems(nextLesson, notesCount) {
   const weakTopics = getWeakQuizTopics();
   const currentModule = getModuleByNumber(nextLesson.moduleNumber);
   const completedPercent = getCompletionPercent();
+  const projectProgress = getProjectProgress();
   const focusWindow = completedPercent >= 50 ? "30 min de revisão + 20 min de prática" : "20 min de aula + 10 min de anotação";
 
   return [
@@ -1689,9 +1996,206 @@ function buildPremiumIntelligenceItems(nextLesson, notesCount) {
     },
     {
       label: "Memória de bancada",
-      value: notesCount > 0 ? `${notesCount} anotação(ões) salvas para revisão ativa.` : "Crie a primeira anotação para personalizar a revisão.",
+      value:
+        projectProgress.done > 0
+          ? `${projectProgress.done}/${projectProgress.total} marco(s) do projeto final concluído(s).`
+          : notesCount > 0
+            ? `${notesCount} anotação(ões) salvas para revisão ativa.`
+            : "Crie a primeira anotação para personalizar a revisão.",
     },
   ];
+}
+
+function getPhaseProgress(phase) {
+  const lessons = course.modules
+    .filter((module) => (phase.moduleNumbers || []).includes(module.number))
+    .flatMap((module) => module.lessons);
+  const done = lessons.filter((lesson) => state.completed.has(lesson.id)).length;
+  return {
+    done,
+    total: lessons.length,
+    percent: lessons.length === 0 ? 0 : Math.round((done / lessons.length) * 100),
+  };
+}
+
+function getProjectProgress() {
+  const milestones = course.finalProject?.milestones || [];
+  const done = milestones.filter((milestone) => state.projectMilestones.has(milestone.id)).length;
+  return {
+    done,
+    total: milestones.length,
+    percent: milestones.length === 0 ? 0 : Math.round((done / milestones.length) * 100),
+  };
+}
+
+function toggleProjectMilestone(milestoneId) {
+  if (!milestoneId) return;
+
+  if (!isPremiumMember()) {
+    openAccessModal("O projeto final guiado faz parte do núcleo premium do curso.", "library");
+    return;
+  }
+
+  if (state.projectMilestones.has(milestoneId)) {
+    state.projectMilestones.delete(milestoneId);
+  } else {
+    state.projectMilestones.add(milestoneId);
+  }
+
+  saveState();
+  renderAll();
+}
+
+function bindPremiumContentControls(root) {
+  if (!root) return;
+
+  root.querySelectorAll("[data-project-milestone]").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleProjectMilestone(button.dataset.projectMilestone);
+    });
+  });
+
+  root.querySelectorAll("[data-copy-material]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const index = Number(button.dataset.copyMaterial);
+      const material = course.extraMaterials[index];
+      if (!material) return;
+      const copied = await copyTextToClipboard(`${material.title}\n${material.copy}`);
+      button.textContent = copied ? "Copiado" : "Copiar";
+      window.setTimeout(() => {
+        button.textContent = "Copiar";
+      }, 1600);
+    });
+  });
+}
+
+function buildGuidedTrailPreviewMarkup(modules, { compact = false } = {}) {
+  return `
+    <div class="guided-trail-grid ${compact ? "is-compact" : ""}">
+      ${modules
+        .map(
+          (module) => `
+            <article class="guided-trail-item">
+              <span>${escapeHtml(module.stage || `Módulo ${module.number}`)}</span>
+              <strong>${escapeHtml(module.title)}</strong>
+              <p>${escapeHtml(module.outcome || module.objective || "Estudo guiado com aplicação prática.")}</p>
+            </article>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function buildFinalProjectMarkup({ compact = false, locked = false, interactive = false } = {}) {
+  const progress = getProjectProgress();
+  const visibleMilestones = compact ? course.finalProject.milestones.slice(0, 3) : course.finalProject.milestones;
+
+  return `
+    <section class="final-project-block ${locked ? "is-locked" : ""}">
+      <div class="final-project-head">
+        <div>
+          <p class="panel-label">Projeto real guiado</p>
+          <h3>${escapeHtml(course.finalProject.title)}</h3>
+          <p class="side-copy">${escapeHtml(course.finalProject.summary)}</p>
+        </div>
+        <div class="project-progress-pill">
+          <strong>${progress.percent}%</strong>
+          <span>${progress.done}/${progress.total} marcos</span>
+        </div>
+      </div>
+      <div class="project-progress-track" aria-hidden="true">
+        <span style="width: ${progress.percent}%"></span>
+      </div>
+      <div class="final-project-milestones ${compact ? "is-compact" : ""}">
+        ${visibleMilestones
+          .map((milestone) => {
+            const done = state.projectMilestones.has(milestone.id);
+            const moduleLabel = milestone.modules.map((moduleNumber) => `M${moduleNumber}`).join(" + ");
+            return `
+              <article class="final-project-milestone ${done ? "is-done" : ""}">
+                <span class="premium-advanced-badge">${escapeHtml(moduleLabel)}</span>
+                <strong>${escapeHtml(milestone.title)}</strong>
+                <p>${escapeHtml(milestone.deliverable)}</p>
+                ${
+                  interactive
+                    ? `<button class="project-check-button ${done ? "is-done" : ""}" data-project-milestone="${
+                        milestone.id
+                      }" type="button">${done ? "Concluído" : "Marcar marco"}</button>`
+                    : `<span class="project-check-label">${locked ? "Premium" : done ? "Concluído" : "A fazer"}</span>`
+                }
+              </article>
+            `;
+          })
+          .join("")}
+      </div>
+      ${compact ? "" : `<p class="side-copy final-project-result">${escapeHtml(course.finalProject.result)}</p>`}
+    </section>
+  `;
+}
+
+function buildExtraMaterialsMarkup({ compact = false, locked = false } = {}) {
+  const materials = compact ? course.extraMaterials.slice(0, 3) : course.extraMaterials;
+  return `
+    <section class="premium-material-block ${locked ? "is-locked" : ""}">
+      <p class="panel-label">Material extra</p>
+      <h3>Cheatsheets, checklist e troubleshooting</h3>
+      <div class="premium-material-grid">
+        ${materials
+          .map(
+            (material, index) => `
+              <article class="premium-material-item">
+                <span>${escapeHtml(material.type)}</span>
+                <strong>${escapeHtml(material.title)}</strong>
+                <p>${escapeHtml(material.copy)}</p>
+                ${
+                  locked
+                    ? `<em>Disponível no premium</em>`
+                    : `<button class="button button-secondary button-small" data-copy-material="${index}" type="button">Copiar</button>`
+                }
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function buildLessonGuidanceMarkup(lesson, hasFullAccess) {
+  const layers = lesson.learningLayers || [];
+  const challenge = lesson.practiceChallenge;
+  if (!layers.length || !challenge) return "";
+
+  return `
+    <section class="lesson-guidance-block">
+      <p class="panel-label">Prática guiada</p>
+      <h4>Aprenda esta aula em camadas</h4>
+      <div class="lesson-layer-grid">
+        ${layers
+          .map(
+            (layer) => `
+              <article class="lesson-layer-card">
+                <span>${escapeHtml(layer.level)}</span>
+                <strong>${escapeHtml(layer.title)}</strong>
+                <p>${escapeHtml(layer.copy)}</p>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+      <article class="lesson-challenge-card">
+        <strong>${escapeHtml(challenge.title)}</strong>
+        <p>${escapeHtml(challenge.task)}</p>
+        <small>${escapeHtml(challenge.proof)}</small>
+      </article>
+      <div class="lesson-proof-strip">
+        <span>Explique com suas palavras</span>
+        <span>Tente antes da solução</span>
+        <span>${hasFullAccess ? "Salve sua anotação" : "Crie conta para salvar"}</span>
+      </div>
+    </section>
+  `;
 }
 
 function renderPremiumIntelligence(nextLesson, notesCount) {
@@ -1712,7 +2216,7 @@ function renderPremiumIntelligence(nextLesson, notesCount) {
         <p class="panel-label">Inteligência premium</p>
         <h3>Plano de estudo adaptativo sem anúncios</h3>
         <p class="side-copy">
-          A plataforma cruza progresso, quiz, favoritos e anotações para sugerir a próxima ação de maior impacto.
+          A plataforma cruza progresso, quiz, favoritos, anotações e projeto final para sugerir a próxima ação de maior impacto.
         </p>
       </div>
       <div class="intelligence-grid">
@@ -1727,6 +2231,7 @@ function renderPremiumIntelligence(nextLesson, notesCount) {
           )
           .join("")}
       </div>
+      ${buildFinalProjectMarkup({ compact: true, interactive: true })}
       ${buildPremiumAdvancedMarkup({ compact: true })}
       <div class="premium-tool-row">
         <span>Sem anúncios</span>
@@ -1735,6 +2240,7 @@ function renderPremiumIntelligence(nextLesson, notesCount) {
         <span>${escapeHtml(getLearningDepthLabel())}</span>
       </div>
     `;
+    bindPremiumContentControls(dom.premiumIntelligenceCard);
     return;
   }
 
@@ -1747,6 +2253,7 @@ function renderPremiumIntelligence(nextLesson, notesCount) {
       <p class="side-copy">
         No grátis você aprende com anúncios. No premium, a jornada remove anúncios, libera certificado e entrega um roteiro adaptado ao seu avanço.
       </p>
+      ${buildFinalProjectMarkup({ compact: true, locked: true })}
       ${buildPremiumAdvancedMarkup({ compact: true })}
     </div>
     <div class="intelligence-grid">
@@ -1808,24 +2315,29 @@ function renderPremiumContentCard() {
   dom.premiumContentCard.classList.toggle("is-premium-active", premium);
   dom.premiumContentCard.innerHTML = premium
     ? `
-      <p class="panel-label">Conteúdo premium avançado</p>
-      <h3>Laboratório avançado de eletrônica</h3>
+      <p class="panel-label">Núcleo premium completo</p>
+      <h3>Trilha, projeto real e laboratório avançado</h3>
       <p class="side-copy">
-        Roteiros extras liberados para alunos premium: diagnóstico com método, fonte assimétrica, fontes chaveadas, SMD e osciloscópio.
+        Aqui ficam as entregas de maior valor: projeto final guiado, material de bancada, troubleshooting e roteiros avançados.
       </p>
+      ${buildFinalProjectMarkup({ interactive: true })}
+      ${buildExtraMaterialsMarkup()}
       ${buildPremiumAdvancedMarkup()}
     `
     : `
       <p class="panel-label">Premium bloqueado</p>
-      <h3>Laboratório avançado de eletrônica</h3>
+      <h3>Núcleo premium completo</h3>
       <p class="side-copy">
-        O plano grátis libera a base do curso com anúncios. O premium adiciona roteiros avançados, estudo sem anúncios e certificado profissional.
+        O plano grátis libera a base do curso com anúncios. O premium adiciona projeto real guiado, materiais extras, roteiros avançados, estudo sem anúncios e certificado profissional.
       </p>
+      ${buildFinalProjectMarkup({ compact: true, locked: true })}
+      ${buildExtraMaterialsMarkup({ compact: true, locked: true })}
       ${buildPremiumAdvancedMarkup({ compact: true })}
       <a class="button button-primary button-small btn-premium" ${getExternalLinkAttributes(checkoutUrl)}>Desbloquear premium ${escapeHtml(
         getPremiumPriceLabel()
       )}</a>
     `;
+  bindPremiumContentControls(dom.premiumContentCard);
 }
 
 function getExternalLinkAttributes(href, { sponsored = false } = {}) {
@@ -2820,6 +3332,7 @@ function renderPublicOffer() {
         A apresentação mostra a estrutura do treinamento. A conta gratuita libera a entrada na plataforma e a navegação com anúncios.
         O premium transforma a jornada em estudo contínuo, sem interrupções visuais, com certificado e trilhas avançadas.
       </p>
+      ${buildGuidedTrailPreviewMarkup(course.modules.slice(0, 8), { compact: true })}
       <div class="presentation-signal-grid">
         ${presentationSignals
           .map(
@@ -2978,9 +3491,11 @@ function renderHeaderHud() {
 function renderProgress() {
   const completedCount = state.completed.size;
   const percent = course.lessons.length === 0 ? 0 : (completedCount / course.lessons.length) * 100;
+  const projectProgress = getProjectProgress();
+  const projectCopy = projectProgress.done > 0 ? ` Projeto final: ${projectProgress.done}/${projectProgress.total} marcos.` : "";
 
   dom.progressCount.textContent = `${completedCount} de ${course.lessons.length} aulas concluídas`;
-  dom.progressCopy.textContent = `Você tem ${state.favorites.size} favorito(s), ${Object.values(state.notes).filter((value) => String(value).trim()).length} anotação(ões) e ${getAnsweredQuizCount()} resposta(s) no quiz.`;
+  dom.progressCopy.textContent = `Você tem ${state.favorites.size} favorito(s), ${Object.values(state.notes).filter((value) => String(value).trim()).length} anotação(ões) e ${getAnsweredQuizCount()} resposta(s) no quiz.${projectCopy}`;
   dom.progressFill.style.width = `${percent}%`;
 }
 
@@ -3020,10 +3535,12 @@ function renderDashboard() {
   const nextLesson = getNextLesson();
   const notesCount = Object.values(state.notes).filter((value) => String(value).trim()).length;
   const freeMember = isFreeMember();
+  const projectProgress = getProjectProgress();
   const memberMetrics = [
     { label: "Aulas concluídas", value: `${state.completed.size}/${course.lessons.length}` },
     { label: "Favoritos", value: String(state.favorites.size) },
     { label: "Anotações salvas", value: String(notesCount) },
+    { label: "Projeto final", value: `${projectProgress.percent}%` },
     {
       label: freeMember ? "Certificado" : "Quiz final",
       value: freeMember ? "Premium" : state.quizResult ? `${state.quizResult.score}%` : "Pendente",
@@ -3063,6 +3580,11 @@ function renderDashboard() {
       done: Boolean(state.quizResult?.passed),
     },
     {
+      title: "Projeto real",
+      text: "Concluir os marcos do projeto final guiado.",
+      done: projectProgress.percent >= 100,
+    },
+    {
       title: "Conclusão profissional",
       text: freeMember ? "Ativar o premium para emitir o certificado." : "Liberar o certificado.",
       done: hasUnlockedCertificate(),
@@ -3083,13 +3605,15 @@ function renderDashboard() {
   dom.timelineList.innerHTML = studyPhases
     .map((phase, index) => {
       const threshold = Math.round(((index + 1) / studyPhases.length) * 100);
-      const unlocked = getCompletionPercent() >= threshold;
+      const phaseProgress = getPhaseProgress(phase);
+      const unlocked = phaseProgress.percent >= 100 || getCompletionPercent() >= threshold;
       return `
         <article class="timeline-item ${unlocked ? "is-done" : ""}">
           <span class="timeline-badge">${escapeHtml(phase.title)}</span>
           <div>
             <strong>${escapeHtml(phase.subtitle)}</strong>
             <p>${escapeHtml(phase.items.join(" • "))}</p>
+            <small>${phaseProgress.done}/${phaseProgress.total} aulas desta fase</small>
           </div>
         </article>
       `;
@@ -3130,6 +3654,7 @@ function renderSidebarModules() {
             <div>
               <p class="module-kicker">Módulo ${module.number}</p>
               <h3>${escapeHtml(module.title)}</h3>
+              <p class="module-objective">${escapeHtml(module.outcome || module.objective || "")}</p>
             </div>
             <span class="module-progress-badge">${progress.done}/${progress.total}</span>
           </div>
@@ -3219,17 +3744,25 @@ function renderCourse() {
   const favorite = state.favorites.has(lesson.id);
 
   dom.lessonBreadcrumb.textContent = `Curso / Módulo ${lesson.moduleNumber} / Aula ${lesson.order}`;
-  dom.lessonOverline.textContent = `Módulo ${lesson.moduleNumber}`;
+  dom.lessonOverline.textContent = `Módulo ${lesson.moduleNumber} • ${module?.level || "Trilha guiada"}`;
   dom.lessonTitle.textContent = lesson.title;
   dom.lessonSummary.textContent = lesson.summary;
   dom.lessonPosition.textContent = `${lesson.order}/${course.lessons.length}`;
   dom.lessonDuration.textContent = `${lesson.duration} min`;
   dom.lessonStatus.textContent = done ? "Concluída" : "Em andamento";
-  dom.lessonModuleName.textContent = lesson.moduleTitle;
-  dom.lessonContent.innerHTML = lesson.blocks.map(renderBlock).join("");
+  dom.lessonModuleName.textContent = `${lesson.moduleTitle} • ${module?.stage || "Trilha"}`;
+  dom.lessonContent.innerHTML = `${lesson.blocks.map(renderBlock).join("")}${buildLessonGuidanceMarkup(
+    lesson,
+    hasPremiumAccess
+  )}`;
+  const outlineItems = [
+    module?.objective ? `Objetivo: ${module.objective}` : "",
+    ...lesson.outline,
+    lesson.practiceChallenge?.task ? `Prática: ${lesson.practiceChallenge.task}` : "",
+  ].filter(Boolean);
   dom.lessonOutline.innerHTML =
-    lesson.outline.length > 0
-      ? lesson.outline.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
+    outlineItems.length > 0
+      ? outlineItems.slice(0, 7).map((item) => `<li>${escapeHtml(item)}</li>`).join("")
       : "<li>Leia a aula completa e anote os pontos mais importantes.</li>";
   dom.moduleProgressCopy.textContent = `${moduleProgress.done} de ${moduleProgress.total} aulas deste módulo concluídas.`;
   dom.moduleProgressFill.style.width = `${moduleProgress.percent}%`;
@@ -3300,6 +3833,16 @@ function renderLibrary() {
       href: "conteudo/curso-eletronica.md",
     },
     {
+      title: "Projeto final guiado",
+      meta: "Mapa, medições e relatório de bancada",
+      action: "focusPremium",
+    },
+    {
+      title: "Materiais premium",
+      meta: "Checklist, guia rápido e troubleshooting",
+      action: "focusPremium",
+    },
+    {
       title: "Abrir quiz final",
       meta: "Revisão e avaliação",
       action: "panel",
@@ -3338,6 +3881,15 @@ function renderLibrary() {
         `;
       }
 
+      if (resource.action === "focusPremium") {
+        return `
+          <button class="resource-link-card" data-focus-premium-content="true" type="button">
+            <strong>${escapeHtml(resource.title)}</strong>
+            <span>${escapeHtml(resource.meta)}</span>
+          </button>
+        `;
+      }
+
       return `
         <button class="resource-link-card ${resource.variant ? `is-${resource.variant}` : ""}" data-open-panel="${
           resource.panel
@@ -3362,6 +3914,15 @@ function renderLibrary() {
   });
 
   renderPremiumContentCard();
+
+  dom.resourceLinks.querySelectorAll("[data-focus-premium-content]").forEach((button) => {
+    bindSponsoredClick(button, () => {
+      dom.premiumContentCard?.scrollIntoView({
+        block: "start",
+        behavior: "smooth",
+      });
+    });
+  });
 
   if (dom.librarySponsoredCard) {
     if (freeMember && smartlinkUrl !== "#") {
@@ -3483,7 +4044,7 @@ function renderCertificate() {
   dom.certificateCard.classList.toggle("has-long-student-name", studentName.length > 28);
   dom.certificateCard.classList.toggle("has-very-long-student-name", studentName.length > 42);
   dom.printCertificate.textContent = unlocked ? "Imprimir certificado" : "Certificado bloqueado";
-  const premiumBonusHours = premiumAdvancedTracks.length * 2;
+  const premiumBonusHours = premiumAdvancedTracks.length * 2 + course.finalProject.milestones.length;
   const certifiedHours = Math.max(1, Math.ceil(course.totalDuration / 60) + premiumBonusHours);
 
   if (unlocked) {
