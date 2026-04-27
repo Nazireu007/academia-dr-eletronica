@@ -46,12 +46,12 @@
               <form class="auth-form" id="access-generator-form">
                 <label>
                   <span>Novo codigo de acesso</span>
-                  <input id="generator-code" type="password" required />
+                  <input id="generator-code" type="password" autocomplete="new-password" required />
                 </label>
 
                 <label>
                   <span>Confirmacao do codigo</span>
-                  <input id="generator-code-confirm" type="password" required />
+                  <input id="generator-code-confirm" type="password" autocomplete="new-password" required />
                 </label>
 
                 <div class="auth-actions">
@@ -63,7 +63,7 @@
 
               <label class="auth-form">
                 <span>Bloco para colar em <code>access-config.js</code></span>
-                <textarea class="note-editor" id="generator-output" spellcheck="false" readonly></textarea>
+                <textarea class="note-editor" id="generator-output" spellcheck="false" autocomplete="off" readonly></textarea>
               </label>
             </article>
           </section>

@@ -99,17 +99,31 @@
         <form class="auth-form" id="member-form">
           <label>
             <span>Seu nome</span>
-            <input id="member-name-input" name="name" type="text" placeholder="Ex.: Davi Rodriguez" required />
+            <input
+              id="member-name-input"
+              name="name"
+              type="text"
+              placeholder="Ex.: Davi Rodriguez"
+              autocomplete="name"
+              required
+            />
           </label>
 
           <label>
             <span>Seu e-mail</span>
-            <input id="member-email-input" name="email" type="email" placeholder="voce@email.com" required />
+            <input
+              id="member-email-input"
+              name="email"
+              type="email"
+              placeholder="voce@email.com"
+              autocomplete="email"
+              required
+            />
           </label>
 
           <label>
             <span>Objetivo principal</span>
-            <select id="member-goal-input" name="goal">
+            <select id="member-goal-input" name="goal" autocomplete="off">
               <option value="dominar fundamentos">Dominar fundamentos</option>
               <option value="trabalhar com bancada">Trabalhar com bancada</option>
               <option value="reparo de placas">Reparo de placas</option>
@@ -119,7 +133,7 @@
 
           <label>
             <span>Ritmo de estudo</span>
-            <select id="member-rhythm-input" name="rhythm">
+            <select id="member-rhythm-input" name="rhythm" autocomplete="off">
               <option value="30 min por dia">30 min por dia</option>
               <option value="1 hora por dia">1 hora por dia</option>
               <option value="estudo intensivo">Estudo intensivo</option>
@@ -513,7 +527,7 @@
               <aside class="course-sidebar">
                 <label class="search-box" for="lesson-search">
                   <span>Buscar por módulo, aula ou tema</span>
-                  <input id="lesson-search" type="search" placeholder="Ex.: soldagem, bancada, SMD..." />
+                  <input id="lesson-search" type="search" placeholder="Ex.: soldagem, bancada, SMD..." autocomplete="off" />
                 </label>
 
                 <div class="module-nav" id="module-nav"></div>
@@ -574,7 +588,12 @@
                   <article class="side-card">
                     <p class="panel-label">Anotações</p>
                     <h3>Seu caderno desta aula</h3>
-                    <textarea class="note-editor" id="lesson-note" placeholder="Escreva aqui seus insights, medições, dúvidas e passos práticos..."></textarea>
+                    <textarea
+                      class="note-editor"
+                      id="lesson-note"
+                      placeholder="Escreva aqui seus insights, medições, dúvidas e passos práticos..."
+                      autocomplete="off"
+                    ></textarea>
                     <small class="note-hint">Salvamento automático local.</small>
                   </article>
 
@@ -771,7 +790,7 @@
                 </div>
                 <label class="search-box" for="admin-member-search">
                   <span>Buscar aluno</span>
-                  <input id="admin-member-search" type="search" placeholder="Ex.: aluno@email.com" />
+                  <input id="admin-member-search" type="search" placeholder="Ex.: aluno@email.com" autocomplete="off" />
                 </label>
                 <div class="admin-filter-row">
                   <button class="button button-secondary button-small is-active" data-admin-filter="all" type="button">Todos</button>
