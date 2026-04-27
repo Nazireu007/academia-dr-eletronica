@@ -559,6 +559,8 @@ async function main() {
       `
         (() => new Promise((resolve) => {
           const checks = [
+            { selector: '.top-nav-link[data-panel-target="public"]', expectedPanel: "public", startPanel: "dashboard" },
+            { selector: '.sidebar-link[data-panel-target="public"]', expectedPanel: "public", startPanel: "dashboard" },
             { selector: '.top-nav-link[data-panel-target="dashboard"]', expectedPanel: "dashboard", startPanel: "public" },
             {
               selector: '.top-nav-link[data-panel-target="course"]',
@@ -846,6 +848,87 @@ async function main() {
               shouldOpen: window.__smoke.openCalls.length === 1,
             });
           }, 700);
+        }))()
+      `
+    );
+    const sponsoredCloseWithoutFocusResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          authState.session = { user: { id: "smoke-no-focus", email: "nofocus@example.com" } };
+          authState.user = authState.session.user;
+          authState.accessGranted = true;
+          authState.accessStatus = "pending";
+          state.member = { name: "Aluno Sem Foco", email: "nofocus@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+          state.activePanel = "dashboard";
+          window.__smoke.openCalls = [];
+          window.__smoke.lastOpenedWindow = null;
+          renderAll();
+          setActivePanel("dashboard");
+
+          const presentationTarget = document.querySelector('.top-nav-link[data-panel-target="public"]');
+          presentationTarget?.click();
+          window.dispatchEvent(new Event("blur"));
+          const beforeClose = {
+            panel: state.activePanel,
+            opened: Boolean(window.__smoke.lastOpenedWindow),
+            pending: presentationTarget?.classList.contains("is-sponsored-pending") || false,
+          };
+          window.__smoke.lastOpenedWindow?.close();
+
+          window.setTimeout(() => {
+            const activeTopNav = document.querySelector('.top-nav-link.is-active');
+            const activeSidebarLink = document.querySelector('.sidebar-link.is-active');
+            resolve({
+              activeSidebarTarget: activeSidebarLink?.dataset.panelTarget || null,
+              activeTopNavTarget: activeTopNav?.dataset.panelTarget || null,
+              afterClosePanel: state.activePanel,
+              beforeClose,
+              openCalls: window.__smoke.openCalls.length,
+              pendingAfterClose: presentationTarget?.classList.contains("is-sponsored-pending") || false,
+            });
+          }, 900);
+        }))()
+      `
+    );
+    const sponsoredHudCloseWithoutFocusResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          authState.session = { user: { id: "smoke-hud-no-focus", email: "hudnofocus@example.com" } };
+          authState.user = authState.session.user;
+          authState.accessGranted = true;
+          authState.accessStatus = "pending";
+          state.member = { name: "Aluno HUD", email: "hudnofocus@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+          state.activePanel = "dashboard";
+          window.__smoke.openCalls = [];
+          window.__smoke.lastOpenedWindow = null;
+          renderAll();
+          setActivePanel("dashboard");
+
+          const hudTarget = document.querySelector('.hud-chip[data-panel-target="certificate"]');
+          hudTarget?.click();
+          window.dispatchEvent(new Event("blur"));
+          const beforeClose = {
+            panel: state.activePanel,
+            opened: Boolean(window.__smoke.lastOpenedWindow),
+            pending: hudTarget?.classList.contains("is-sponsored-pending") || false,
+          };
+          window.__smoke.lastOpenedWindow?.close();
+
+          window.setTimeout(() => {
+            const activeHud = document.querySelector('.hud-chip.is-active');
+            resolve({
+              activeHudPressed: activeHud?.getAttribute("aria-pressed") || null,
+              activeHudTarget: activeHud?.dataset.panelTarget || null,
+              afterClosePanel: state.activePanel,
+              beforeClose,
+              openCalls: window.__smoke.openCalls.length,
+              pendingAfterClose: hudTarget?.classList.contains("is-sponsored-pending") || false,
+            });
+          }, 900);
         }))()
       `
     );
@@ -1145,6 +1228,30 @@ async function main() {
     assert(freeInternalNavigationResult.beforeClose.panelName !== "course", "O painel interno so deveria abrir depois que o anuncio fosse fechado.");
     assert(freeInternalNavigationResult.afterClose.panelOpen, "A navegacao interna deveria continuar automaticamente apos fechar o anuncio.");
     assert(freeInternalNavigationResult.afterClose.openCalls === 1, "A repeticao automatica da acao nao deveria abrir outro anuncio.");
+    assert(
+      sponsoredCloseWithoutFocusResult.beforeClose.opened &&
+        sponsoredCloseWithoutFocusResult.beforeClose.pending &&
+        sponsoredCloseWithoutFocusResult.openCalls === 1 &&
+        sponsoredCloseWithoutFocusResult.afterClosePanel === "public" &&
+        sponsoredCloseWithoutFocusResult.activeTopNavTarget === "public" &&
+        sponsoredCloseWithoutFocusResult.activeSidebarTarget === "public" &&
+        sponsoredCloseWithoutFocusResult.pendingAfterClose === false,
+      `Fechar anuncio sem evento de foco deve abrir a Apresentacao original, nao manter Painel: ${JSON.stringify(
+        sponsoredCloseWithoutFocusResult
+      )}`
+    );
+    assert(
+      sponsoredHudCloseWithoutFocusResult.beforeClose.opened &&
+        sponsoredHudCloseWithoutFocusResult.beforeClose.pending &&
+        sponsoredHudCloseWithoutFocusResult.openCalls === 1 &&
+        sponsoredHudCloseWithoutFocusResult.afterClosePanel === "certificate" &&
+        sponsoredHudCloseWithoutFocusResult.activeHudTarget === "certificate" &&
+        sponsoredHudCloseWithoutFocusResult.activeHudPressed === "true" &&
+        sponsoredHudCloseWithoutFocusResult.pendingAfterClose === false,
+      `Fechar anuncio sem evento de foco deve executar o HUD clicado originalmente: ${JSON.stringify(
+        sponsoredHudCloseWithoutFocusResult
+      )}`
+    );
     assert(
       pendingClickLockResult.openCallsAfterFirstClick === 1 && pendingClickLockResult.openCallsAfterSecondClick === 1,
       `Um segundo clique durante o anuncio nao deveria abrir nova janela patrocinada: ${JSON.stringify(pendingClickLockResult)}`

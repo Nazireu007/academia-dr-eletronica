@@ -1439,18 +1439,40 @@ function notePendingSponsoredFocusReturn() {
   pendingSponsoredResume.focusReturned = true;
 }
 
+function isSponsoredWindowClosed(sponsoredWindow) {
+  if (!sponsoredWindow) return true;
+
+  try {
+    return sponsoredWindow.closed === true;
+  } catch (_error) {
+    return true;
+  }
+}
+
+function hasAppFocus() {
+  if (typeof document.hasFocus !== "function") return true;
+  return document.hasFocus();
+}
+
+function hasReturnedFromSponsoredWindow(resumeState) {
+  if (!resumeState?.blurObserved) return false;
+  return resumeState.focusReturned || (document.visibilityState !== "hidden" && hasAppFocus());
+}
+
 function flushPendingSponsoredResume(resumeId = null) {
   if (!pendingSponsoredResume) return false;
   if (resumeId !== null && pendingSponsoredResume.id !== resumeId) return false;
 
-  const { actionRunner, sponsoredWindow, openedAt, minHoldMs, blurObserved, focusReturned } = pendingSponsoredResume;
+  const { actionRunner, sponsoredWindow, openedAt, maxHoldMs, minHoldMs } = pendingSponsoredResume;
   const elapsed = Date.now() - openedAt;
   if (elapsed < minHoldMs) {
     return false;
   }
 
-  const windowClosed = !sponsoredWindow || sponsoredWindow.closed;
-  const readyToReplay = blurObserved ? focusReturned : windowClosed;
+  const windowClosed = isSponsoredWindowClosed(sponsoredWindow);
+  const returnedToApp = hasReturnedFromSponsoredWindow(pendingSponsoredResume);
+  const maxHoldReached = elapsed >= maxHoldMs && document.visibilityState !== "hidden";
+  const readyToReplay = windowClosed || returnedToApp || maxHoldReached;
   if (!readyToReplay) {
     return false;
   }
@@ -1471,7 +1493,8 @@ function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow, actionTa
     blurObserved: false,
     focusReturned: false,
     id: resumeId,
-    minHoldMs: 400,
+    maxHoldMs: 12000,
+    minHoldMs: 450,
     openedAt: Date.now(),
     sponsoredWindow,
   };
@@ -4459,6 +4482,9 @@ document.addEventListener("click", blockClicksDuringSponsoredResume, true);
 window.addEventListener("focus", () => {
   notePendingSponsoredFocusReturn();
   if (flushPendingSponsoredResume()) {
+    return;
+  }
+  if (pendingSponsoredResume) {
     return;
   }
 
