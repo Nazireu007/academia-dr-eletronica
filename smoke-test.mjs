@@ -932,6 +932,161 @@ async function main() {
         }))()
       `
     );
+    const supabaseRefreshDoesNotClobberNavigationResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          const originalLoadRemoteProfile = loadRemoteProfile;
+          const originalRefreshRemoteAccessStatus = refreshRemoteAccessStatus;
+          const originalPullRemoteState = pullRemoteState;
+          const originalScheduleRemoteSync = scheduleRemoteSync;
+
+          const session = { user: { id: "smoke-auth-clobber", email: "clobber@example.com", user_metadata: { name: "Clobber" } } };
+          saveJSON(storageKeys.supabaseUser, session.user.id);
+          authState.session = session;
+          authState.user = session.user;
+          authState.profileExists = true;
+          authState.accessGranted = true;
+          authState.accessStatus = "pending";
+          authState.isAdmin = false;
+          authState.profileRole = "student";
+          state.member = { name: "Aluno Clobber", email: "clobber@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+          state.activePanel = "dashboard";
+          window.__smoke.openCalls = [];
+          window.__smoke.lastOpenedWindow = null;
+          renderAll();
+          setActivePanel("dashboard");
+
+          loadRemoteProfile = async () => {
+            authState.profileExists = true;
+            authState.isAdmin = false;
+            authState.profileRole = "student";
+            state.member = { name: "Aluno Clobber", email: "clobber@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+            return true;
+          };
+          refreshRemoteAccessStatus = async () => {
+            authState.accessStatus = "pending";
+            authState.accessGranted = true;
+            return true;
+          };
+          pullRemoteState = async () => {
+            applyRemoteStatePayload({
+              activePanel: "dashboard",
+              completed: [],
+              favorites: [],
+              notes: {},
+              quizAnswers: {},
+              quizResult: null,
+              selectedLessonId: course.lessons[0]?.id,
+            });
+          };
+          scheduleRemoteSync = () => {};
+
+          const presentationTarget = document.querySelector('.top-nav-link[data-panel-target="public"]');
+          presentationTarget?.click();
+          window.dispatchEvent(new Event("blur"));
+          window.__smoke.lastOpenedWindow?.close();
+
+          window.setTimeout(async () => {
+            const afterSponsoredClosePanel = state.activePanel;
+            await applySupabaseSession(session);
+            const activeTopNav = document.querySelector('.top-nav-link.is-active');
+            const activeSidebarLink = document.querySelector('.sidebar-link.is-active');
+            const result = {
+              activeSidebarTarget: activeSidebarLink?.dataset.panelTarget || null,
+              activeTopNavTarget: activeTopNav?.dataset.panelTarget || null,
+              afterRefreshPanel: state.activePanel,
+              afterSponsoredClosePanel,
+              openCalls: window.__smoke.openCalls.length,
+            };
+
+            loadRemoteProfile = originalLoadRemoteProfile;
+            refreshRemoteAccessStatus = originalRefreshRemoteAccessStatus;
+            pullRemoteState = originalPullRemoteState;
+            scheduleRemoteSync = originalScheduleRemoteSync;
+            resolve(result);
+          }, 900);
+        }))()
+      `
+    );
+    const supabaseRefreshDoesNotClobberHudResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          const originalLoadRemoteProfile = loadRemoteProfile;
+          const originalRefreshRemoteAccessStatus = refreshRemoteAccessStatus;
+          const originalPullRemoteState = pullRemoteState;
+          const originalScheduleRemoteSync = scheduleRemoteSync;
+
+          const session = { user: { id: "smoke-hud-clobber", email: "hudclobber@example.com", user_metadata: { name: "HUD" } } };
+          saveJSON(storageKeys.supabaseUser, session.user.id);
+          authState.session = session;
+          authState.user = session.user;
+          authState.profileExists = true;
+          authState.accessGranted = true;
+          authState.accessStatus = "pending";
+          authState.isAdmin = false;
+          authState.profileRole = "student";
+          state.member = { name: "Aluno HUD Clobber", email: "hudclobber@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+          state.activePanel = "dashboard";
+          window.__smoke.openCalls = [];
+          window.__smoke.lastOpenedWindow = null;
+          renderAll();
+          setActivePanel("dashboard");
+
+          loadRemoteProfile = async () => {
+            authState.profileExists = true;
+            authState.isAdmin = false;
+            authState.profileRole = "student";
+            state.member = { name: "Aluno HUD Clobber", email: "hudclobber@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+            return true;
+          };
+          refreshRemoteAccessStatus = async () => {
+            authState.accessStatus = "pending";
+            authState.accessGranted = true;
+            return true;
+          };
+          pullRemoteState = async () => {
+            applyRemoteStatePayload({
+              activePanel: "dashboard",
+              completed: [],
+              favorites: [],
+              notes: {},
+              quizAnswers: {},
+              quizResult: null,
+              selectedLessonId: course.lessons[0]?.id,
+            });
+          };
+          scheduleRemoteSync = () => {};
+
+          const hudTarget = document.querySelector('.hud-chip[data-panel-target="certificate"]');
+          hudTarget?.click();
+          window.dispatchEvent(new Event("blur"));
+          window.__smoke.lastOpenedWindow?.close();
+
+          window.setTimeout(async () => {
+            const afterSponsoredClosePanel = state.activePanel;
+            await applySupabaseSession(session);
+            const activeHud = document.querySelector('.hud-chip.is-active');
+            const result = {
+              activeHudPressed: activeHud?.getAttribute("aria-pressed") || null,
+              activeHudTarget: activeHud?.dataset.panelTarget || null,
+              afterRefreshPanel: state.activePanel,
+              afterSponsoredClosePanel,
+              openCalls: window.__smoke.openCalls.length,
+            };
+
+            loadRemoteProfile = originalLoadRemoteProfile;
+            refreshRemoteAccessStatus = originalRefreshRemoteAccessStatus;
+            pullRemoteState = originalPullRemoteState;
+            scheduleRemoteSync = originalScheduleRemoteSync;
+            resolve(result);
+          }, 900);
+        }))()
+      `
+    );
     const pendingClickLockResult = await evaluate(
       cdp,
       sessionId,
@@ -1250,6 +1405,26 @@ async function main() {
         sponsoredHudCloseWithoutFocusResult.pendingAfterClose === false,
       `Fechar anuncio sem evento de foco deve executar o HUD clicado originalmente: ${JSON.stringify(
         sponsoredHudCloseWithoutFocusResult
+      )}`
+    );
+    assert(
+      supabaseRefreshDoesNotClobberNavigationResult.openCalls === 1 &&
+        supabaseRefreshDoesNotClobberNavigationResult.afterSponsoredClosePanel === "public" &&
+        supabaseRefreshDoesNotClobberNavigationResult.afterRefreshPanel === "public" &&
+        supabaseRefreshDoesNotClobberNavigationResult.activeTopNavTarget === "public" &&
+        supabaseRefreshDoesNotClobberNavigationResult.activeSidebarTarget === "public",
+      `Refresh do Supabase com estado remoto antigo nao pode sobrescrever a Apresentacao clicada: ${JSON.stringify(
+        supabaseRefreshDoesNotClobberNavigationResult
+      )}`
+    );
+    assert(
+      supabaseRefreshDoesNotClobberHudResult.openCalls === 1 &&
+        supabaseRefreshDoesNotClobberHudResult.afterSponsoredClosePanel === "certificate" &&
+        supabaseRefreshDoesNotClobberHudResult.afterRefreshPanel === "certificate" &&
+        supabaseRefreshDoesNotClobberHudResult.activeHudTarget === "certificate" &&
+        supabaseRefreshDoesNotClobberHudResult.activeHudPressed === "true",
+      `Refresh do Supabase com estado remoto antigo nao pode sobrescrever o HUD clicado: ${JSON.stringify(
+        supabaseRefreshDoesNotClobberHudResult
       )}`
     );
     assert(

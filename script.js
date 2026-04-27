@@ -527,7 +527,6 @@ function getRemoteStatePayload() {
     quizAnswers: state.quizAnswers,
     quizResult: state.quizResult,
     selectedLessonId: state.selectedLessonId,
-    activePanel: state.activePanel,
   };
 }
 
@@ -541,7 +540,6 @@ function applyRemoteStatePayload(payload) {
   state.selectedLessonId = validLessonIds.has(source.selectedLessonId)
     ? source.selectedLessonId
     : course.lessons[0]?.id;
-  state.activePanel = source.activePanel || "dashboard";
 }
 
 function parseCourse(markdown) {
@@ -3990,7 +3988,7 @@ async function signInWithSupabase() {
     return;
   }
 
-  await applySupabaseSession(data.session);
+  await applySupabaseSession(data.session, { navigateToTarget: true });
 }
 
 async function signUpWithSupabase() {
@@ -4048,7 +4046,7 @@ async function signUpWithSupabase() {
         return;
       }
 
-      await applySupabaseSession(loginAttempt.data.session);
+      await applySupabaseSession(loginAttempt.data.session, { navigateToTarget: true });
       return;
     }
 
@@ -4058,7 +4056,7 @@ async function signUpWithSupabase() {
 
   if (data?.session) {
     setAccessFeedback("Conta criada com sucesso. Abrindo sua área...", "is-success");
-    await applySupabaseSession(data.session);
+    await applySupabaseSession(data.session, { navigateToTarget: true });
     return;
   }
 
@@ -4069,7 +4067,7 @@ async function signUpWithSupabase() {
 
   if (!loginAttempt.error && loginAttempt.data.session) {
     setAccessFeedback("Conta criada com sucesso. Abrindo sua área...", "is-success");
-    await applySupabaseSession(loginAttempt.data.session);
+    await applySupabaseSession(loginAttempt.data.session, { navigateToTarget: true });
     return;
   }
 
@@ -4104,6 +4102,16 @@ async function resetSupabasePassword() {
   setAccessFeedback("Link de redefinicao enviado para o e-mail informado.", "is-success");
 }
 
+function getPostAuthPanel(targetPanel = accessTargetPanel) {
+  if (authState.isAdmin) {
+    if (targetPanel === "admin") return "admin";
+    if (targetPanel === "public") return "dashboard";
+    return targetPanel || "dashboard";
+  }
+
+  return targetPanel && targetPanel !== "public" ? targetPanel : "dashboard";
+}
+
 async function signOutFromSupabase() {
   const client = await getAuthClient();
   if (!client) return;
@@ -4126,11 +4134,14 @@ async function signOutFromSupabase() {
   renderAll();
 }
 
-async function applySupabaseSession(session) {
+async function applySupabaseSession(session, options = {}) {
+  const { navigateToTarget = false, targetPanel = accessTargetPanel } = options;
+  const panelBeforeSessionRefresh = state.activePanel || "public";
   const previousUserId = loadJSON(storageKeys.supabaseUser, null);
   authState.session = session || null;
   authState.user = session?.user || null;
   const nextUserId = authState.user?.id || null;
+  const sameUser = previousUserId === nextUserId;
 
   if (!authState.session) {
     authState.accessGranted = false;
@@ -4147,7 +4158,7 @@ async function applySupabaseSession(session) {
     return;
   }
 
-  if (previousUserId !== nextUserId) {
+  if (!sameUser) {
     resetMemberWorkspace();
   }
 
@@ -4189,18 +4200,12 @@ async function applySupabaseSession(session) {
     await refreshAdminMembers();
   }
 
-  const nextPanel = authState.isAdmin
-    ? accessTargetPanel === "admin"
-      ? "admin"
-      : accessTargetPanel === "public"
-        ? "dashboard"
-        : accessTargetPanel || "dashboard"
-    : accessTargetPanel && accessTargetPanel !== "public"
-      ? accessTargetPanel
-      : "dashboard";
-
   closeAccessModal();
-  state.activePanel = nextPanel;
+  if (navigateToTarget || !sameUser) {
+    state.activePanel = getPostAuthPanel(targetPanel);
+  } else {
+    state.activePanel = panelBeforeSessionRefresh;
+  }
   saveState();
   renderAll();
 
@@ -4253,7 +4258,7 @@ async function handleAccessSubmit(event) {
   if (isSupabaseMode()) {
     if (authState.session && hasMemberAreaAccess()) {
       closeAccessModal();
-      setActivePanel(authState.isAdmin && accessTargetPanel === "admin" ? "admin" : accessTargetPanel || "dashboard");
+      setActivePanel(getPostAuthPanel(accessTargetPanel));
       return;
     }
 
@@ -4329,7 +4334,7 @@ dom.authResetButton.addEventListener("click", () => {
   void resetSupabasePassword();
 });
 dom.authRefreshAccessButton.addEventListener("click", () => {
-  void applySupabaseSession(authState.session);
+  void applySupabaseSession(authState.session, { navigateToTarget: true });
 });
 dom.authSignoutButton.addEventListener("click", () => {
   void signOutFromSupabase();
