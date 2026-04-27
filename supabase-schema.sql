@@ -214,6 +214,54 @@ after insert on auth.users
 for each row
 execute procedure public.handle_new_user();
 
+create or replace function public.admin_set_course_access(
+  target_user_id uuid,
+  target_course_slug text,
+  target_access_status text
+)
+returns public.course_access
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  result public.course_access;
+begin
+  if not public.is_admin() then
+    raise exception 'Apenas administradores podem alterar acesso de alunos.';
+  end if;
+
+  if target_access_status not in ('pending', 'active', 'blocked') then
+    raise exception 'Status de acesso invalido: %', target_access_status;
+  end if;
+
+  insert into public.course_access (
+    user_id,
+    course_slug,
+    access_status,
+    granted_at,
+    updated_at
+  )
+  values (
+    target_user_id,
+    target_course_slug,
+    target_access_status,
+    case when target_access_status = 'active' then timezone('utc', now()) else null end,
+    timezone('utc', now())
+  )
+  on conflict (user_id, course_slug)
+  do update set
+    access_status = excluded.access_status,
+    granted_at = excluded.granted_at,
+    updated_at = timezone('utc', now())
+  returning * into result;
+
+  return result;
+end;
+$$;
+
+grant execute on function public.admin_set_course_access(uuid, text, text) to authenticated;
+
 create or replace function public.admin_remove_member(target_user_id uuid, target_course_slug text)
 returns void
 language plpgsql

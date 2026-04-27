@@ -24,11 +24,14 @@ This project runs on GitHub Pages. Client-side files are public by nature, so se
 
 Do not store private service keys, admin passwords, payment secrets, database passwords, or Supabase service-role keys in frontend files. Public anon keys and publishable keys can be present only when their backend Row Level Security policies are correctly configured.
 
+`access-config.js` is treated as a local/offline access helper and is not deployed to GitHub Pages. Do not put API keys, private tokens, payment credentials, service-role keys, or admin secrets in that file.
+
 ## Deployment Boundary
 
 The Pages workflow publishes only the public app bundle. Internal tools and operational files stay in the repository and are intentionally excluded from the deployed artifact, including:
 
 - access hash generator
+- local access hash config
 - smoke tests
 - Supabase SQL setup
 - monetization notes

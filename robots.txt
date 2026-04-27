@@ -3,6 +3,7 @@ Allow: /
 
 Disallow: /gerar-acesso.html
 Disallow: /access-generator.js
+Disallow: /access-config.js
 Disallow: /supabase-schema.sql
 Disallow: /smoke-test.mjs
 Disallow: /MONETIZACAO.md

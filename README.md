@@ -8,7 +8,7 @@ Esta pasta agora contém uma plataforma web local em formato de área de membros
 - `styles.css`: identidade visual premium, responsiva e com modo de impressão do certificado.
 - `script.js`: lógica da área de membros, perfil do aluno, progresso, favoritos, anotações, quiz e certificado.
 - `app-config.js`: chaveia entre modo local e autenticação real com Supabase.
-- `access-config.js`: configuração do bloqueio de acesso da área de membros.
+- `access-config.js`: configuração local de acesso por código. Este arquivo fica fora do GitHub Pages e não deve guardar chaves privadas.
 - `course-data.js`: conteúdo completo do curso embutido para funcionar direto no navegador.
 - `conteudo/curso-eletronica.md`: texto-base limpo extraído do material bruto.
 - `gerar-acesso.html`: ferramenta local para gerar um novo hash de acesso.
@@ -48,7 +48,6 @@ O workflow fica em `.github/workflows/deploy-pages.yml` e publica apenas os arqu
 - `styles.css`
 - `script.js`
 - `app-config.js`
-- `access-config.js`
 - `course-data.js`
 - `privacidade.html`
 - `termos.html`
@@ -59,7 +58,7 @@ O workflow fica em `.github/workflows/deploy-pages.yml` e publica apenas os arqu
 - `sw.js`
 - `404.html`
 
-Isso evita expor ferramentas e arquivos internos como `gerar-acesso.html`, `access-generator.js`, `supabase-schema.sql`, `smoke-test.mjs`, `MONETIZACAO.md`, `meuprojeto.txt`, `.tools/` e documentação do repositório.
+Isso evita expor ferramentas e arquivos internos como `access-config.js`, `gerar-acesso.html`, `access-generator.js`, `supabase-schema.sql`, `smoke-test.mjs`, `MONETIZACAO.md`, `meuprojeto.txt`, `.tools/` e documentação do repositório.
 
 ## SEO, PWA e segurança
 
@@ -87,21 +86,21 @@ Com esse nome, o link ficaria:
 
 `https://SEUUSUARIO.github.io/academia-dr-eletronica/`
 
-## Protecao da area de membros
+## Protecao da area de membros local
 
-Esta versao agora exige um codigo de acesso antes de liberar o curso. O bloqueio funciona com:
+O modo local por codigo continua disponivel apenas para desenvolvimento ou uso offline. Ele nao e publicado no GitHub Pages quando `authMode` esta em `supabase`. O bloqueio local funciona com:
 
 - hash PBKDF2 no navegador
 - sessao com expiracao automatica
 - botao de saida da area protegida
 - perfil do aluno separado da validacao de acesso
 
-Para trocar o codigo atual:
+Para trocar o codigo local:
 
 1. Abra `gerar-acesso.html` no navegador.
 2. Gere um novo bloco de configuracao.
 3. Substitua o conteudo de `access-config.js`.
-4. Publique novamente com `git push`.
+4. Use esse arquivo somente em ambiente local ou em uma hospedagem privada.
 
 ## Autenticacao profissional
 
@@ -121,6 +120,8 @@ Depois disso:
 - o acesso pode ser liberado por aluno na tabela `course_access`
 - progresso, notas e quiz sobem para o backend
 - o codigo de acesso local deixa de ser o fluxo principal
+- novos cadastros criam perfil remoto antes de abrir a plataforma
+- o painel admin usa a RPC `admin_set_course_access` para centralizar a liberação no banco, com fallback para a política antiga enquanto o SQL novo não for aplicado
 
 Para transformar sua conta em admin no Supabase:
 

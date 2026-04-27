@@ -1083,18 +1083,28 @@ async function updateMemberAccess(userId, accessStatus) {
         ? "Movendo conta para o plano gratuito..."
         : "Bloqueando acesso da conta...";
 
-  const { error } = await client.from("course_access").upsert(
-    {
-      user_id: userId,
-      course_slug: appConfig.courseSlug,
-      access_status: accessStatus,
-      granted_at: accessStatus === "active" ? new Date().toISOString() : null,
-      updated_at: new Date().toISOString(),
-    },
-    {
-      onConflict: "user_id,course_slug",
-    }
-  );
+  const { error: rpcError } = await client.rpc("admin_set_course_access", {
+    target_access_status: accessStatus,
+    target_course_slug: appConfig.courseSlug,
+    target_user_id: userId,
+  });
+
+  let error = rpcError;
+  if (rpcError) {
+    const fallback = await client.from("course_access").upsert(
+      {
+        user_id: userId,
+        course_slug: appConfig.courseSlug,
+        access_status: accessStatus,
+        granted_at: accessStatus === "active" ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id,course_slug",
+      }
+    );
+    error = fallback.error;
+  }
 
   if (error) {
     dom.adminStatusCopy.textContent = error.message;
@@ -4056,7 +4066,7 @@ async function signUpWithSupabase() {
 
   if (data?.session) {
     setAccessFeedback("Conta criada com sucesso. Abrindo sua área...", "is-success");
-    await applySupabaseSession(data.session, { navigateToTarget: true });
+    await applySupabaseSession(data.session, { ensureProfile: true, navigateToTarget: true });
     return;
   }
 
@@ -4067,7 +4077,7 @@ async function signUpWithSupabase() {
 
   if (!loginAttempt.error && loginAttempt.data.session) {
     setAccessFeedback("Conta criada com sucesso. Abrindo sua área...", "is-success");
-    await applySupabaseSession(loginAttempt.data.session, { navigateToTarget: true });
+    await applySupabaseSession(loginAttempt.data.session, { ensureProfile: true, navigateToTarget: true });
     return;
   }
 
@@ -4135,7 +4145,7 @@ async function signOutFromSupabase() {
 }
 
 async function applySupabaseSession(session, options = {}) {
-  const { navigateToTarget = false, targetPanel = accessTargetPanel } = options;
+  const { ensureProfile = false, navigateToTarget = false, targetPanel = accessTargetPanel } = options;
   const panelBeforeSessionRefresh = state.activePanel || "public";
   const previousUserId = loadJSON(storageKeys.supabaseUser, null);
   authState.session = session || null;
@@ -4163,6 +4173,10 @@ async function applySupabaseSession(session, options = {}) {
   }
 
   saveJSON(storageKeys.supabaseUser, nextUserId);
+
+  if (ensureProfile) {
+    await ensureRemoteProfile();
+  }
 
   await loadRemoteProfile();
   await refreshRemoteAccessStatus();

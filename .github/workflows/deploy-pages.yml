@@ -41,7 +41,6 @@ jobs:
           cp site.webmanifest _site/site.webmanifest
           cp sw.js _site/sw.js
           cp app-config.js _site/app-config.js
-          cp access-config.js _site/access-config.js
           cp course-data.js _site/course-data.js
           cp privacidade.html _site/privacidade.html
           cp termos.html _site/termos.html
