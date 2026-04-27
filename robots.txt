@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+Disallow: /gerar-acesso.html
+Disallow: /access-generator.js
+Disallow: /supabase-schema.sql
+Disallow: /smoke-test.mjs
+Disallow: /MONETIZACAO.md
+Disallow: /README.md
+
+Sitemap: https://nazireu007.github.io/academia-dr-eletronica/sitemap.xml

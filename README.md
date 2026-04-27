@@ -16,6 +16,9 @@ Esta pasta agora contém uma plataforma web local em formato de área de membros
 - `MONETIZACAO.md`: guia rápido do modelo comercial do curso.
 - `privacidade.html`: política de privacidade pública da plataforma.
 - `termos.html`: termos públicos de uso da plataforma.
+- `robots.txt` e `sitemap.xml`: arquivos públicos de SEO.
+- `site.webmanifest` e `sw.js`: base PWA segura, sem cache agressivo.
+- `SECURITY.md`: política de segurança do projeto.
 
 ## Recursos da plataforma
 
@@ -47,16 +50,24 @@ O workflow fica em `.github/workflows/deploy-pages.yml` e publica apenas os arqu
 - `app-config.js`
 - `access-config.js`
 - `course-data.js`
-- `MONETIZACAO.md`
 - `privacidade.html`
 - `termos.html`
-- `gerar-acesso.html`
 - `favicon.svg`
+- `robots.txt`
+- `sitemap.xml`
+- `site.webmanifest`
+- `sw.js`
 - `404.html`
-- `conteudo/curso-eletronica.md`
-- `CHECKLIST-PUBLICACAO.md`, se o arquivo existir
 
-Isso evita expor o arquivo bruto `meuprojeto.txt`.
+Isso evita expor ferramentas e arquivos internos como `gerar-acesso.html`, `access-generator.js`, `supabase-schema.sql`, `smoke-test.mjs`, `MONETIZACAO.md`, `meuprojeto.txt`, `.tools/` e documentação do repositório.
+
+## SEO, PWA e segurança
+
+- `sitemap.xml` lista somente as páginas públicas indexáveis.
+- `robots.txt` aponta o sitemap e bloqueia URLs internas que não devem aparecer em busca.
+- `site.webmanifest` ativa metadados de instalação do app.
+- `sw.js` registra um service worker transparente, sem cache agressivo, para não prender versão velha nem interferir com login/anúncios.
+- `SECURITY.md` documenta como reportar vulnerabilidades e reforça que chaves privadas não devem entrar no front-end.
 
 ### Passo a passo
 

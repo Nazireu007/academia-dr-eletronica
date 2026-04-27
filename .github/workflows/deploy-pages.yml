@@ -31,24 +31,22 @@ jobs:
 
       - name: Build publish folder
         run: |
-          mkdir -p _site/conteudo
+          mkdir -p _site
           cp index.html _site/index.html
           cp styles.css _site/styles.css
           cp script.js _site/script.js
           cp favicon.svg _site/favicon.svg
+          cp robots.txt _site/robots.txt
+          cp sitemap.xml _site/sitemap.xml
+          cp site.webmanifest _site/site.webmanifest
+          cp sw.js _site/sw.js
           cp app-config.js _site/app-config.js
           cp access-config.js _site/access-config.js
           cp course-data.js _site/course-data.js
-          cp MONETIZACAO.md _site/MONETIZACAO.md
-          if [ -f CHECKLIST-PUBLICACAO.md ]; then
-            cp CHECKLIST-PUBLICACAO.md _site/CHECKLIST-PUBLICACAO.md
-          fi
           cp privacidade.html _site/privacidade.html
           cp termos.html _site/termos.html
           cp 404.html _site/404.html
-          cp gerar-acesso.html _site/gerar-acesso.html
           cp .nojekyll _site/.nojekyll
-          cp conteudo/curso-eletronica.md _site/conteudo/curso-eletronica.md
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

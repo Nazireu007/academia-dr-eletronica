@@ -1,0 +1,33 @@
+{
+  "name": "Nitro Scan Pro | Curso Completo de Eletronica",
+  "short_name": "Nitro Scan Pro",
+  "description": "Plataforma do Curso Completo de Eletronica com aulas, painel, biblioteca, quiz e certificado.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#08111a",
+  "theme_color": "#08111a",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Abrir plataforma",
+      "short_name": "Plataforma",
+      "url": "./"
+    },
+    {
+      "name": "Politica de privacidade",
+      "short_name": "Privacidade",
+      "url": "./privacidade.html"
+    }
+  ]
+}
