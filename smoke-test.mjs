@@ -895,6 +895,69 @@ async function main() {
         }))()
       `
     );
+    const sponsoredTargetSnapshotResult = await evaluate(
+      cdp,
+      sessionId,
+      `
+        (() => new Promise((resolve) => {
+          authState.session = { user: { id: "smoke-snapshot", email: "snapshot@example.com" } };
+          authState.user = authState.session.user;
+          authState.accessGranted = true;
+          authState.accessStatus = "pending";
+          state.member = { name: "Aluno Snapshot", email: "snapshot@example.com", goal: "aprender eletronica", rhythm: "20 min por dia", joinedAt: new Date().toISOString() };
+          state.activePanel = "public";
+          window.__smoke.openCalls = [];
+          window.__smoke.lastOpenedWindow = null;
+          renderAll();
+          setActivePanel("public");
+
+          const firstTarget = document.createElement("button");
+          firstTarget.type = "button";
+          firstTarget.dataset.panelTarget = "dashboard";
+          firstTarget.textContent = "Destino original";
+
+          const secondTarget = document.createElement("button");
+          secondTarget.type = "button";
+          secondTarget.dataset.panelTarget = "course";
+          secondTarget.textContent = "Destino concorrente";
+
+          document.body.append(firstTarget, secondTarget);
+
+          let replayedPanel = null;
+          bindSponsoredClick(firstTarget, ({ dataset }) => {
+            replayedPanel = dataset.panelTarget;
+            openPrimaryPanel(dataset.panelTarget);
+          });
+          bindSponsoredClick(secondTarget, ({ dataset }) => {
+            replayedPanel = dataset.panelTarget;
+            openPrimaryPanel(dataset.panelTarget);
+          });
+
+          firstTarget.click();
+          const pendingBeforeMutation = firstTarget.classList.contains("is-sponsored-pending");
+          firstTarget.dataset.panelTarget = "certificate";
+          secondTarget.click();
+          const openCallsAfterSecondClick = window.__smoke.openCalls.length;
+
+          window.__smoke.lastOpenedWindow?.close();
+          window.dispatchEvent(new Event("focus"));
+
+          window.setTimeout(() => {
+            const result = {
+              finalPanel: state.activePanel,
+              openCalls: window.__smoke.openCalls.length,
+              openCallsAfterSecondClick,
+              pendingAfterClose: firstTarget.classList.contains("is-sponsored-pending"),
+              pendingBeforeMutation,
+              replayedPanel,
+            };
+            firstTarget.remove();
+            secondTarget.remove();
+            resolve(result);
+          }, 750);
+        }))()
+      `
+    );
     const focusOwnedReplayResult = await evaluate(
       cdp,
       sessionId,
@@ -1099,6 +1162,17 @@ async function main() {
     assert(
       pendingClickLockResult.finalPanel === "dashboard",
       `Ao fechar o anuncio, a plataforma deveria executar a acao do primeiro clique apenas: ${JSON.stringify(pendingClickLockResult)}`
+    );
+    assert(
+      sponsoredTargetSnapshotResult.pendingBeforeMutation &&
+        sponsoredTargetSnapshotResult.openCallsAfterSecondClick === 1 &&
+        sponsoredTargetSnapshotResult.openCalls === 1 &&
+        sponsoredTargetSnapshotResult.replayedPanel === "dashboard" &&
+        sponsoredTargetSnapshotResult.finalPanel === "dashboard" &&
+        sponsoredTargetSnapshotResult.pendingAfterClose === false,
+      `A acao patrocinada deve preservar o destino do clique original e ignorar outro botao: ${JSON.stringify(
+        sponsoredTargetSnapshotResult
+      )}`
     );
     assert(
       focusOwnedReplayResult.beforeFocus.replayCount === 0 &&

@@ -423,6 +423,7 @@ const appConfig = {
 
 let sponsoredActionReplayInProgress = false;
 let pendingSponsoredActionTarget = null;
+let sponsoredActionResumeId = 0;
 
 function getPremiumPriceLabel() {
   return appConfig.priceLabel || "R$ 19,99";
@@ -1359,6 +1360,22 @@ function goToAdjacentAccessibleLesson(direction) {
   renderCourse();
 }
 
+function getSponsoredActionSnapshot(actionTarget) {
+  const dataset = {};
+  if (actionTarget?.dataset) {
+    Object.entries(actionTarget.dataset).forEach(([key, value]) => {
+      dataset[key] = value;
+    });
+  }
+
+  return {
+    dataset,
+    href: actionTarget?.href || actionTarget?.getAttribute?.("href") || "",
+    id: actionTarget?.id || "",
+    text: actionTarget?.textContent?.trim() || "",
+  };
+}
+
 function replaySponsoredAction(actionRunner) {
   if (typeof actionRunner !== "function") return;
 
@@ -1380,23 +1397,27 @@ function setPendingSponsoredActionTarget(actionTarget) {
 
   if (!(actionTarget instanceof Element)) {
     pendingSponsoredActionTarget = null;
+    document.body.classList.remove("is-sponsored-action-pending");
     return;
   }
 
   pendingSponsoredActionTarget = actionTarget;
   pendingSponsoredActionTarget.classList.add("is-sponsored-pending");
   pendingSponsoredActionTarget.setAttribute("aria-busy", "true");
+  document.body.classList.add("is-sponsored-action-pending");
 }
 
 function clearPendingSponsoredActionTarget() {
   if (!(pendingSponsoredActionTarget instanceof Element)) {
     pendingSponsoredActionTarget = null;
+    document.body.classList.remove("is-sponsored-action-pending");
     return;
   }
 
   pendingSponsoredActionTarget.classList.remove("is-sponsored-pending");
   pendingSponsoredActionTarget.removeAttribute("aria-busy");
   pendingSponsoredActionTarget = null;
+  document.body.classList.remove("is-sponsored-action-pending");
 }
 
 function clearPendingSponsoredResume() {
@@ -1418,8 +1439,9 @@ function notePendingSponsoredFocusReturn() {
   pendingSponsoredResume.focusReturned = true;
 }
 
-function flushPendingSponsoredResume() {
+function flushPendingSponsoredResume(resumeId = null) {
   if (!pendingSponsoredResume) return false;
+  if (resumeId !== null && pendingSponsoredResume.id !== resumeId) return false;
 
   const { actionRunner, sponsoredWindow, openedAt, minHoldMs, blurObserved, focusReturned } = pendingSponsoredResume;
   const elapsed = Date.now() - openedAt;
@@ -1441,19 +1463,32 @@ function flushPendingSponsoredResume() {
 function resumeActionAfterSponsoredClose(actionRunner, sponsoredWindow, actionTarget) {
   clearPendingSponsoredResume();
   setPendingSponsoredActionTarget(actionTarget);
+  sponsoredActionResumeId += 1;
+  const resumeId = sponsoredActionResumeId;
   pendingSponsoredResume = {
     actionRunner,
     closeCheck: null,
     blurObserved: false,
     focusReturned: false,
+    id: resumeId,
     minHoldMs: 400,
     openedAt: Date.now(),
     sponsoredWindow,
   };
 
   pendingSponsoredResume.closeCheck = window.setInterval(() => {
-    flushPendingSponsoredResume();
+    flushPendingSponsoredResume(resumeId);
   }, 250);
+}
+
+function blockClicksDuringSponsoredResume(event) {
+  if (!pendingSponsoredResume || sponsoredActionReplayInProgress) return;
+  if (!(event.target instanceof Element)) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  pendingSponsoredActionTarget?.focus?.({ preventScroll: true });
+  flushPendingSponsoredResume();
 }
 
 function isPremiumActionTarget(actionTarget) {
@@ -1534,13 +1569,18 @@ function bindSponsoredClick(element, actionRunner, options = {}) {
   if (!element) return;
 
   element.addEventListener("click", (event) => {
-    if (element.disabled || element.getAttribute("aria-disabled") === "true") {
+    const actionTarget = event.currentTarget;
+    if (actionTarget.disabled || actionTarget.getAttribute("aria-disabled") === "true") {
       event.preventDefault();
       return;
     }
+
+    const actionSnapshot = getSponsoredActionSnapshot(actionTarget);
+    const runOriginalClickAction = () => actionRunner(actionSnapshot, actionTarget);
+
     event.preventDefault();
     event.stopPropagation();
-    runSponsoredAction(element, actionRunner, options);
+    runSponsoredAction(actionTarget, runOriginalClickAction, options);
   });
 }
 
@@ -2875,8 +2915,8 @@ function renderPublicOffer() {
   });
 
   dom.previewLessonList.querySelectorAll("[data-preview-lesson]").forEach((button) => {
-    bindSponsoredClick(button, () => {
-      openPreviewLesson(button.dataset.previewLesson);
+    bindSponsoredClick(button, ({ dataset }) => {
+      openPreviewLesson(dataset.previewLesson);
     });
   });
 
@@ -3089,8 +3129,8 @@ function renderSidebarModules() {
     .join("");
 
   dom.moduleNav.querySelectorAll("[data-lesson-id]").forEach((button) => {
-    bindSponsoredClick(button, () => {
-      openCourseLesson(button.dataset.lessonId);
+    bindSponsoredClick(button, ({ dataset }) => {
+      openCourseLesson(dataset.lessonId);
     });
   });
 }
@@ -3279,15 +3319,15 @@ function renderLibrary() {
     .join("");
 
   dom.favoriteList.querySelectorAll("[data-open-lesson]").forEach((button) => {
-    bindSponsoredClick(button, () => openLessonFromLibrary(button.dataset.openLesson));
+    bindSponsoredClick(button, ({ dataset }) => openLessonFromLibrary(dataset.openLesson));
   });
 
   dom.noteList.querySelectorAll("[data-open-lesson]").forEach((button) => {
-    bindSponsoredClick(button, () => openLessonFromLibrary(button.dataset.openLesson));
+    bindSponsoredClick(button, ({ dataset }) => openLessonFromLibrary(dataset.openLesson));
   });
 
   dom.resourceLinks.querySelectorAll("[data-open-panel]").forEach((button) => {
-    bindSponsoredClick(button, () => openPrimaryPanel(button.dataset.openPanel));
+    bindSponsoredClick(button, ({ dataset }) => openPrimaryPanel(dataset.openPanel));
   });
 
   renderPremiumContentCard();
@@ -4302,8 +4342,8 @@ dom.logoutButton.addEventListener("click", () => {
 });
 
 [...dom.topNavLinks, ...dom.sidebarLinks, ...dom.hudButtons].forEach((button) => {
-  bindSponsoredClick(button, () => {
-    openPrimaryPanel(button.dataset.panelTarget);
+  bindSponsoredClick(button, ({ dataset }) => {
+    openPrimaryPanel(dataset.panelTarget);
   });
 });
 
@@ -4342,14 +4382,14 @@ bindSponsoredClick(dom.openCoursePanel, () => {
 });
 
 dom.publicMobileButtons.forEach((button) => {
-  bindSponsoredClick(button, () => {
-    setMobilePublicView(button.dataset.mobilePublicView || "plans");
+  bindSponsoredClick(button, ({ dataset }) => {
+    setMobilePublicView(dataset.mobilePublicView || "plans");
   });
 });
 
 dom.courseMobileButtons.forEach((button) => {
-  bindSponsoredClick(button, () => {
-    setMobileCourseView(button.dataset.mobileCourseView || "lesson");
+  bindSponsoredClick(button, ({ dataset }) => {
+    setMobileCourseView(dataset.mobileCourseView || "lesson");
   });
 });
 
@@ -4413,6 +4453,8 @@ dom.adminFilterButtons.forEach((button) => {
     renderAdminPanel();
   });
 });
+
+document.addEventListener("click", blockClicksDuringSponsoredResume, true);
 
 window.addEventListener("focus", () => {
   notePendingSponsoredFocusReturn();
