@@ -71,7 +71,7 @@ create policy "profiles_upsert_own"
 on public.member_profiles
 for insert
 to authenticated
-with check (auth.uid() = user_id);
+with check (auth.uid() = user_id and role = 'student');
 
 drop policy if exists "profiles_update_own" on public.member_profiles;
 create policy "profiles_update_own"
@@ -79,7 +79,7 @@ on public.member_profiles
 for update
 to authenticated
 using (auth.uid() = user_id)
-with check (auth.uid() = user_id);
+with check (auth.uid() = user_id and role = 'student');
 
 drop policy if exists "profiles_update_admin" on public.member_profiles;
 create policy "profiles_update_admin"
